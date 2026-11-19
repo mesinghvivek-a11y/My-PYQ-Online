@@ -213,6 +213,8 @@ body.perfmode .fbar,body.perfmode #fToggle,body.perfmode .bar2{display:none!impo
 .mtf{overflow-x:auto;margin:0 0 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface2)}.mtf table{border-collapse:collapse;width:100%;font-size:calc(16px*var(--scale))}.mtf th{font-size:12px;text-align:left;padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--line)}.mtf th small{display:block;font-weight:500}.mtf td{padding:8px 12px;vertical-align:top;border-bottom:1px solid var(--line)}.mtf td:nth-child(1),.mtf td:nth-child(3){width:1%;white-space:nowrap;color:var(--brand)}.mtf td:nth-child(2){border-right:1px solid var(--line)}.mtf tr:last-child td{border-bottom:0}
 .opt .mo b{color:var(--brand)}.opt .mo i{display:inline-block;width:16px}
 #timerBox{cursor:default}
+.qimg{display:block;max-width:100%;height:auto;max-height:420px;object-fit:contain;margin:0 0 16px;border-radius:12px;border:1px solid var(--line);background:#fff;cursor:zoom-in}.oimg{display:block;max-width:100%;max-height:200px;margin-top:8px;border-radius:10px;background:#fff;cursor:zoom-in}
+#zoomB{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.85);display:grid;place-items:center;padding:12px}#zoomB img{max-width:100%;max-height:100%;background:#fff;border-radius:8px}
 </style>
 </head>
 <body>
@@ -406,13 +408,13 @@ function render(){
  if(!q){card.innerHTML='<div class="empty"><h3>No questions match this view</h3><p>Change the exam, chapter, review set or search text.</p></div>';return;}
  const saved=stateFor(q)||(FORCE.has(q.id)?{grade:'timeout',sel:[],selected:null}:null),rev=revealed(saved);selected=saved?saved.selected:null;
  const tags=(q.group&&DATA.groups&&DATA.groups.length?`<span class="tag">${esc(q.group)}</span>`:'')+(q.examTags.length?q.examTags.map(t=>`<span class="tag exam">${esc(t.label)}</span>`).join(''):(SUBJ.builtin?'<span class="tag">Exam tag not recovered</span>':''));
- const mt=q.prompt?parseMatch(q.prompt):null,prompt=q.prompt?(mt?matchHTML(mt):`<p class="prompt">${esc(rf(q.prompt))}</p>`):'';
+ const mt=q.prompt?parseMatch(q.prompt):null,prompt=(q.prompt?(mt?matchHTML(mt):`<p class="prompt">${esc(rf(q.prompt))}</p>`):'')+(q.images||[]).map(u=>`<img class="qimg" src="${esc(u)}" loading="lazy" decoding="async" alt="Question figure">`).join('');
  let options;
  if(q.options.length){options='<div class="options" role="group" aria-label="Answer options">'+q.options.map(o=>{
   let cls='opt',mark='';
   if(rev){if(q.gradeable&&q.correct.includes(o.sourceLabel)){cls+=' correct';mark='✓'}else if(selKeys(saved).includes(o.key)&&q.gradeable){cls+=' wrong';mark='✗'}else if(selKeys(saved).includes(o.key))cls+=' selected';}
   else if(selKeys(saved).includes(o.key))cls+=' selected';
-  return `<button class="${cls}" type="button" data-option="${esc(o.key)}" ${rev||submitted?'disabled':''}><span class="letter">${esc(o.sourceLabel.toUpperCase())}</span><span>${(mt&&optMatch(o.text,mt))?'<span class="mo">'+optMatch(o.text,mt)+'</span>':(esc(rf(o.text))||'<em>[Option text not recovered]</em>')}</span>${mark?`<span class="mark">${mark}</span>`:''}</button>`;}).join('')+'</div>';}
+  return `<button class="${cls}" type="button" data-option="${esc(o.key)}" ${rev||submitted?'disabled':''}><span class="letter">${esc(o.sourceLabel.toUpperCase())}</span><span>${(mt&&optMatch(o.text,mt))?'<span class="mo">'+optMatch(o.text,mt)+'</span>':(esc(rf(o.text))||(o.image?'':'<em>[Option text not recovered]</em>'))}${o.image?`<img class="oimg" src="${esc(o.image)}" loading="lazy" decoding="async" alt="Option ${esc(o.sourceLabel)}">`:''}</span>${mark?`<span class="mark">${mark}</span>`:''}</button>`;}).join('')+'</div>';}
  else options='<div class="note" style="margin:0 0 20px">The source layout did not yield reliable separate options for this item. The extracted prompt is retained for review; it is not scored.</div>';
  const expl=(t,label,fallback)=>(t||fallback)?`<details open><summary>${label}</summary><div class="explain">${esc(rf(t||fallback))}</div></details>`:'';
  let fb='';
@@ -947,7 +949,10 @@ function lobbyCast(){const c=LIVE.cfg;cast({t:'lobby',players:names(),cfg:{mode:
 const mineOf=n=>{const o={};LIVE.picks.forEach((pm,q)=>{const v=pm.get(n);if(v)o[q]=v.sel;});return o;};
 function hostMsg(c,m){const H=LIVE;if(!H||!m)return;
  if(m.t==='hi'){const n0=String(m.name||'Player').slice(0,16);
-  if(H.ph!=='lobby'){if(m.rj&&H.roster.has(n0)){c._n=n0;H.players.set(n0,c);H.off.delete(n0);c.send({t:'me',name:n0});c.send({t:'rj',cfg:H.cfg,mine:mineOf(n0),ph:phMsg(),names:names()});}else c.send({t:'err',m:'This session has already started.'});return;}
+  if(H.ph!=='lobby'){if(H.ph==='over'){c.send({t:'err',m:'This test has already ended.'});return;}
+   let k=n0;if(!(H.roster.has(k)&&(H.off.has(k)||m.rj))){let x=2;while(H.roster.has(k))k=n0+x++;H.roster.add(k);}
+   c._n=k;H.players.set(k,c);H.off.delete(k);c.send({t:'me',name:k});c.send({t:'rj',cfg:H.cfg,mine:mineOf(k),ph:phMsg(),names:names()});
+   if(H.ph==='live'||H.ph==='reveal')setTimeout(()=>{if(LIVE===H)castPh();},400);return;}
   let k=n0,x=2;while(H.roster.has(k))k=n0+x++;c._n=k;H.players.set(k,c);H.roster.add(k);c.send({t:'me',name:k});lobbyCast();showRoom();}
  else if(m.t==='a'&&c._n)recPick(c._n,m);}
 function recPick(name,m){const H=LIVE;if(!H||H.ph!=='live'||H.pz||H.cfg.ids[H.i]!==m.qid||!Array.isArray(m.sel))return;
@@ -1082,6 +1087,7 @@ function matchHTML(m){const c=(a,b)=>`<td>${a?'<b>'+esc(a.k)+'.</b>':''}</td><td
  for(let i=0;i<Math.max(m.L.length,m.R.length);i++)r+='<tr>'+c(m.L[i])+c(m.R[i])+'</tr>';
  return(m.intro?`<p class="prompt">${esc(m.intro)}</p>`:'')+`<div class="mtf"><table><thead><tr><th colspan="2">List I${sh(m.subL)}</th><th colspan="2">List II${sh(m.subR)}</th></tr></thead><tbody>${r}</tbody></table></div>`;}
 const optMatch=(t,m)=>{const p=mapOpt(t,m);return p?p.map(x=>`<b>${esc(x[0])}</b>→${esc(x[1])}`).join('<i></i>'):null;};
+document.addEventListener('click',e=>{const i=e.target.closest('.qimg,.oimg');if(!i)return;e.stopPropagation();e.preventDefault();let z=$('zoomB');if(!z){z=document.createElement('div');z.id='zoomB';z.innerHTML='<img alt="">';z.onclick=()=>z.hidden=true;document.body.append(z);}z.firstChild.src=i.src;z.hidden=false;},true);
 /* ---------- storage health + error safety net ---------- */
 (function(){let ok=true;try{localStorage.setItem('qm-probe','1');ok=localStorage.getItem('qm-probe')==='1';localStorage.removeItem('qm-probe');}catch(e){ok=false;}
  if(!ok){const w=$('warnBar');w.textContent='⚠ This browser is not letting the app save data (private mode or a restricted viewer). Progress will be lost when you close the page — open the file normally in Safari or Chrome.';w.hidden=false;}
@@ -1096,7 +1102,7 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();}catch(e){}
  SUBJECTS.push({id:'polity',name:'Indian Polity & Governance',builtin:true,reflow:true,sourceHtml:POLITY_SRC},
   {id:'history',name:'Indian History',builtin:true,reflow:true,sourceHtml:'<b>Source:</b> Indian History — Complete Booklet (consolidated exam papers, printed pages B9–B760). Question text, options, answer key and explanations are extracted from the supplied booklet; questions with no printed answer key are not scored.'});
- for(const k of await kv.keys('subj:')){const d=await kv.get(k);if(d&&d.questions)SUBJECTS.push({id:k.slice(5),name:d.title,builtin:false,data:d,sourceHtml:'<b>Source:</b> '+esc(d.source||'Imported subject')+'. Imported on this device.'});}
+ for(const k of (QM.isAdmin?await kv.keys('subj:'):[])){const d=await kv.get(k);if(d&&d.questions)SUBJECTS.push({id:k.slice(5),name:d.title,builtin:false,data:d,sourceHtml:'<b>Source:</b> '+esc(d.source||'Imported subject')+'. Imported on this device.'});}
  const applyRows=rows=>{for(const r of rows){const i=SUBJECTS.findIndex(s=>s.id===r.id);if(r.status==='hidden'){if(i>=0&&SUBJECTS[i].builtin)SUBJECTS.splice(i,1);continue}if(r.status!=='live'||!r.path)continue;const o={id:r.id,name:r.name,builtin:false,cloud:r,sourceHtml:'<b>Source:</b> '+esc(r.subtitle||r.name)};if(i>=0)SUBJECTS[i]=o;else SUBJECTS.push(o)}};
  try{const c0=await QM.kvGet('cache:subjects');applyRows(c0||await QM.subjects());const w=new URLSearchParams(location.search).get('s');if(c0&&w&&!SUBJECTS.some(s=>s.id===w))applyRows(await QM.subjects());else QM.subjects();}catch(e){}
  SESS=(await kv.get('sessions'))||[];DAILY=(await kv.get('daily'))||{};Object.assign(PREFS,(await kv.get('prefs'))||{});

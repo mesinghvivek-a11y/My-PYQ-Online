@@ -62,7 +62,6 @@ async function loadOnce(){
  for(const r of ((await QM.kvGet('cache:subjects'))||[])){if(r.status==='hidden'){const i=subs.findIndex(z=>z.id===r.id);if(i>=0)subs.splice(i,1);continue}
   if(r.status==='upcoming'){if(!upIds.has(r.id)){upIds.add(r.id);up.push(r)}continue}
   if(r.path)put({id:r.id,name:r.name,subtitle:r.subtitle||'',chapters:r.chapters,questions:r.questions,pyq:r.pyq,cloud:1})}
- for(const k of await QM.kvKeys('subj:')){const id=k.slice(5),d=await QM.kvGet(k);if(!d||!d.questions)continue;const nm=String(d.title||id).toLowerCase();if(subs.some(z=>z.id===id||String(z.name).toLowerCase()===nm))continue;subs.push({id,name:d.title,subtitle:d.subtitle||'Imported subject',chapters:d.chapters.length,questions:d.questions.length,pyq:d.questions.filter(q=>q.examTags&&q.examTags.length).length})}
  const[sess,daily,prefs]=await Promise.all([QM.kvGet('sessions'),QM.kvGet('daily'),QM.kvGet('prefs')]);
  await Promise.all(subs.map(async s=>{const qs=(await QM.kvGet('qs:'+s.id))||{},v=Object.values(qs);s.att=v.length;s.a=v.reduce((n,z)=>n+z.c+z.w,0);s.c=v.reduce((n,z)=>n+z.c,0);s.due=v.filter(z=>z.d<=Date.now()).length}));
  SUBS=subs;UP=up;SESS=sess||[];DAILY=daily||{};Object.assign(PREFS,prefs||{});
