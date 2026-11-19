@@ -26,6 +26,8 @@ create policy "admin writes subjects" on public.subjects for all using (public.i
 -- 4) Storage bucket for question banks (public read, admin write)
 insert into storage.buckets(id, name, public) values ('banks','banks',true)
 on conflict (id) do update set public = true;
+drop policy if exists "admin selects banks" on storage.objects;
+create policy "admin selects banks" on storage.objects for select to authenticated using (bucket_id='banks' and public.is_admin());
 drop policy if exists "admin inserts banks" on storage.objects;
 create policy "admin inserts banks" on storage.objects for insert to authenticated with check (bucket_id='banks' and public.is_admin());
 drop policy if exists "admin updates banks" on storage.objects;
