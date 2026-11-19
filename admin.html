@@ -31,19 +31,21 @@ footer{padding:34px 0 60px;color:var(--mut);font-size:12px;text-align:center}.to
 
 .tabs{display:flex;gap:6px;margin:22px 0 16px}.tabs button.on{background:var(--br);color:var(--bi);border-color:var(--br)}.act{display:flex;gap:6px}.act .btn{height:34px;padding:0 12px}.frm{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;padding:16px;align-items:end}.frm label{font-size:12px;font-weight:600;color:var(--mut);display:grid;gap:4px}.frm input,.frm select{height:40px;border:1px solid var(--line);border-radius:11px;background:var(--s);padding:0 10px}.gate{padding:40px;text-align:center;margin-top:30px}h3.t{margin:22px 0 8px}
 .bk{position:fixed;inset:0;background:rgba(8,12,30,.55);display:grid;place-items:center;z-index:60;padding:16px}.ed{width:min(680px,100%);max-height:90vh;overflow:auto;padding:20px}.chr{display:grid;grid-template-columns:34px 1fr 150px;gap:8px;align-items:center;margin:6px 0}.chr input{height:38px;border:1px solid var(--line);border-radius:10px;background:var(--s);padding:0 10px;min-width:0}
+.rvc{border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0;background:var(--s2)}.rvc .bad{color:var(--bad);font-size:12px;font-weight:700;margin-bottom:6px}.rvc textarea{width:100%;min-height:60px;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--s);color:var(--ink);font:inherit}.rvo{display:grid;grid-template-columns:34px 1fr;gap:8px;align-items:center;margin:5px 0}.rvo input{height:36px;border:1px solid var(--line);border-radius:10px;background:var(--s);color:var(--ink);padding:0 10px;min-width:0}
 </style><script src="config.js"></script><script src="shared.js"></script></head><body>
 <nav><div class="w"><a class="lg" href="index.html"><img src="icon.svg" alt="">Admin</a><div class="nl"><a href="index.html">← Home</a></div><span class="sp"></span><span id="acct"></span></div></nav>
 <main class="w"><div class="card gate" id="gate">Loading…</div>
 <div id="app" hidden><div class="tabs"><button class="btn on" data-t="subs">Subjects</button><button class="btn" data-t="rep">Reports</button><button class="btn" data-t="ov">Overview</button></div>
 <section id="t-subs"><h2>Subjects</h2><p class="sub">Add subjects from an Excel file. Live subjects appear for everyone. “Upcoming” ones show as coming soon. Changing a file bumps its version so devices refresh once.</p>
-<div class="card frm"><label>Name (optional with a file)<input id="aN" placeholder="e.g. Indian Geography"></label><label>Subtitle<input id="aS" placeholder="Edition / source"></label><label>Status<select id="aSt"><option>live</option><option>upcoming</option><option>hidden</option></select></label><label>ETA (upcoming)<input id="aE" placeholder="e.g. Dec 2026"></label><label>Excel file (.xlsx)<input id="aF" type="file" accept=".xlsx,.xlsm,.csv"></label><label>Pictures (optional, used by Add and Replace)<input id="aI" type="file" accept="image/*" multiple></label><button class="btn p" id="aGo">Add subject</button><button class="btn" id="aT" type="button">Download template</button></div>
-<div class="card tb" style="margin-top:14px" id="subT"></div><h3 class="t">Drafts on this device (not visible to students)</h3><div class="card tb" id="locT"></div><input type="file" id="rF" accept=".xlsx,.xlsm,.csv" hidden></section>
+<div class="card frm"><label>Name (optional with a file)<input id="aN" placeholder="e.g. Indian Geography"></label><label>Subtitle<input id="aS" placeholder="Edition / source"></label><label>Status<select id="aSt"><option>live</option><option>upcoming</option><option>hidden</option></select></label><label>ETA (upcoming)<input id="aE" placeholder="e.g. Dec 2026"></label><label>Excel file (.xlsx)<input id="aF" type="file" accept=".xlsx,.xlsm,.xls,.csv"></label><label>Pictures (optional, used by Add and Replace)<input id="aI" type="file" accept="image/*" multiple></label><button class="btn p" id="aGo">Add subject</button><button class="btn" id="aT" type="button">Download template</button></div>
+<div class="card tb" style="margin-top:14px" id="subT"></div><h3 class="t">Drafts on this device (not visible to students)</h3><div class="card tb" id="locT"></div><input type="file" id="rF" accept=".xlsx,.xlsm,.xls,.csv" hidden></section>
 <section id="t-rep" hidden><div class="hd"><div><h2>Question reports</h2><p class="sub" id="repSub"></p></div><button class="btn" id="repCsv">Export CSV</button></div><div class="card tb" id="repT"></div></section>
 <section id="t-ov" hidden><h2>Overview</h2><div class="pg" id="ov"></div></section></div></main><div class="bk" id="edB" hidden><div class="card ed"><h2 style="margin-bottom:12px">Edit subject</h2><div class="frm" style="padding:0"><label>Name<input id="edN"></label><label>Subtitle<input id="edS"></label><label>Status<select id="edSt"><option>live</option><option>upcoming</option><option>hidden</option></select></label><label>ETA (upcoming)<input id="edE"></label><label>Sort order (lower first)<input id="edO" type="number"></label></div><div style="margin:14px 0 6px"><button class="btn" id="edCL" type="button">Edit chapter names &amp; sections</button></div><div id="edC"></div><div class="act" style="margin-top:16px;justify-content:flex-end"><button class="btn" id="edX" type="button">Cancel</button><button class="btn p" id="edSave" type="button">Save changes</button></div></div></div>
+<div class="bk" id="rvB" hidden><div class="card ed" style="width:min(820px,100%)"><h2 style="margin-bottom:6px">Check your file</h2><p class="sub" id="rvS" style="margin-bottom:8px"></p><div id="rvSum" style="margin-bottom:8px"></div><div id="rvL"></div><div class="act" style="margin-top:14px;justify-content:flex-end;flex-wrap:wrap"><button class="btn" id="rvX" type="button">Cancel</button><button class="btn" id="rvA" type="button">Apply fixes</button><button class="btn p" id="rvP" type="button">Publish without problem rows</button></div></div></div>
 <div class="toast" id="toast" hidden></div>
 <script>
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const toast=m=>{const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,4500)};
+const toast=m=>{const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,Math.min(14000,3500+String(m).length*70))};
 const sb=()=>QM.client(),slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');let ROWS=[],REP=[],MAN=[],PICK=null;
 document.querySelector('.tabs').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));['subs','rep','ov'].forEach(t=>$('t-'+t).hidden=t!==b.dataset.t)};
 async function boot(){await QM.init(15000);const g=$('gate');$('app').hidden=true;g.hidden=false;
@@ -98,10 +100,10 @@ function parseSheet(x,ss){
  const rows=[],re=/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;let m;
  while((m=re.exec(x))){const at=m[1],r=/\br="([A-Z]+)(\d+)"/.exec(at);if(!r)continue;let ci=0;for(const ch of r[1])ci=ci*26+ch.charCodeAt(0)-64;ci--;
   const ty=(/\bt="(\w+)"/.exec(at)||[])[1],body=m[2]||'';let v='';
-  if(ty==='inlineStr')v=tText(body);else{const vm=/<v[^>]*>([\s\S]*?)<\/v>/.exec(body);v=vm?unent(vm[1]):'';if(ty==='s')v=ss[+v]??'';else if(ty==='b')v=v==='1'?'TRUE':'FALSE';}
+  if(ty==='inlineStr')v=tText(body);else{const vm=/<v[^>]*>([\s\S]*?)<\/v>/.exec(body);v=vm?unent(vm[1]):'';if(ty==='s')v=ss[+v]??'';else if(ty==='b')v=v==='1'?'TRUE':'FALSE';else if(ty==='e')v='';}
   (rows[+r[2]-1]||(rows[+r[2]-1]=[]))[ci]=v;}
  return Array.from(rows,r=>r||[]);}
-async function parseXlsx(buf){
+async function parseXlsx0(buf){
  const z=unzip(buf),X=n=>z[n]?fileText(z[n]):Promise.resolve(null),dp=new DOMParser(),P=s=>dp.parseFromString(s,'application/xml');
  const wbx=await X('xl/workbook.xml');if(!wbx)throw new Error('This is not a valid Excel workbook.');
  const wb=P(wbx),rels=P(await X('xl/_rels/workbook.xml.rels')),sst=await X('xl/sharedStrings.xml');
@@ -118,30 +120,39 @@ function parseCsv(t){
  if(f!==''||r.length){r.push(f);rows.push(r);}return rows;}
 
 /* ---------- sheet rows → subject ---------- */
+function normAns(s,opts){let t=String(s||'').trim();if(!t)return[];const low=t.toLowerCase(),i=opts.findIndex(o=>o&&String(o).trim().toLowerCase()===low);if(i>=0)return['abcdef'[i]];
+ t=low.replace(/^(?:correct\s+)?(?:answer|ans|option|opt|key)\s*[:\-–.]?\s*/,'').replace(/[().\[\]:]/g,' ');
+ return t.split(/[\s,;&\/|]+/).filter(x=>x&&x!=='and'&&x!=='or').map(x=>/^[1-6]$/.test(x)?'abcdef'[+x-1]:x.replace(/[^a-z0-9]/g,'')).filter(Boolean);}
 function rowsToRaw(rows,info){
- const h=rows.findIndex(r=>r&&r.some(c=>String(c??'').trim()));if(h<0)return{err:['The sheet is empty.']};
+ const nm=c=>String(c??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(),isH=r=>{const x=(r||[]).map(nm);return x.some(v=>['question','questions','q','prompt'].includes(v))&&x.some(v=>['a','option a','opt a','options a','choice a'].includes(v))};
+ let h=rows.slice(0,25).findIndex(isH);if(h<0)h=rows.findIndex(r=>r&&r.some(c=>String(c??'').trim()));if(h<0)return{err:['The sheet is empty.']};
  const head=rows[h].map(c=>String(c??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()),find=(...k)=>head.findIndex(x=>k.includes(x));
  const col={img:find('image','images','question image','picture','figure','diagram'),ch:find('chapter','chapter name','topic','unit'),gr:find('group','era','category','branch','section'),q:find('question','questions','q','prompt'),an:find('answer','correct answer','correct','ans','key','correct option'),ex:find('explanation','solution','rationale','explain'),exam:find('exam','exams','exam tag','source','previous year','pyq'),yr:find('year')};
  const oi='abcdef'.split('').map(L=>find(L,'option '+L,'opt '+L,'options '+L,'choice '+L)),oim='abcdef'.split('').map(L=>find('image '+L,'img '+L,'option '+L+' image','opt '+L+' image','picture '+L));
- const err=[];if(col.q<0)err.push('No “Question” column found — the first row must hold the column headings (Chapter, Question, Option A …).');if(oi[0]<0||oi[1]<0)err.push('Columns “Option A” and “Option B” are required.');
+ const err=[];const seen='Headings I found (row '+(h+1)+'): '+(head.filter(Boolean).slice(0,10).join(' | ')||'none')+'.';if(col.q<0)err.push('No “Question” column found. '+seen);if(oi[0]<0||oi[1]<0)err.push('Columns “Option A” and “Option B” are required. '+seen);
  if(err.length)return{err};
  const qs=[];let lastCh='',lastGr='';
- for(let i=h+1;i<rows.length;i++){const r=rows[i]||[];if(!r.some(c=>String(c??'').trim()))continue;const g=k=>k<0?'':String(r[k]??'').trim();
+ for(let i=h+1;i<rows.length;i++){const r=rows[i]||[];if(!r.some(c=>String(c??'').trim()))continue;const g=k=>{if(k<0)return'';const v=String(r[k]??'').trim();return/^#(VALUE!|N\/A|REF!|NAME\?|DIV\/0!|NULL!|NUM!)$/i.test(v)?'':v};
   const ch=g(col.ch)||lastCh,gr=g(col.gr)||(g(col.ch)?'':lastGr);lastCh=ch;lastGr=gr||lastGr;if(g(col.ch)&&!g(col.gr))lastGr='';
+  if(!g(col.q)&&!g(col.img)&&!oi.some(k=>g(k))&&!oim.some(k=>g(k)))continue;
   const opts=oi.map(g),oimgs=oim.map(g);let n=opts.length;while(n>0&&!opts[n-1]&&!oimgs[n-1])n--;
-  const ans=g(col.an).toLowerCase().replace(/[().]/g,'').split(/[\s,;&\/]+/).filter(x=>x&&x!=='and').map(x=>/^[1-6]$/.test(x)?'abcdef'[+x-1]:x);
+  const ans=normAns(g(col.an),opts.slice(0,n));
   let ex=g(col.exam).split(/[;|\n]+/).map(s=>s.trim()).filter(Boolean);const y=g(col.yr).match(/(?:19|20)\d{2}/);
   if(y)ex=ex.length?ex.map(s=>/(?:19|20)\d{2}/.test(s)?s:s+' '+y[0]):['PYQ '+y[0]];
   qs.push({_row:i+1,chapter:ch||undefined,group:gr,question:g(col.q),images:g(col.img).split(/[;|\n]+/).map(s=>s.trim()).filter(Boolean),optImages:oimgs.slice(0,n),options:opts.slice(0,n),answer:ans,explanation:g(col.ex),exams:ex});}
  return{raw:{subject:info.subject||'',subtitle:info.subtitle||'',groupLabel:info.groupLabel||'',questions:qs}};}
+async function parseSheetJS(buf){if(!window.XLSX)await new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=ok;s.onerror=()=>no(new Error('the backup reader could not load — check your internet'));document.head.append(s)});
+ const wb=XLSX.read(buf,{type:'array'}),out=wb.SheetNames.map(n=>({name:n,rows:XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:false,defval:''}).map(r=>r.map(c=>String(c??'')))}));if(!out.length)throw new Error('the workbook has no sheets');return out}
+async function parseXlsx(buf){try{const o=await parseXlsx0(buf);if(o.every(s=>!s.rows.length))throw new Error('empty');return o}catch(e){try{return await parseSheetJS(buf)}catch(e2){throw new Error((e&&e.message||'Could not read the workbook')+' — and the backup reader failed: '+(e2&&e2.message||e2)+'. Try opening the file in Excel and saving it again as .xlsx.')}}}
 async function readFileToRaw(f){
  const ext=(f.name.split('.').pop()||'').toLowerCase(),stem=f.name.replace(/\.[^.]+$/,'');
  if(ext==='json')return{raw:JSON.parse(await f.text()),stem};
  let sheets;
  if(['csv','tsv','txt'].includes(ext))sheets=[{name:'Questions',rows:parseCsv(await f.text())}];
- else if(['xlsx','xlsm'].includes(ext)){if(typeof DecompressionStream==='undefined')throw new Error('This browser cannot open .xlsx directly. In Excel use File ▸ Save As ▸ CSV UTF-8 and import that file instead.');sheets=await parseXlsx(await f.arrayBuffer());}
- else throw new Error('Unsupported file type “.'+ext+'”. Please use .xlsx, .csv or .json.');
- const q=sheets.find(s=>/question/i.test(s.name))||sheets[0],info={},is=sheets.find(s=>s!==q&&/^(info|about|subject|settings)/i.test(s.name));
+ else if(['xlsx','xlsm','xls'].includes(ext)){sheets=await parseXlsx(await f.arrayBuffer());}
+ else throw new Error('Unsupported file type “.'+ext+'”. Please use .xlsx, .xls or .csv.');
+ const hs=r=>{const x=(r||[]).map(c=>String(c??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ').trim());return x.some(v=>['question','questions','q','prompt'].includes(v))&&x.some(v=>['a','option a','opt a','options a','choice a'].includes(v))};
+ const q=sheets.filter(s=>s.rows.slice(0,25).some(hs)).sort((x,y)=>y.rows.length-x.rows.length)[0]||sheets.find(s=>/question/i.test(s.name))||sheets[0],info={},is=sheets.find(s=>s!==q&&/^(info|about|subject|settings)/i.test(s.name));
  if(is)for(const r of is.rows){const k=String(r&&r[0]||'').toLowerCase().replace(/[^a-z]/g,''),v=String(r&&r[1]||'').trim();if(['subject','subjectname','name'].includes(k))info.subject=v;else if(k==='subtitle')info.subtitle=v;else if(['grouplabel','filterlabel'].includes(k))info.groupLabel=v;}
  const t=rowsToRaw(q.rows,info);if(t.err)throw new Error(t.err.join(' '));return{raw:t.raw,stem};}
 
@@ -206,24 +217,31 @@ function normalizeImport(raw){
  const data={title:name,subtitle:String(raw.subtitle||''),groupLabel:String(raw.groupLabel||'').trim()||'Category',chapters:chs.filter(c=>used.has(c.no)).sort((x,y)=>x.no-y.no),questions:qs,source:String(raw.source||'Imported subject'),stats:{total:qs.length}};
  return{data,skipped:err,ungraded:qs.filter(q=>!q.gradeable).length};}
 
-async function readBank(f){const{raw,stem}=await readFileToRaw(f);raw.subject=String(raw.subject||raw.name||'').trim()||stem.replace(/[_-]+/g,' ');const r=normalizeImport(raw);if(r.err)throw new Error(r.err.slice(0,3).join(' · '));if(r.skipped&&r.skipped.length)toast(r.skipped.length+' row(s) skipped — check the file.');r.data.groups=[...new Set(r.data.chapters.map(c=>c.group).filter(Boolean))];return r.data}
-const imgName=s=>String(s).split(/[\\/]/).pop().trim().toLowerCase();
-async function shrink(f){if(/svg|gif/i.test(f.type)||(f.size<70000&&/jpe?g|webp/i.test(f.type)))return{blob:f,ext:(f.name.split('.').pop()||'jpg').toLowerCase()};
- const b=await createImageBitmap(f),sc=Math.min(1,1100/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=Math.round(b.width*sc);c.height=Math.round(b.height*sc);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(b,0,0,c.width,c.height);
- return{blob:await new Promise(r=>c.toBlob(r,'image/jpeg',.85)),ext:'jpg'}}
-async function attachImages(data,id,files){const need=new Set();data.questions.forEach(q=>{(q.images||[]).forEach(n=>need.add(imgName(n)));q.options.forEach(o=>{if(o.image)need.add(imgName(o.image))})});if(!need.size)return;
- const have=new Map([...files].map(f=>[imgName(f.name),f])),miss=[...need].filter(n=>!have.has(n));
- if(miss.length)throw new Error('Missing picture file(s): '+miss.slice(0,6).join(', ')+(miss.length>6?' …':'')+'. Select them together with the Excel file.');
- const urls=new Map(),list=[...need];let done=0;
- const up=async n=>{const{blob,ext}=await shrink(have.get(n)),path=id+'/'+slug(n.replace(/\.[^.]+$/,''))+'-'+Date.now().toString(36)+'.'+ext;
-  const r=await sb().storage.from('qimg').upload(path,blob,{cacheControl:'31536000',contentType:blob.type||'image/jpeg'});if(r.error)throw new Error(/row-level|policy/i.test(r.error.message)?'Picture storage permission missing — run supabase/images.sql in Supabase.':'Picture upload failed: '+r.error.message);
-  urls.set(n,QM_CONFIG.SUPABASE_URL+'/storage/v1/object/public/qimg/'+path);toast('Uploading pictures '+(++done)+'/'+list.length+'…')};
- for(let i=0;i<list.length;i+=4)await Promise.all(list.slice(i,i+4).map(up));
- data.questions.forEach(q=>{if(q.images)q.images=q.images.map(n=>urls.get(imgName(n)));q.options.forEach(o=>{if(o.image)o.image=urls.get(imgName(o.image))})})}
+async function readBank(f){const{raw,stem}=await readFileToRaw(f);raw.subject=String(raw.subject||raw.name||'').trim()||stem.replace(/[_-]+/g,' ');
+ const r=normalizeImport(raw);if(!r.data&&!(raw.questions||[]).length)throw new Error((r.err||[]).join(' '));
+ let data=r.data;if(((r.skipped&&r.skipped.length?r.skipped:r.err)||[]).length){data=await askReview(raw,r);if(!data)return null}
+ data.groups=[...new Set(data.chapters.map(c=>c.group).filter(Boolean))];return data}
+let RV=null;
+const badOf=r=>((r.skipped&&r.skipped.length?r.skipped:r.err)||[]);
+const rvIdx=(raw,m)=>{let x=/^Row (\d+): /.exec(m);if(x)return raw.questions.findIndex(q=>q._row==x[1]);x=/^Question #(\d+): /.exec(m);return x?+x[1]-1:-1};
+const rvTxt=m=>m.replace(/^(Row \d+|Question #\d+): /,'');
+function askReview(raw,r){return new Promise(res=>{RV={raw,res,r,show:30};drawRv();$('rvB').hidden=false})}
+function drawRv(){const{raw,r}=RV,bad=badOf(r),items=bad.map(m=>({m,i:rvIdx(raw,m)})).filter(x=>x.i>=0),gr={};
+ bad.forEach(m=>{const t=rvTxt(m).replace(/“[^”]*”/,'“…”').replace(/\(found \d+\)/,'').trim();gr[t]=(gr[t]||0)+1});
+ $('rvS').innerHTML=(r.data?`<b>${r.data.questions.length}</b> questions are ready. `:'No valid questions yet. ')+`<b>${bad.length}</b> row(s) have problems. Fix them below and press <b>Apply fixes</b>, or publish without them.`;
+ $('rvSum').innerHTML=Object.entries(gr).sort((x,y)=>y[1]-x[1]).slice(0,6).map(([t,n])=>`<span class="chip b" style="white-space:normal">${n}× ${esc(t)}</span>`).join(' ');
+ $('rvL').innerHTML=items.slice(0,RV.show).map(x=>{const q=raw.questions[x.i],n=Math.min(6,Math.max(4,(q.options||[]).length));
+  return`<div class="rvc" data-i="${x.i}"><div class="bad">Sheet row ${esc(q._row||x.i+1)} · ${esc(rvTxt(x.m))}</div><textarea data-q>${esc(q.question||'')}</textarea>${Array.from({length:n},(_,k)=>`<div class="rvo"><b>${'ABCDEF'[k]}</b><input data-o="${k}" value="${esc((q.options||[])[k]||'')}"></div>`).join('')}<div class="rvo"><b>Ans</b><input data-a value="${esc((q.answer||[]).join(', ').toUpperCase())}" placeholder="e.g. B   or   A, C"></div></div>`}).join('')+(items.length>RV.show?`<button class="btn" id="rvM" type="button">Show ${Math.min(40,items.length-RV.show)} more</button>`:'');
+ $('rvP').disabled=!r.data}
+function rvRead(){const{raw}=RV;document.querySelectorAll('#rvL .rvc').forEach(el=>{const q=raw.questions[+el.dataset.i];q.question=el.querySelector('[data-q]').value.trim();const o=[...el.querySelectorAll('[data-o]')].map(i=>i.value.trim());let n=o.length;while(n>0&&!o[n-1])n--;q.options=o.slice(0,n);q.optImages=(q.optImages||[]).slice(0,n);q.answer=normAns(el.querySelector('[data-a]').value,q.options)})}
+$('rvA').onclick=()=>{rvRead();const b=badOf(RV.r).length;RV.r=normalizeImport(RV.raw);const n=badOf(RV.r).length;toast((b-n)+' row(s) fixed'+(n?', '+n+' still need attention.':'.'));if(!n&&RV.r.data){$('rvB').hidden=true;RV.res(RV.r.data);RV=null;return}drawRv()};
+$('rvP').onclick=()=>{rvRead();const r=normalizeImport(RV.raw);if(!r.data)return toast('Nothing valid to publish yet.');const n=badOf(r).length;$('rvB').hidden=true;RV.res(r.data);RV=null;if(n)toast(n+' problem row(s) were left out.')};
+$('rvX').onclick=()=>{$('rvB').hidden=true;if(RV)RV.res(null);RV=null};
+$('rvL').onclick=e=>{if(e.target.id==='rvM'){rvRead();RV.show+=40;drawRv()}};
 $('aT').onclick=()=>dlBlob(templateBlob(),'subject-template.xlsx');
 $('aGo').onclick=async()=>{let name=$('aN').value.trim();const f=$('aF').files[0];if(!name&&!f)return toast('Enter a name or choose an Excel file.');let id=slug(name);
  if(!f){const{error}=await sb().from('subjects').upsert({id,name,subtitle:$('aS').value.trim(),status:'upcoming',eta:$('aE').value.trim()||null});if(error)return toast(error.message);toast('Added as upcoming (no file yet).');await loadAll();return}
- try{toast('Reading file…');const data=await readBank(f);name=name||data.title;id=slug(name);data.title=name;await attachImages(data,id,$('aI').files);const ok=await publish({id,name,subtitle:$('aS').value.trim()||data.subtitle||'',status:$('aSt').value,eta:$('aE').value.trim(),data});if(ok){['aN','aS','aE'].forEach(i=>$(i).value='');$('aF').value='';$('aI').value=''}}catch(e){toast(e.message||'Could not read that Excel file.')}};
+ try{toast('Reading file…');const data=await readBank(f);if(!data){toast('Cancelled — nothing was published.');return}name=name||data.title;id=slug(name);data.title=name;await attachImages(data,id,$('aI').files);const ok=await publish({id,name,subtitle:$('aS').value.trim()||data.subtitle||'',status:$('aSt').value,eta:$('aE').value.trim(),data});if(ok){['aN','aS','aE'].forEach(i=>$(i).value='');$('aF').value='';$('aI').value=''}}catch(e){toast(e.message||'Could not read that Excel file.')}};
 $('subT').onclick=async e=>{const tr=e.target.closest('tr');if(!tr)return;const id=tr.dataset.id,r=ROWS.find(x=>x.id===id);
  if(e.target.closest('[data-ed]'))openEd(r);
  else if(e.target.closest('[data-up]')){PICK=r;$('rF').click()}
@@ -231,7 +249,7 @@ $('subT').onclick=async e=>{const tr=e.target.closest('tr');if(!tr)return;const 
  else if(e.target.closest('[data-mv]')){const m=MAN.find(x=>x.id===tr.dataset.b);toast('Uploading…');try{await publish({id:m.id,name:m.name,subtitle:m.subtitle,status:'live',data:await(await fetch('data/'+m.id+'.json')).json()})}catch(x){toast('Could not read the built-in file.')}}
  else if(e.target.closest('[data-hd]')){const m=MAN.find(x=>x.id===tr.dataset.b);if(!confirm('Hide “'+m.name+'” from everyone?'))return;const{error}=await sb().from('subjects').upsert({id:m.id,name:m.name,subtitle:m.subtitle,status:'hidden'});if(error)toast(error.message);else loadAll()}};
 $('subT').onchange=async e=>{if(!e.target.matches('[data-st]'))return;const id=e.target.closest('tr').dataset.id,{error}=await sb().from('subjects').update({status:e.target.value,updated_at:new Date().toISOString()}).eq('id',id);if(error)toast(error.message);else{toast('Status updated.');loadAll()}};
-$('rF').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f||!PICK)return;try{toast('Reading file…');const data=await readBank(f);data.title=PICK.name;await attachImages(data,PICK.id,$('aI').files);await publish({id:PICK.id,name:PICK.name,subtitle:PICK.subtitle,status:PICK.status,eta:PICK.eta,data})}catch(x){toast(x.message||'Could not read that Excel file.')}};
+$('rF').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f||!PICK)return;try{toast('Reading file…');const data=await readBank(f);if(!data){toast('Cancelled — nothing was published.');return}data.title=PICK.name;await attachImages(data,PICK.id,$('aI').files);await publish({id:PICK.id,name:PICK.name,subtitle:PICK.subtitle,status:PICK.status,eta:PICK.eta,data})}catch(x){toast(x.message||'Could not read that Excel file.')}};
 $('locT').onclick=async e=>{const tr=e.target.closest('tr');if(!tr)return;if(e.target.closest('[data-rmk]')){if(!confirm('Remove this draft from this device?'))return;await QM.kvDel(tr.dataset.k);toast('Draft removed.');drawSubs();return}if(!e.target.closest('[data-pub]'))return;const d=await QM.kvGet(tr.dataset.k);const name=d.title||tr.dataset.k.slice(5);await publish({id:slug(name),name,subtitle:d.subtitle||d.source||'',status:'live',data:d})};
 function drawRep(){$('repSub').textContent=`${REP.filter(r=>r.status==='open').length} open · ${REP.length} total`;
  $('repT').innerHTML=REP.length?`<table><tr><th>When</th><th>Subject</th><th>Q</th><th>Issue</th><th>Note</th><th>Question</th><th>Status</th><th></th></tr>${REP.map(r=>`<tr><td>${new Date(r.created_at).toLocaleDateString()}</td><td>${esc(r.subject_name)}</td><td>${esc(r.qno)}</td><td>${esc(r.reason)}</td><td style="white-space:normal;max-width:240px">${esc(r.note)}</td><td style="white-space:normal;max-width:300px"><small>${esc(r.prompt)}</small></td><td><span class="chip ${r.status==='open'?'b':''}">${r.status}</span></td><td><button class="btn" data-r="${r.id}">${r.status==='open'?'Resolve':'Reopen'}</button></td></tr>`).join('')}</table>`:'<div class="empty">No reports yet.</div>'}
