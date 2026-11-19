@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Quiz Master · Test portal</title>
-<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="theme-color" content="#2f4fd8"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg"><link rel="apple-touch-icon" href="icon-192.png"><script src="config.js"></script><script src="shared.js"></script>
+<title>My PYQ Online · Test portal</title>
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="theme-color" content="#2f4fd8"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg"><link rel="apple-touch-icon" href="icon-192.png"><script src="config.js"></script><script src="shared.js"></script><script>try{var __s=new URLSearchParams(location.search).get("s")||localStorage.getItem("qm-last")||"polity";if(__s==="polity"||__s==="history")window.__pre={id:__s,p:fetch("data/"+__s+".json").then(function(r){return r.json()})}}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -207,7 +207,7 @@ body.perfmode .fbar,body.perfmode #fToggle,body.perfmode .bar2{display:none!impo
 <div class="warnbar" id="warnBar" hidden></div>
 <header class="top" id="top">
  <div class="bar bar1"><a class="btn" href="index.html" title="Back to home" aria-label="Home">⌂<span class="lbl2"> Home</span></a>
-  <label class="sel subj"><span>Subject</span><select id="subjectSel" aria-label="Select subject"></select></label>
+  <label class="sel subj" hidden><span>Subject</span><select id="subjectSel" aria-label="Select subject"></select></label>
   <div class="brand"><div class="logo" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M12 3v7M12 14v7M3 12h7M14 12h7M5.6 5.6l5 5M13.4 13.4l5 5M18.4 5.6l-5 5M10.6 13.4l-5 5"/></svg></div><div class="btxt"><b id="brandTitle">Indian Polity &amp; Governance</b><small id="brandSub">Master test · 42 chapters</small></div></div>
   <span class="spacer"></span>
   <div class="seg" id="tabSeg" hidden role="group" aria-label="View"><button type="button" data-tab="quiz" class="on">Quiz</button><button type="button" data-tab="perf"><span class="lbl2">Performance</span><span class="only-s">Stats</span></button></div>
@@ -234,7 +234,7 @@ body.perfmode .fbar,body.perfmode #fToggle,body.perfmode .bar2{display:none!impo
    <input class="search" id="searchBox" type="search" placeholder="Search questions…" aria-label="Search questions and explanations">
    <button class="btn" id="shuffleBtn" type="button" title="Shuffle the questions in this view" aria-label="Reshuffle">⇄<span class="lbl"> Reshuffle</span></button>
    <button class="btn" id="fClear" type="button">Clear filters</button>
-   <button class="btn" id="reviseBtn" type="button">↻ Revise due</button><button class="btn" id="mockBtn" type="button">⚙ Custom session</button></div>
+   <button class="btn" id="reviseBtn" type="button">↻ Revise due</button><button class="btn primary" id="hostBtn" type="button" style="font-weight:700">▶ Host test</button><button class="btn" id="joinBtn" type="button" style="font-weight:700;border-color:var(--brand);color:var(--brand)">⌁ Join test</button></div>
  <div class="fextra"><div class="fgrp"><small>SESSION</small><div id="slotMode"></div></div><div class="fgrp"><small>DISPLAY</small><div id="slotTools"></div></div></div>
 </section>
 
@@ -291,7 +291,7 @@ body.perfmode .fbar,body.perfmode #fToggle,body.perfmode .bar2{display:none!impo
 </section></div>
 <div class="backdrop" id="mockBackdrop" hidden style="z-index:88"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="mkT0">
  <div class="dhead"><div><h2 id="mkT0">Custom session</h2><p>Pick chapters, practice or exam, and play solo or with friends.</p></div><button class="btn" id="mkCancel" type="button">Close</button></div>
- <div class="mockgrid" style="margin-bottom:6px"><div class="seg" id="mkWho"><button type="button" data-w="solo" class="on">Solo</button><button type="button" data-w="host">Host room</button><button type="button" data-w="join">Join room</button></div><div class="seg" id="mkModeSeg"><button type="button" data-m="practice" class="on">Practice</button><button type="button" data-m="exam">Exam</button></div></div>
+ <div class="mockgrid" style="margin-bottom:6px"><div class="seg" id="mkWho" hidden><button type="button" data-w="host" class="on">Host room</button><button type="button" data-w="join">Join room</button></div><div class="seg" id="mkModeSeg"><button type="button" data-m="practice" class="on">Practice</button><button type="button" data-m="exam">Exam</button></div></div>
  <div id="mkJoin" hidden><div class="impname"><label>Room code<input id="mkCode" maxlength="8" autocapitalize="characters" autocomplete="off" placeholder="e.g. K7M2Q"></label></div></div>
  <div class="impname" id="mkNameW"><label>Your name<input id="mkName" maxlength="16" autocomplete="off" placeholder="Shown to friends"></label></div>
  <div id="mkCfg"><div class="dhead" style="margin-top:12px;align-items:center"><b style="font-size:13px">Chapters <small style="font-weight:500;color:var(--muted)">· pick two or more (none = all)</small></b><span><button class="btn" id="mkAll" type="button" style="height:30px">All</button> <button class="btn" id="mkNone" type="button" style="height:30px">None</button></span></div>
@@ -304,7 +304,7 @@ body.perfmode .fbar,body.perfmode #fToggle,body.perfmode .bar2{display:none!impo
   <label class="sel"><span>Negative marking</span><select id="mkNeg"><option value="0">None</option><option value="0.25">¼ per wrong</option><option value="0.33">⅓ per wrong</option><option value="0.5">½ per wrong</option></select></label>
  </div>
  <label class="chk"><input type="checkbox" id="mkShuf" checked><span>Shuffle question order</span></label><label class="chk"><input type="checkbox" id="mkBal"><span>Balance across chapters (equal share from each)</span></label></div>
- <div class="dfoot" style="justify-content:flex-end"><button class="btn primary" id="mkGo" type="button">Start session</button></div>
+ <label class="chk" id="mkAloneW" hidden><input type="checkbox" id="mkAlone"><span>Just me — no room needed (works offline)</span></label><div class="dfoot" style="justify-content:flex-end"><button class="btn primary" id="mkGo" type="button">Start session</button></div>
 </section></div>
 <div class="backdrop" id="roomBackdrop" hidden style="z-index:89"><section class="dialog confirm" role="dialog" aria-modal="true"><h2>Room lobby</h2><div id="roomBody"></div><div class="row" style="margin-top:16px"><button class="btn" id="roomLeave" type="button">Leave</button><button class="btn primary" id="roomStart" type="button">Start for everyone</button></div></section></div>
 <div class="backdrop" id="lbBackdrop" hidden style="z-index:79"><section class="dialog"><div class="dhead"><div><h2>Results</h2><p>Winner list and everyone’s responses</p></div></div><div id="lbBody"></div><div class="dfoot"><button class="btn primary" id="lbSum" type="button">My summary</button><button class="btn" id="lbClose" type="button">Close room</button></div></section></div>
@@ -312,7 +312,7 @@ body.perfmode .fbar,body.perfmode #fToggle,body.perfmode .bar2{display:none!impo
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script>
-let DATA=null,SUBJ=null,LIVE=null;
+let DATA=null,SUBJ=null,LIVE=null;const FORCE=new Set();
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
@@ -392,7 +392,7 @@ function render(){
  document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.mode===mode));
  renderNavigator();updateScore();syncBar(q);save();
  if(!q){card.innerHTML='<div class="empty"><h3>No questions match this view</h3><p>Change the exam, chapter, review set or search text.</p></div>';return;}
- const saved=stateFor(q),rev=revealed(saved);selected=saved?saved.selected:null;
+ const saved=stateFor(q)||(FORCE.has(q.id)?{grade:'timeout',sel:[],selected:null}:null),rev=revealed(saved);selected=saved?saved.selected:null;
  const tags=(q.group&&DATA.groups&&DATA.groups.length?`<span class="tag">${esc(q.group)}</span>`:'')+(q.examTags.length?q.examTags.map(t=>`<span class="tag exam">${esc(t.label)}</span>`).join(''):(SUBJ.builtin?'<span class="tag">Exam tag not recovered</span>':''));
  const prompt=q.prompt?`<p class="prompt">${esc(rf(q.prompt))}</p>`:'';
  let options;
@@ -407,6 +407,7 @@ function render(){
  if(rev){
   if(saved.grade==='correct')fb=`<div class="fb good"><div class="fb-head"><span class="fb-ico" data-i="✓"></span><div>Correct<small>Correct option: ${keyStr(q)}</small></div></div>${expl(q.explanation,'Explanation','No separate explanation text was recovered from the source.')}</div>`;
   else if(saved.grade==='wrong')fb=`<div class="fb bad"><div class="fb-head"><span class="fb-ico" data-i="✗"></span><div>Incorrect<small>Correct option: ${keyStr(q)}</small></div></div>${expl(q.explanation,'Explanation')}</div>`;
+  else if(saved.grade==='timeout')fb=`<div class="fb neutral"><div class="fb-head"><span class="fb-ico" data-i="⏱"></span><div>Time’s up<small>Correct option: ${keyStr(q)}</small></div></div>${expl(q.explanation,'Explanation','No separate explanation text was recovered from the source.')}</div>`;
   else fb=`<div class="fb neutral"><div class="fb-head"><span class="fb-ico" data-i="!"></span><div>Attempt recorded · no answer key<small>${esc(q.answerRaw||'No printed answer key line')} — the book gives no mappable keyed option, so this cannot be scored.</small></div></div>${expl(q.explanation,'Explanation / source note')}</div>`;
  }
  const exam=mode==='exam';
@@ -509,7 +510,7 @@ document.addEventListener('keydown',e=>{
  else if(k.length===1){const i='1234'.includes(k)?+k-1:'abcd'.indexOf(k);if(i>=0&&i<q.options.length)pick(q.options[i].key);}
 });
 
-/* ===== Quiz Master additions: subjects · local storage · sessions · performance · import ===== */
+/* ===== My PYQ Online additions: subjects · local storage · sessions · performance · import ===== */
 const LS_LAST='qm-last',SUBJECTS=[];
 let SESS=[],sess={},tab='quiz',pendingSubj=null;
 const POLITY_SRC=$('sourceNote').innerHTML;
@@ -525,8 +526,8 @@ function dl(name,text){const a=document.createElement('a');a.href=URL.createObje
 
 /* durable storage: IndexedDB (large data) with localStorage fallback */
 const kv={db:null,
- open(){return this.db?Promise.resolve(this.db):new Promise(r=>{try{const q=indexedDB.open('quizmaster',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>r(this.db=q.result);q.onerror=()=>r(null);}catch(e){r(null)}})},
- async run(m,fn){const d=await this.open();if(!d)return{ok:false};return new Promise(r=>{try{const t=d.transaction('kv',m),q=fn(t.objectStore('kv'));t.oncomplete=()=>r({ok:true,v:q&&q.result});t.onerror=t.onabort=()=>r({ok:false});}catch(e){r({ok:false})}})},
+ open(){return this.db?Promise.resolve(this.db):new Promise(r=>{try{const q=indexedDB.open('quizmaster',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>{const d=this.db=q.result;d.onclose=d.onversionchange=()=>{try{d.close()}catch(e){}this.db=null};r(d)};q.onerror=()=>r(null);}catch(e){r(null)}})},
+ async run(m,fn,again){const d=await this.open();if(!d)return{ok:false};return new Promise(r=>{try{const t=d.transaction('kv',m),q=fn(t.objectStore('kv'));t.oncomplete=()=>r({ok:true,v:q&&q.result});t.onerror=t.onabort=()=>r({ok:false});}catch(e){this.db=null;r(again?{ok:false}:this.run(m,fn,1))}})},
  async get(k){const r=await this.run('readonly',s=>s.get(k));if(r.ok)return r.v===undefined?null:r.v;try{const l=localStorage.getItem('qmkv:'+k);return l?JSON.parse(l):null}catch(e){return null}},
  async set(k,v){const r=await this.run('readwrite',s=>s.put(v,k));if(!r.ok)store.set('qmkv:'+k,JSON.stringify(v));return r.ok},
  async del(k){const r=await this.run('readwrite',s=>s.delete(k));if(!r.ok)try{localStorage.removeItem('qmkv:'+k)}catch(e){}},
@@ -545,7 +546,7 @@ groupFilter.addEventListener('change',()=>{fillChapters();userFilter();});yearFi
 
 /* subjects */
 async function ensureData(s){
- if(!s.data)s.data=s.builtin?await(await fetch('data/'+s.id+'.json')).json():await kv.get('subj:'+s.id);
+ if(!s.data)s.data=s.builtin?await(window.__pre&&window.__pre.id===s.id?window.__pre.p:fetch('data/'+s.id+'.json').then(r=>r.json())):s.cloud?await QM.bank(s.cloud):await kv.get('subj:'+s.id);
  if(!s.prep){const g=new Map(s.data.chapters.map(c=>[c.no,c.group||'']));s.data.questions.forEach(q=>q.group=g.get(q.chapterNo)||'');s.data.groups=[...new Set(s.data.chapters.map(c=>c.group).filter(Boolean))];s.prep=1;}
  return s.data;}
 function buildSubjectSelect(){const el=$('subjectSel');el.innerHTML='';SUBJECTS.forEach(s=>el.append(new Option(s.name,s.id)));el.append(new Option('＋ Add subject…','__add'));if(SUBJ)el.value=SUBJ.id;}
@@ -557,7 +558,7 @@ async function openSubject(id,first){
  answers.clear();flags.clear();spent.clear();elapsed=0;submitted=false;mode='practice';sess={};retryIds=null;search='';$('searchBox').value='';viewFilter.value='all';
  paused=false;document.body.classList.remove('paused');$('summaryBackdrop').hidden=true;
  populateFilters();store.set(LS_LAST,s.id);$('subjectSel').value=s.id;
- $('brandTitle').textContent=s.name;$('brandSub').textContent=`Master test · ${DATA.chapters.length} chapters`;document.title=s.name+' · Quiz Master';$('sourceNote').innerHTML=s.sourceHtml||'';
+ $('brandTitle').textContent=s.name;$('brandSub').textContent=`Master test · ${DATA.chapters.length} chapters`;document.title=s.name+' · My PYQ Online';$('sourceNote').innerHTML=s.sourceHtml||'';
  const prior=restore();if(sess.ids)retryIds=new Set(sess.ids);applyFilters();
  if(prior){const i=order.findIndex(q=>q.id===prior.c);if(i>0){current=i;render();}toast(submitted?'Restored your submitted test.':`Welcome back — restored ${answers.size} answers.`);}
  paint();$('pauseBtn').disabled=submitted;$('testSubmit').textContent=submitted?'Summary':'Submit';
@@ -648,7 +649,7 @@ $('bkFile').addEventListener('change',async e=>{const f=e.target.files[0];e.targ
   const m=new Map(SESS.map(r=>[r.id,r]));(b.sessions||[]).forEach(r=>m.set(r.id,r));await kv.set('sessions',[...m.values()]);
   for(const [id,d] of Object.entries(b.subjects||{}))await kv.set('subj:'+id,d);for(const [k,v] of Object.entries(b.kvs||{}))await kv.set(k,v);
   toast('Backup restored — reloading…');setTimeout(()=>location.reload(),700);
- }catch(x){toast('That file is not a valid Quiz Master backup.');}});
+ }catch(x){toast('That file is not a valid My PYQ Online backup.');}});
 
 /* add / import subject */
 const TEMPLATE={_readme:['Replace the sample content with your own and keep this structure. Save as .json and import it from Subject → Add subject.','subject (required): name shown in the subject list. subtitle, source and groupLabel are optional.','chapters (optional): [{ "no": 1, "title": "…", "group": "…" }]. "group" powers an extra filter (e.g. Physics / Chemistry / Biology, or Ancient / Medieval / Modern).','questions (required): chapter = chapter number (or chapter title); options = 2 to 6 choices (letters a–f are assigned in order); answer = a letter such as "b", or ["a","c"] when several options are correct. Leave answer out for an unscored question.','explanation and exams (for example "UPSC CSE (Pre) 2019") are optional; exam labels with a year feed the Exam and Year filters. This _readme key is ignored.'],format:'quizmaster-subject-v1',subject:'General Science',subtitle:'NCERT based · Class 6–10',groupLabel:'Branch',chapters:[{no:1,title:'Motion and Force',group:'Physics'},{no:2,title:'Acids, Bases and Salts',group:'Chemistry'}],questions:[{chapter:1,question:'The SI unit of force is –',options:['Joule','Newton','Watt','Pascal'],answer:'b',explanation:'Force is measured in newton (N).',exams:['UPSC CSE (Pre) 2019']},{chapter:2,question:'Which of the following are acids?\n1. HCl\n2. NaOH\n3. H2SO4',options:['1 and 2','2 only','1 and 3','1, 2 and 3'],answer:'c',explanation:'NaOH is a base.',exams:[]},{chapter:1,question:'Select all vector quantities.',options:['Speed','Velocity','Displacement','Mass'],answer:['b','c'],explanation:'Velocity and displacement have direction.'}]};
@@ -657,11 +658,11 @@ function examTag(l){const ys=new Set();String(l).replace(/\b((?:19|20)\d{2})\b/g
  return{label:String(l),family:fam||String(l),stage:'',year:ys.size?[...ys][0]:0,years:[...ys]};}
 /* ===== v3: Excel import/export · smart revision · notes · mock tests · goals & charts ===== */
 const INTERVALS=[0,1,3,7,16,35],dayKey=(t=Date.now())=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
-let QS={},NOTES={},DAILY={},PREFS={goal:30},_ps=null;
+let QS={},NOTES={},NTS={},DAILY={},PREFS={goal:30},_ps=null;
 const h32=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return(h>>>0).toString(36);};
-async function loadSubjData(s){QS=(await kv.get('qs:'+s.id))||{};NOTES=(await kv.get('notes:'+s.id))||{};}
+async function loadSubjData(s){QS=(await kv.get('qs:'+s.id))||{};NOTES=(await kv.get('notes:'+s.id))||{};NTS=(await kv.get('nts:'+s.id))||{};}
 function persistSoon(){clearTimeout(_ps);_ps=setTimeout(flushPersist,900);}
-function flushPersist(){if(_ps==null)return;clearTimeout(_ps);_ps=null;if(SUBJ){kv.set('qs:'+SUBJ.id,QS);kv.set('notes:'+SUBJ.id,NOTES);}kv.set('daily',DAILY);kv.set('prefs',PREFS);}
+function flushPersist(){if(_ps==null)return;clearTimeout(_ps);_ps=null;if(SUBJ){kv.set('qs:'+SUBJ.id,QS);kv.set('notes:'+SUBJ.id,NOTES);kv.set('nts:'+SUBJ.id,NTS);}kv.set('daily',DAILY);kv.set('prefs',PREFS);}
 function recordResult(q,g){
  if(!q||(g!=='correct'&&g!=='wrong'))return;
  const s=QS[q.id]||(QS[q.id]={a:0,c:0,w:0,b:0,t:0,d:0});s.a++;if(g==='correct'){s.c++;s.b=Math.min(5,s.b+1);}else{s.w++;s.b=0;}
@@ -671,7 +672,8 @@ function autoSubmit(){gradePending();submitted=true;setPaused(false);stopClock()
 
 /* notes */
 const noteBox=q=>`<details class="mynote" ${NOTES[q.id]?'open':''}><summary>📝 ${NOTES[q.id]?'My note':'Add a note'}</summary><textarea id="noteTa" placeholder="A memory trick, source or doubt to revisit…">${esc(NOTES[q.id]||'')}</textarea></details>`;
-function setNote(id,t){if(t.trim())NOTES[id]=t;else delete NOTES[id];persistSoon();}
+const nMeta=id=>{const q=byId.get(id);return{ts:Date.now(),c:q?q.chapterNo:0,ch:q?q.chapter:'',n:q?String(q.number):'',p:q?String(q.prompt||'').slice(0,160):''}};
+function setNote(id,t){if(t.trim()){NOTES[id]=t;NTS[id]=nMeta(id);}else{delete NOTES[id];delete NTS[id];}persistSoon();}
 
 /* "Show" filter counts */
 const VIEW_BASE={due:'Due for revision',everwrong:'Missed before',weak:'Weak: under 60%',new:'Never attempted',noted:'With my notes'};
@@ -811,12 +813,12 @@ function normalizeImport(raw){
  const data={title:name,subtitle:String(raw.subtitle||''),groupLabel:String(raw.groupLabel||'').trim()||'Category',chapters:chs.filter(c=>used.has(c.no)).sort((x,y)=>x.no-y.no),questions:qs,source:String(raw.source||'Imported subject'),stats:{total:qs.length}};
  return{data,skipped:err,ungraded:qs.filter(q=>!q.gradeable).length};}
 const showImp=l=>{$('impGo').disabled=true;pend=null;$('impNameWrap').hidden=true;$('impMsg').innerHTML=`<div class="note" style="margin:0"><b>Couldn’t import this file</b><br>${l.slice(0,8).map(esc).join('<br>')}${l.length>8?`<br>…and ${l.length-8} more`:''}</div>`;};
-function openAdd(){$('impMsg').innerHTML='';$('impGo').disabled=true;$('impNameWrap').hidden=true;pend=null;$('impFile').value='';renderMine();$('subjBackdrop').hidden=false;}
+function openAdd(){if(!QM.isAdmin){toast('Only admins can add subjects.');return;}$('impMsg').innerHTML='';$('impGo').disabled=true;$('impNameWrap').hidden=true;pend=null;$('impFile').value='';renderMine();$('subjBackdrop').hidden=false;}
 function renderMine(){
- $('mySubj').innerHTML='<h3>Your subjects</h3>'+SUBJECTS.map(s=>`<div class="mine"><span><b>${esc(s.name)}</b>${s.builtin?' <span class="chip">built-in</span>':''}</span><span class="mbtn"><button class="btn" type="button" data-ex="${s.id}">Export Excel</button>${s.builtin?'':`<button class="btn" type="button" data-sh="${s.id}">Share link</button><button class="btn danger" type="button" data-rm="${s.id}">Remove</button>`}</span></div>`).join('');
+ $('mySubj').innerHTML='<h3>Your subjects</h3>'+SUBJECTS.map(s=>`<div class="mine"><span><b>${esc(s.name)}</b>${s.builtin?' <span class="chip">built-in</span>':''}</span><span class="mbtn"><button class="btn" type="button" data-ex="${s.id}">Export Excel</button>${s.builtin?'':`<button class="btn danger" type="button" data-rm="${s.id}">Remove</button>`}</span></div>`).join('');
  $('mySubj').querySelectorAll('[data-ex]').forEach(b=>b.addEventListener('click',async()=>{b.disabled=true;try{await exportSubject(SUBJECTS.find(x=>x.id===b.dataset.ex));}finally{b.disabled=false;}}));
  $('mySubj').querySelectorAll('[data-rm]').forEach(b=>b.addEventListener('click',async()=>{const s=SUBJECTS.find(x=>x.id===b.dataset.rm);if(!s||!await ask('Remove “'+s.name+'”?','The subject, its notes and saved progress are deleted. Past sessions stay in Performance.','Remove'))return;
-  await kv.del('subj:'+s.id);await kv.del('qs:'+s.id);await kv.del('notes:'+s.id);try{localStorage.removeItem('qm-state:'+s.id)}catch(e){}const cur=SUBJ.id===s.id;SUBJECTS.splice(SUBJECTS.indexOf(s),1);if(cur){sess={};await openSubject('polity',true);}buildSubjectSelect();renderMine();}));}
+  await kv.del('subj:'+s.id);await kv.del('qs:'+s.id);await kv.del('notes:'+s.id);await kv.del('nts:'+s.id);try{localStorage.removeItem('qm-state:'+s.id)}catch(e){}const cur=SUBJ.id===s.id;SUBJECTS.splice(SUBJECTS.indexOf(s),1);if(cur){sess={};await openSubject('polity',true);}buildSubjectSelect();renderMine();}));}
 $('tplBtn').addEventListener('click',()=>{dlBlob(templateBlob(),'quizmaster-subject-template.xlsx');toast('Template downloaded — open it in Excel, Numbers or Google Sheets.');});
 $('impFile').addEventListener('change',async e=>{
  const f=e.target.files[0];if(!f)return;$('impMsg').innerHTML='<div class="note" style="margin:0">Reading file…</div>';
@@ -835,7 +837,7 @@ $('closeSubj').addEventListener('click',()=>$('subjBackdrop').hidden=true);
 $('subjBackdrop').addEventListener('click',e=>{if(e.target===$('subjBackdrop'))$('subjBackdrop').hidden=true;});
 
 /* ---------- mock tests ---------- */
-$('mockBtn').addEventListener('click',()=>openCustom());
+$('hostBtn').addEventListener('click',()=>{who='host';openCustom();});$('joinBtn').addEventListener('click',()=>{who='join';openCustom();});
 $('mkCancel').addEventListener('click',()=>$('mockBackdrop').hidden=true);
 /* ---------- performance extras: goal, streak, charts, backup ---------- */
 function streak(){let n=0,t=Date.now();if(!DAILY[dayKey(t)])t-=864e5;while(DAILY[dayKey(t)]>0){n++;t-=864e5;}return n;}
@@ -869,7 +871,7 @@ const L=()=>LIVE&&LIVE.ph!=='over'?LIVE:null;
 const myName=()=>($('mkName').value.trim()||store.get('qm-name')||'Player').slice(0,16);
 const shufA=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 const lab=(q,s)=>s.map(k=>((q.options.find(o=>o.key===k)||{}).sourceLabel||'?')).join(',').toUpperCase();
-let who='solo',cmode='practice';
+let who='host',cmode='practice';
 function openCustom(){
  const cc=new Map(),pre=chapterFilter.value;DATA.questions.forEach(q=>{if(q.gradeable&&q.attemptable&&q.options.length)cc.set(q.chapterNo,(cc.get(q.chapterNo)||0)+1);});
  $('mkChs').innerHTML=DATA.chapters.filter(c=>cc.get(c.no)).map(c=>`<label class="chk"><input type="checkbox" value="${c.no}" ${String(c.no)===pre?'checked':''}><span>${String(c.no).padStart(2,'0')} · ${esc(c.title)}</span><em>${cc.get(c.no)}</em></label>`).join('');
@@ -887,9 +889,10 @@ function buildIds(){
  if(!$('mkShuf').checked){const ix=new Map(DATA.questions.map((q,i)=>[q.id,i]));ids.sort((a,b)=>ix.get(a.id)-ix.get(b.id));}
  return ids.map(q=>q.id);}
 function setWho(w){who=w;document.querySelectorAll('#mkWho button').forEach(b=>b.classList.toggle('on',b.dataset.w===w));document.querySelectorAll('#mkModeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.m===cmode));
- $('mkJoin').hidden=w!=='join';$('mkCfg').hidden=w==='join';$('mkModeSeg').hidden=w==='join';$('mkNameW').hidden=w==='solo';
- document.querySelectorAll('.solo-only').forEach(x=>x.hidden=w!=='solo');document.querySelectorAll('.host-only').forEach(x=>x.hidden=w!=='host');
- $('mkGo').textContent=w==='solo'?'Start session':w==='host'?'Create room':'Join room';}
+ $('mkJoin').hidden=w!=='join';$('mkCfg').hidden=w==='join';$('mkModeSeg').hidden=w==='join';$('mkNameW').hidden=w==='host'&&$('mkAlone').checked;
+ const al=w==='host'&&$('mkAlone').checked;document.querySelectorAll('.solo-only').forEach(x=>x.hidden=!al);document.querySelectorAll('.host-only').forEach(x=>x.hidden=!(w==='host'&&!al));$('mkAloneW').hidden=w!=='host';
+ $('mkGo').textContent=w==='join'?'Join room':$('mkAlone').checked?'Start session':'Create room';$('mkT0').textContent=w==='join'?'Join a test':'Host a test';}
+$('mkAlone').addEventListener('change',()=>setWho(who));
 $('mkWho').addEventListener('click',e=>{const b=e.target.closest('[data-w]');if(b)setWho(b.dataset.w);});
 $('mkModeSeg').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(b){cmode=b.dataset.m;setWho(who);}});
 $('mkChs').addEventListener('change',updAvail);$('mkSrc').addEventListener('change',updAvail);
@@ -900,7 +903,7 @@ $('mkGo').addEventListener('click',async()=>{
  if(who==='join')return joinRoom();
  const ids=buildIds();if(!ids)return;
  const cfg={subj:SUBJ.id,ids,mode:cmode,neg:+$('mkNeg').value,qsec:+$('mkQS').value,n:ids.length};
- if(who==='host')return hostRoom(cfg);
+ if(who==='host'&&!$('mkAlone').checked)return hostRoom(cfg);
  const lim=+$('mkT').value*60;
  if(answers.size&&!await ask('Start this session?','Your current attempt in this subject will be ended (it stays in Performance).','Start'))return;
  logSession(submitted?'submitted':'ended');stopClock();answers.clear();flags.clear();spent.clear();submitted=false;elapsed=0;mode=cmode;
@@ -912,7 +915,7 @@ $('mkGo').addEventListener('click',async()=>{
 const names=()=>[LIVE.name,...LIVE.players.keys()];
 const cast=m=>{if(LIVE.peer&&LIVE.peer.bc)LIVE.peer.bc(m);else LIVE.players.forEach(c=>{try{c.send(m)}catch(e){}});};
 const loadPeer=async()=>{if(!QM.enabled){toast('Live rooms need Supabase keys in config.js (see README).');return false;}try{await QM.load();return true;}catch(e){return false;}};
-const mkShow=H=>()=>H.ph==='live'||H.ph==='reveal'?mmss(Math.max(0,Math.ceil((H.end-Date.now())/1000))):'--:--';
+const mkShow=H=>()=>H.ph==='live'||H.ph==='reveal'?(H.pz?'⏸ ':'')+mmss(Math.max(0,Math.ceil((H.pz?H.pr:H.end-Date.now())/1000))):'--:--';
 function liveTick(){if(!LIVE)return;if(LIVE.host)hostTick();paint();const c=$('lcd');if(c&&LIVE.show)c.textContent=LIVE.show();}
 async function hostRoom(cfg){
  store.set('qm-name',myName());if(!await loadPeer()){toast('Could not connect to live rooms.');return;}
@@ -927,17 +930,18 @@ function hostMsg(c,m){
  if(m.t==='hi'){if(LIVE.ph!=='lobby'){c.send({t:'err',m:'This session has already started.'});return;}
   const n=String(m.name||'Player').slice(0,16);let k=n,x=2;while(k===LIVE.name||LIVE.players.has(k))k=n+x++;c._n=k;LIVE.players.set(k,c);c.send({t:'me',name:k});lobbyCast();showRoom();}
  else if(m.t==='a'&&c._n)recPick(c._n,m);}
-function recPick(name,m){const H=LIVE;if(!H||H.ph!=='live'||H.cfg.ids[H.i]!==m.qid||!Array.isArray(m.sel))return;
+function recPick(name,m){const H=LIVE;if(!H||H.ph!=='live'||H.pz||H.cfg.ids[H.i]!==m.qid||!Array.isArray(m.sel))return;
  let pm=H.picks.get(m.qid);if(!pm)H.picks.set(m.qid,pm=new Map());const o=pm.get(name);pm.set(name,{sel:m.sel,ms:o?o.ms:(+m.ms||0)});castPh();}
 const allIn=()=>{const pm=LIVE.picks.get(LIVE.cfg.ids[LIVE.i]);return!!pm&&names().every(n=>pm.has(n));};
-function hostTick(){const H=LIVE;if(!H||H.ph==='over')return;const now=Date.now();
+function hostTick(){const H=LIVE;if(!H||H.ph==='over'||H.pz)return;const now=Date.now();
  if(H.ph==='live'){if(now>=H.end||allIn())toReveal();}else if(H.ph==='reveal'&&now>=H.end)nextQ();}
 function toReveal(){if(LIVE.cfg.mode==='exam')return nextQ();LIVE.ph='reveal';LIVE.end=Date.now()+REV*1000;castPh();}
 function nextQ(){const H=LIVE;if(!H||!H.host||H.ph==='over'||H.ph==='lobby')return;H.i++;if(H.i>=H.cfg.ids.length)return finish();H.ph='live';H.end=Date.now()+H.cfg.qsec*1000;castPh();}
-function castPh(){const H=LIVE,pm=H.picks.get(H.cfg.ids[H.i]),pk={};if(pm)pm.forEach((v,n)=>pk[n]=H.cfg.mode==='exam'?[]:v.sel);const m={t:'ph',i:H.i,ph:H.ph,rem:H.end-Date.now(),picks:pk};cast(m);onPh(m);}
+function castPh(){const H=LIVE,pm=H.picks.get(H.cfg.ids[H.i]),pk={};if(pm)pm.forEach((v,n)=>pk[n]=H.cfg.mode==='exam'?[]:v.sel);const m={t:'ph',i:H.i,ph:H.ph,rem:H.pz?H.pr:H.end-Date.now(),pz:H.pz?1:0,picks:pk};cast(m);onPh(m);}
 function onPh(m){const H=LIVE;if(!H||!byId.has(H.cfg.ids[m.i]))return;const first=H.ci!==m.i;
  if(first&&m.ph==='live'){H.qs=Date.now()-(H.cfg.qsec*1000-m.rem);H.last='';}
- H.ci=m.i;H.ph=m.ph;H.end=Date.now()+m.rem;H.cpicks=m.picks;
+ H.ci=m.i;H.ph=m.ph;H.end=Date.now()+m.rem;H.cpicks=m.picks;H.pz=m.pz;H.pr=m.rem;
+ if(m.ph==='reveal'&&H.cfg.mode==='practice'){const qq=H.cfg.ids[m.i],a=answers.get(qq);if(!a)FORCE.add(qq);else if(a.grade==='pending'){const g=gradeOf(byId.get(qq),a);answers.set(qq,{...a,grade:g});recordResult(byId.get(qq),g);}}
  if(current!==m.i){current=m.i;selected=null;scrollTo({top:0});}render();}
 function finish(){const H=LIVE,ids=H.cfg.ids,neg=H.cfg.neg||0,rows=[],pk={};
  ids.forEach(id=>{pk[id]={};const pm=H.picks.get(id);if(pm)pm.forEach((v,n)=>pk[id][n]=v.sel);});
@@ -970,14 +974,14 @@ async function liveBegin(cfg){
  const H=LIVE;if(!SUBJECTS.some(s=>s.id===cfg.subj)){toast('You don’t have this subject — import the same subject file first.');liveLeave();return;}
  if(SUBJ.id!==cfg.subj)await openSubject(cfg.subj);if(LIVE!==H)return;
  if(!cfg.ids.every(id=>byId.has(id))){toast('Your copy of this subject differs from the host’s. Import the same file.');liveLeave();return;}
- logSession(submitted?'submitted':'ended');stopClock();answers.clear();flags.clear();spent.clear();submitted=false;elapsed=0;mode=cfg.mode;paused=false;document.body.classList.remove('paused');
+ logSession(submitted?'submitted':'ended');stopClock();answers.clear();flags.clear();spent.clear();submitted=false;elapsed=0;FORCE.clear();mode=cfg.mode;paused=false;document.body.classList.remove('paused');
  sess={eb:0,lim:0,neg:cfg.neg,mock:1,live:1,ids:cfg.ids};retryIds=new Set(cfg.ids);H.cfg=cfg;H.ph='wait';H.ci=-1;H.last='';
  ['roomBackdrop','mockBackdrop','summaryBackdrop'].forEach(i=>$(i).hidden=true);$('testSubmit').textContent='Submit';setTab('quiz');applyFilters();setOrder(cfg.ids);paint();}
 $('roomStart').addEventListener('click',async()=>{const H=LIVE;if(!H||!H.host||H.ph!=='lobby')return;H.ph='wait';H.i=-1;cast({t:'start',cfg:H.cfg});await liveBegin(H.cfg);setTimeout(()=>{if(LIVE===H)nextQ();},1800);});
 $('roomLeave').addEventListener('click',liveLeave);$('lbClose').addEventListener('click',liveLeave);$('lbSum').addEventListener('click',showSummary);
-function liveAns(){const H=L();if(!H||H.ph!=='live')return;const q=currentQ(),a=q&&answers.get(q.id);if(!a||(mode==='practice'&&a.grade==='pending'))return;
+function liveAns(){const H=L();if(!H||H.ph!=='live'||H.pz)return;const q=currentQ(),a=q&&answers.get(q.id);if(!a||(mode==='practice'&&a.grade==='pending'))return;
  const sel=selKeys(a),k=q.id+sel.join(',');if(H.last===k)return;H.last=k;const m={t:'a',qid:q.id,sel,ms:Date.now()-(H.qs||Date.now())};H.host?recPick(H.name,m):H.conn.send(m);}
-const _pick=pick;pick=function(k){const H=L();if(H&&H.ph!=='live'){toast(H.ph==='reveal'?'Time is up for this question.':'Waiting for the first question…');return;}_pick(k);liveAns();};
+const _pick=pick;pick=function(k){const H=L();if(H&&(H.ph!=='live'||H.pz)){toast(H.pz?'Paused by the host.':H.ph==='reveal'?'Time is up for this question.':'Waiting for the first question…');return;}_pick(k);liveAns();};
 const _cm=checkMulti;checkMulti=function(){_cm();liveAns();};
 const _sb=syncBar;syncBar=function(q){_sb(q);if(L()){['prevBtn','nextBtn','clearBtn','testSubmit','pauseBtn'].forEach(i=>$(i).disabled=true);}};
 const _rn=render;render=function(){_rn();liveUI();};
@@ -986,13 +990,14 @@ function liveUI(){const H=L(),q=currentQ();if(!H||!H.cfg||!H.cfg.ids||!q||H.ci<0
  const rows=nm.map(n=>{const s=pk[n];let v;if(!s)v=`<span style="color:var(--muted)">${H.ph==='reveal'?'no answer':'thinking…'}</span>`;
   else if(!prac||!(done||H.ph==='reveal'))v='✔ answered';else{const ok=gradeOf(q,{sel:s})==='correct';v=`<b style="color:var(--${ok?'ok':'bad'})">${lab(q,s)} ${ok?'✓':'✗'}</b>`;}
   return`<div class="mine"><span>${esc(n)}${n===H.name?' (you)':''}</span><span>${v}</span></div>`;}).join('');
- const ex=prac&&H.ph==='reveal'&&!done?`<p style="margin:8px 0 0;font-size:13px"><b>Time’s up · correct: ${keyStr(q)}</b></p>${q.explanation?`<div class="explain" style="font-size:14px;padding:4px 0">${esc(rf(q.explanation))}</div>`:''}`:'';
+ const ex='';
  const p=document.createElement('div');p.id='livePanel';p.className='lpanel';
- p.innerHTML=`<div class="lhead"><b>Room ${esc(H.code)}</b><span>Question ${H.ci+1} / ${H.cfg.ids.length}</span><span id="lcd">${H.show()}</span></div>${prac?'':'<p class="dnote" style="margin:0 0 6px">Exam: friends’ answers stay hidden until the end.</p>'}${rows}${ex}${H.host&&H.ph==='reveal'?'<button class="btn primary" id="lNext" type="button">Next question →</button>':''}`;
- card.append(p);const nb=$('lNext');if(nb)nb.onclick=nextQ;}
+ p.innerHTML=`<div class="lhead"><b>Room ${esc(H.code)}</b><span>Question ${H.ci+1} / ${H.cfg.ids.length}</span><span id="lcd">${H.show()}</span></div>${prac?'':'<p class="dnote" style="margin:0 0 6px">Exam: friends’ answers stay hidden until the end.</p>'}${H.pz?'<p style="margin:0 0 6px;font-weight:700">⏸ Test paused by the host</p>':''}${rows}${ex}${H.host&&(H.ph==='live'||H.ph==='reveal')?`<button class="btn" id="lPause" type="button">${H.pz?'▶ Resume':'⏸ Pause'}</button> `:''}${H.host&&H.ph==='reveal'?'<button class="btn primary" id="lNext" type="button">Next question →</button>':''}`;
+ card.append(p);const nb=$('lNext');if(nb)nb.onclick=nextQ;const pb=$('lPause');if(pb)pb.onclick=hostPause;}
+function hostPause(){const H=LIVE;if(!H||!H.host)return;if(H.pz){H.pz=0;H.end=Date.now()+H.pr;}else{H.pr=Math.max(0,H.end-Date.now());H.pz=1;}castPh();}
 
 /* ===== v5: sync hooks · reports · shared banks ===== */
-{const ks=kv.set.bind(kv);kv.set=async(k,v)=>{const r=await ks(k,v);QM.dirty&&QM.dirty();return r;};const ss=store.set;store.set=(k,v)=>{ss(k,v);if(/^(pq-state|qm-state)/.test(k)&&QM.dirty)QM.dirty();};}
+{const ks=kv.set.bind(kv);kv.set=async(k,v)=>{const r=await ks(k,v);QM.touch&&QM.touch(k);return r;};const ss=store.set;store.set=(k,v)=>{ss(k,v);if(/^(pq-state|qm-state)/.test(k)&&QM.dirty)QM.dirty();};}
 const _rn3=render;render=function(){_rn3();const q=currentQ(),hd=card.querySelector('.qhead');if(q&&hd&&!$('rptBtn')){const b=document.createElement('button');b.id='rptBtn';b.type='button';b.className='btn flagbtn';b.textContent='🚩';b.title='Report a wrong answer or typo';b.setAttribute('aria-label','Report this question');b.onclick=()=>{$('rptBackdrop').hidden=false;};hd.append(b);}};
 $('rptCancel').addEventListener('click',()=>$('rptBackdrop').hidden=true);
 $('rptSend').addEventListener('click',async()=>{const q=currentQ();if(!q)return;const ok=await QM.report({subject_id:SUBJ.id,subject_name:SUBJ.name,qid:q.id,chapter:q.chapter,qno:q.chapterNo+'.'+q.number,prompt:String(q.prompt).slice(0,400),reason:$('rptReason').value,note:$('rptNote').value.trim().slice(0,500)});
@@ -1001,6 +1006,8 @@ $('mySubj').addEventListener('click',async e=>{const b=e.target.closest('[data-s
  const s=SUBJECTS.find(x=>x.id===b.dataset.sh);await ensureData(s);const slug=s.id+'-'+Math.random().toString(36).slice(2,6);
  const{error}=await QM.client().from('shared_subjects').insert({slug,title:s.name,data:s.data});if(error){toast('Could not share: '+error.message);return;}
  const u=new URL('index.html?bank='+slug,location.href).href;try{await navigator.clipboard.writeText(u);}catch(x){}toast('Share link copied: '+u);});
+const _os=openSubject;openSubject=async function(...a){const r=await _os(...a);let ch=0;for(const id in NOTES)if(!NTS[id]){NTS[id]=nMeta(id);ch=1;}if(ch)persistSoon();return r;};
+document.addEventListener('visibilitychange',()=>{if(document.hidden){try{flushPersist()}catch(e){}}});
 /* ---------- storage health + error safety net ---------- */
 (function(){let ok=true;try{localStorage.setItem('qm-probe','1');ok=localStorage.getItem('qm-probe')==='1';localStorage.removeItem('qm-probe');}catch(e){ok=false;}
  if(!ok){const w=$('warnBar');w.textContent='⚠ This browser is not letting the app save data (private mode or a restricted viewer). Progress will be lost when you close the page — open the file normally in Safari or Chrome.';w.hidden=false;}
@@ -1016,9 +1023,10 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
  SUBJECTS.push({id:'polity',name:'Indian Polity & Governance',builtin:true,reflow:true,sourceHtml:POLITY_SRC},
   {id:'history',name:'Indian History',builtin:true,reflow:true,sourceHtml:'<b>Source:</b> Indian History — Complete Booklet (consolidated exam papers, printed pages B9–B760). Question text, options, answer key and explanations are extracted from the supplied booklet; questions with no printed answer key are not scored.'});
  for(const k of await kv.keys('subj:')){const d=await kv.get(k);if(d&&d.questions)SUBJECTS.push({id:k.slice(5),name:d.title,builtin:false,data:d,sourceHtml:'<b>Source:</b> '+esc(d.source||'Imported subject')+'. Imported on this device.'});}
+ try{for(const r of await QM.subjects()){const i=SUBJECTS.findIndex(s=>s.id===r.id);if(r.status==='hidden'){if(i>=0&&SUBJECTS[i].builtin)SUBJECTS.splice(i,1);continue}if(r.status!=='live'||!r.path)continue;const o={id:r.id,name:r.name,builtin:false,cloud:r,sourceHtml:'<b>Source:</b> '+esc(r.subtitle||r.name)};if(i>=0)SUBJECTS[i]=o;else SUBJECTS.push(o)}}catch(e){}
  SESS=(await kv.get('sessions'))||[];DAILY=(await kv.get('daily'))||{};Object.assign(PREFS,(await kv.get('prefs'))||{});
- const qp=new URLSearchParams(location.search),last=qp.get('s')||store.get(LS_LAST);await openSubject(SUBJECTS.some(s=>s.id===last)?last:'polity',true);buildSubjectSelect();
- if(qp.get('add'))openAdd();if(qp.get('join')){who='join';openCustom();$('mkCode').value=qp.get('join').toUpperCase();}else if(qp.get('custom')){openCustom();}
+ const qp=new URLSearchParams(location.search),last=qp.get('s')||store.get(LS_LAST);await openSubject(SUBJECTS.some(s=>s.id===last)?last:(SUBJECTS[0]||{}).id,true);buildSubjectSelect();
+ if(qp.get('add')){if(QM.isAdmin)openAdd();else toast('Only admins can add subjects.');}if(qp.get('join')){who='join';openCustom();$('mkCode').value=qp.get('join').toUpperCase();}else if(qp.get('custom')){openCustom();}
  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
 
@@ -1043,4 +1051,4 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
  c.addEventListener('touchend',e=>{if(x0==null)return;const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;x0=null;if(Math.abs(dx)>90&&Math.abs(dy)<45&&Date.now()-t0<600&&!paused&&tab==='quiz')go(current+(dx<0?1:-1));},{passive:true});
 })();
 </script>
-</body></html>
+<p style="text-align:center;font-size:12px;color:var(--muted);padding:14px 14px calc(14px + env(safe-area-inset-bottom))"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:support@mypyq.online">Contact</a></p></body></html>
