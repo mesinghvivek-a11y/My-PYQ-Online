@@ -4,25 +4,26 @@ const C=window.QM_CONFIG||{},enabled=!!(C.SUPABASE_URL&&C.SUPABASE_ANON_KEY&&!/Y
 const SBJS='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 let sb=null,dbp=null,timer=null;const last=new Map(),cbs=[],emit=e=>cbs.forEach(f=>{try{f(e)}catch(x){}});
 const QM=window.QM={enabled,user:null,isAdmin:false,listen:f=>cbs.push(f),client:()=>sb};
-const idb=()=>dbp||(dbp=new Promise(r=>{try{const q=indexedDB.open('quizmaster',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)}catch(e){r(null)}}));
-const tx=async(m,fn)=>{const d=await idb();if(!d)return null;return new Promise(r=>{const t=d.transaction('kv',m),q=fn(t.objectStore('kv'));t.oncomplete=()=>r(q&&q.result);t.onerror=t.onabort=()=>r(null)})};
+const idb=()=>dbp||(dbp=new Promise(r=>{try{const q=indexedDB.open('quizmaster',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>{const d=q.result;d.onclose=d.onversionchange=()=>{try{d.close()}catch(e){}dbp=null};r(d)};q.onerror=()=>{dbp=null;r(null)}}catch(e){r(null)}}));
+const tx=async(m,fn,again)=>{const d=await idb();if(!d)return null;try{return await new Promise(r=>{const t=d.transaction('kv',m),q=fn(t.objectStore('kv'));t.oncomplete=()=>r(q&&q.result);t.onerror=t.onabort=()=>r(null)})}catch(e){dbp=null;return again?null:tx(m,fn,1)}};
+const LM=()=>{try{return JSON.parse(localStorage.getItem('qm-lm')||'{}')}catch(e){return{}}},setLM=(k,t)=>{try{const m=LM();m[k]=t||Date.now();localStorage.setItem('qm-lm',JSON.stringify(m))}catch(e){}};
 QM.kvGet=async k=>{const v=await tx('readonly',s=>s.get(k));return v===undefined?null:v};
-QM.kvSet=async(k,v)=>{await tx('readwrite',s=>s.put(v,k));dirty()};
+QM.kvSet=async(k,v)=>{await tx('readwrite',s=>s.put(v,k));setLM(k);dirty()};QM.touch=k=>{setLM(k);dirty()};
 QM.kvDel=k=>tx('readwrite',s=>s.delete(k));
 QM.kvKeys=async p=>((await tx('readonly',s=>s.getAllKeys()))||[]).filter(k=>k.startsWith(p));
-async function all(){const o={};for(const k of await QM.kvKeys(''))o[k]=await QM.kvGet(k);try{Object.keys(localStorage).filter(k=>/^(pq-state|qm-state)/.test(k)).forEach(k=>o['ls:'+k]=localStorage.getItem(k))}catch(e){}return o}
+async function all(){const o={};for(const k of await QM.kvKeys('')){if(/^(cache|bank):/.test(k))continue;o[k]=await QM.kvGet(k)}try{Object.keys(localStorage).filter(k=>/^(pq-state|qm-state)/.test(k)).forEach(k=>o['ls:'+k]=localStorage.getItem(k))}catch(e){}return o}
 QM.all=all;
 async function put(k,v){if(k.startsWith('ls:')){try{localStorage.setItem(k.slice(3),v)}catch(e){}}else await tx('readwrite',s=>s.put(v,k))}
 QM.put=put;
-const merge=(k,l,r)=>{if(l==null)return r;if(r==null)return l;
+const merge=(k,l,r,rt)=>{if(l==null)return r;if(r==null)return l;if(/^(notes|nts):/.test(k))return rt>(LM()[k]||0)?r:l;
  if(k==='sessions'){const m=new Map(l.map(x=>[x.id,x]));r.forEach(x=>{const o=m.get(x.id);if(!o||(x.en||0)>(o.en||0))m.set(x.id,x)});return[...m.values()]}
  if(k.startsWith('qs:')){const o={...l};for(const i in r)if(!o[i]||(r[i].t||0)>(o[i].t||0))o[i]=r[i];return o}
  if(k==='daily'){const o={...l};for(const d in r)o[d]=Math.max(o[d]||0,r[d]);return o}
  if(k.startsWith('ls:')){const n=s=>{try{return JSON.parse(s).a.length}catch(e){return 0}};return n(r)>n(l)?r:l}
- if(k.startsWith('notes:')||k==='prefs')return{...r,...l};
+ if(k==='prefs')return{...r,...l};
  return l};
 async function pull(){const{data,error}=await sb.from('user_data').select('k,v');if(error)return false;const loc=await all();let ch=0;
- for(const r of data){const m=merge(r.k,loc[r.k],r.v);if(JSON.stringify(m)!==JSON.stringify(loc[r.k])){await put(r.k,m);ch++}}
+ for(const r of data){const rt=Date.parse(r.updated_at)||0,m=merge(r.k,loc[r.k],r.v,rt);if(JSON.stringify(m)!==JSON.stringify(loc[r.k])){await put(r.k,m);if(/^(notes|nts):/.test(r.k))setLM(r.k,rt);ch++}}
  await push();return ch>0}
 async function push(){if(!sb||!QM.user)return;const loc=await all(),rows=[];
  for(const k in loc){const s=JSON.stringify(loc[k]);if(last.get(k)!==s){last.set(k,s);rows.push({user_id:QM.user.id,k,v:loc[k],updated_at:new Date().toISOString()})}}
@@ -39,6 +40,9 @@ QM.init=async()=>{if(!enabled||QM.inited)return;QM.inited=1;try{await QM.load()}
 QM.signIn=async()=>{await QM.load();await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}})};
 QM.signOut=async()=>{await sb.auth.signOut();QM.user=null;emit('auth')};
 QM.report=async r=>{if(QM.user&&sb){const{error}=await sb.from('reports').insert(r);if(!error)return true}let q=[];try{q=JSON.parse(localStorage.getItem('qm-rq')||'[]')}catch(e){}q.push(r);localStorage.setItem('qm-rq',JSON.stringify(q));return false};
+QM.subjects=async()=>{const ck='cache:subjects';if(!enabled)return[];try{await QM.load();const{data,error}=await sb.from('subjects').select('*').order('sort').order('created_at');if(error)throw error;await tx('readwrite',s=>s.put(data,ck));return data}catch(e){return(await QM.kvGet(ck))||[]}};
+QM.bank=async row=>{const k='bank:'+row.id,c=await QM.kvGet(k);if(c&&c.v===row.version)return c.data;try{const r=await fetch(C.SUPABASE_URL+'/storage/v1/object/public/banks/'+row.path+'?v='+row.version);if(!r.ok)throw 0;const data=await r.json();await tx('readwrite',s=>s.put({v:row.version,data},k));return data}catch(e){if(c)return c.data;throw e}};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)emit('resume')});addEventListener('pageshow',e=>{if(e.persisted)emit('resume')});
 /* PeerJS-compatible shim over Supabase Realtime (broadcast + presence): no public relays, no size cap on rooms */
 const rid=()=>Math.random().toString(36).slice(2,10);
 window.Peer=function(hostId){const me=hostId||rid(),ev={},self=this,em=(e,a)=>(ev[e]||[]).forEach(f=>f(a));let ch=null;
@@ -54,5 +58,5 @@ window.Peer=function(hostId){const me=hostId||rid(),ev={},self=this,em=(e,a)=>(e
   self.connect=hid=>{const c=open(hid),k=conn(m=>c.send({type:'broadcast',event:'m',payload:{to:'host',from:me,msg:m}}));
    c.on('broadcast',{event:'m'},({payload:p})=>{if(p.to===me||p.to==='*')k.emit('data',p.msg)});
    c.on('presence',{event:'leave'},({leftPresences:l})=>{if((l||[]).some(x=>x.host))k.emit('close')});
-      c.subscribe(async s=>{if(s!=='SUBSCRIBED')return;await c.track({});for(let i=0;i<20;i++){const st=c.presenceState();if(Object.keys(st).some(x=>st[x].some(y=>y.host))){k.emit('open');return}await new Promise(r=>setTimeout(r,400))}em('error',{type:'peer-unavailable'})});return k}}};
+   c.subscribe(async s=>{if(s!=='SUBSCRIBED')return;await c.track({});let n=0;const t=setInterval(()=>{const st=c.presenceState();if(Object.keys(st).some(x=>st[x].some(y=>y.host))){clearInterval(t);k.emit('open')}else if(++n>25){clearInterval(t);em('error',{type:'peer-unavailable'})}},300)});return k}}};
 })();
