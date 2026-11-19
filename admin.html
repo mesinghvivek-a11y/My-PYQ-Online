@@ -44,7 +44,7 @@ const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,
 const toast=m=>{const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,4500)};
 const sb=()=>QM.client(),slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');let ROWS=[],REP=[],MAN=[],PICK=null;
 document.querySelector('.tabs').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));['subs','rep','ov'].forEach(t=>$('t-'+t).hidden=t!==b.dataset.t)};
-async function boot(){await QM.init();const g=$('gate');$('app').hidden=true;g.hidden=false;
+async function boot(){await QM.init(15000);const g=$('gate');$('app').hidden=true;g.hidden=false;
  if(!QM.enabled){g.textContent='Supabase is not configured in config.js.';return}
  $('acct').innerHTML=QM.user?'<button class="btn" id="so">Sign out</button>':'';if($('so'))$('so').onclick=()=>QM.signOut();
  if(!QM.user){g.innerHTML='<b>Admin sign-in</b><br>Use the Google account that was made admin.<br><br><button class="btn p" id="gsi">Continue with Google</button>';$('gsi').onclick=()=>QM.signIn();return}

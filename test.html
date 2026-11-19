@@ -201,6 +201,18 @@ body.perfmode .fbar,body.perfmode #fToggle,body.perfmode .bar2{display:none!impo
 .rcode{font:800 40px var(--ui);letter-spacing:.18em;text-align:center;margin:10px 0;color:var(--brand);cursor:pointer}
 .lbt{width:100%;border-collapse:collapse;font-size:13px}.lbt th,.lbt td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.lbt th{font-size:11px;color:var(--muted)}
 @media(max-width:760px){.lpanel{margin:0 14px 18px}}
+/* ===== v6 ===== */
+.qhead{justify-content:flex-start!important;gap:8px 10px!important;padding:10px 16px!important}
+.qn{font-size:20px;font-weight:800;color:var(--brand);letter-spacing:-.03em}.qch{flex:1;min-width:0;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qhead .tags{flex-basis:100%;justify-content:flex-start;margin:0!important;order:5}.tag{font-size:10px!important;padding:2px 8px!important}
+.qacts{display:flex;gap:6px;margin-left:auto}.ib{width:36px;height:36px;display:grid;place-items:center;border-radius:11px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer;padding:0}.ib:hover{color:var(--brand);border-color:var(--brand)}.ib.on{background:var(--brand-soft);color:var(--brand);border-color:transparent}.ib.rep:hover{color:#c2323a;border-color:#c2323a}
+.qtype{display:none}
+.bottom .stats,.bottom .acc{display:none!important}.bottom .bar{justify-content:center}
+.navbtns{width:100%;max-width:560px;display:grid!important;grid-template-columns:repeat(3,1fr);gap:8px}.navbtns .btn{min-width:0!important;height:44px;font-weight:700}.navbtns .lbl2{display:inline!important}.navbtns .only-s{display:none!important}
+@media(max-width:760px){.navbtns{max-width:none;grid-template-columns:1fr auto 1.15fr 1fr}.navbtns .btn{height:50px;font-size:15px}#prevBtn{order:1}#clearBtn{order:2}#navToggle{order:3;display:flex!important;gap:6px}#nextBtn{order:4}}
+.mtf{overflow-x:auto;margin:0 0 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface2)}.mtf table{border-collapse:collapse;width:100%;font-size:calc(16px*var(--scale))}.mtf th{font-size:12px;text-align:left;padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--line)}.mtf th small{display:block;font-weight:500}.mtf td{padding:8px 12px;vertical-align:top;border-bottom:1px solid var(--line)}.mtf td:nth-child(1),.mtf td:nth-child(3){width:1%;white-space:nowrap;color:var(--brand)}.mtf td:nth-child(2){border-right:1px solid var(--line)}.mtf tr:last-child td{border-bottom:0}
+.opt .mo b{color:var(--brand)}.opt .mo i{display:inline-block;width:16px}
+#timerBox{cursor:default}
 </style>
 </head>
 <body>
@@ -226,7 +238,7 @@ body.perfmode .fbar,body.perfmode #fToggle,body.perfmode .bar2{display:none!impo
 <div class="fscrim" id="fScrim"></div>
 <section class="fbar" id="fbar" aria-label="Filters and options">
  <div class="fhead"><b>Filters &amp; options</b><button class="btn primary" id="fDone" type="button">Done</button></div>
- <div class="filters"><label class="sel" id="groupWrap" hidden><span id="groupLbl">Era</span><select id="groupFilter"><option value="all">All</option></select></label>
+ <div class="filters"><label class="sel" id="groupWrap"><span id="groupLbl">Era</span><select id="groupFilter"><option value="all">All</option></select></label>
    <label class="sel"><span>Exam</span><select id="examFilter"><option value="all">All exams</option></select></label>
    <label class="sel" id="yearWrap"><span>Year</span><select id="yearFilter"><option value="all">All years</option></select></label>
    <label class="sel wide"><span>Chapter</span><select id="chapterFilter"><option value="all">All chapters</option></select></label>
@@ -394,13 +406,13 @@ function render(){
  if(!q){card.innerHTML='<div class="empty"><h3>No questions match this view</h3><p>Change the exam, chapter, review set or search text.</p></div>';return;}
  const saved=stateFor(q)||(FORCE.has(q.id)?{grade:'timeout',sel:[],selected:null}:null),rev=revealed(saved);selected=saved?saved.selected:null;
  const tags=(q.group&&DATA.groups&&DATA.groups.length?`<span class="tag">${esc(q.group)}</span>`:'')+(q.examTags.length?q.examTags.map(t=>`<span class="tag exam">${esc(t.label)}</span>`).join(''):(SUBJ.builtin?'<span class="tag">Exam tag not recovered</span>':''));
- const prompt=q.prompt?`<p class="prompt">${esc(rf(q.prompt))}</p>`:'';
+ const mt=q.prompt?parseMatch(q.prompt):null,prompt=q.prompt?(mt?matchHTML(mt):`<p class="prompt">${esc(rf(q.prompt))}</p>`):'';
  let options;
  if(q.options.length){options='<div class="options" role="group" aria-label="Answer options">'+q.options.map(o=>{
   let cls='opt',mark='';
   if(rev){if(q.gradeable&&q.correct.includes(o.sourceLabel)){cls+=' correct';mark='✓'}else if(selKeys(saved).includes(o.key)&&q.gradeable){cls+=' wrong';mark='✗'}else if(selKeys(saved).includes(o.key))cls+=' selected';}
   else if(selKeys(saved).includes(o.key))cls+=' selected';
-  return `<button class="${cls}" type="button" data-option="${esc(o.key)}" ${rev||submitted?'disabled':''}><span class="letter">${esc(o.sourceLabel.toUpperCase())}</span><span>${esc(rf(o.text))||'<em>[Option text not recovered]</em>'}</span>${mark?`<span class="mark">${mark}</span>`:''}</button>`;}).join('')+'</div>';}
+  return `<button class="${cls}" type="button" data-option="${esc(o.key)}" ${rev||submitted?'disabled':''}><span class="letter">${esc(o.sourceLabel.toUpperCase())}</span><span>${(mt&&optMatch(o.text,mt))?'<span class="mo">'+optMatch(o.text,mt)+'</span>':(esc(rf(o.text))||'<em>[Option text not recovered]</em>')}</span>${mark?`<span class="mark">${mark}</span>`:''}</button>`;}).join('')+'</div>';}
  else options='<div class="note" style="margin:0 0 20px">The source layout did not yield reliable separate options for this item. The extracted prompt is retained for review; it is not scored.</div>';
  const expl=(t,label,fallback)=>(t||fallback)?`<details open><summary>${label}</summary><div class="explain">${esc(rf(t||fallback))}</div></details>`:'';
  let fb='';
@@ -413,11 +425,11 @@ function render(){
  const exam=mode==='exam';
  const hint=isMulti(q)&&!rev&&!submitted&&q.attemptable?'<span>Multiple answers: select every correct option'+(mode==='practice'?', then press Check':'')+'</span>':submitted?'Test submitted — review only.':!q.attemptable?'This item is retained for source review.':exam?'<span>Exam mode: change your answer any time before you submit</span>':'<span>Tap an option to check it instantly</span><kbd class="kbdhint">A–D</kbd><span class="kbdhint">then</span><kbd class="kbdhint">Enter</kbd><span class="kbdhint">for next</span>';
  const mchk=isMulti(q)&&!rev&&!submitted&&mode==='practice'&&saved&&saved.sel&&saved.sel.length?'<div style="margin:0 28px 4px"><button class="btn primary" id="chkMulti" type="button">Check answer</button></div>':'';
- card.innerHTML=`<div class="qhead"><div class="badge"><span class="ch">${q.chapterNo}<em>.</em>${esc(q.number)}</span><small>Chapter ${String(q.chapterNo).padStart(2,'0')} · ${esc(q.chapter||'')}<br>${esc([q.bookPage,q.pdfPage?'PDF p.'+q.pdfPage:''].filter(Boolean).join(' · '))}</small></div><div class="tags">${tags}</div><button class="btn flagbtn ${flags.has(q.id)?'flagged':''}" id="flagBtn" type="button" title="Mark for review (F)" aria-pressed="${flags.has(q.id)}">⚑<span class="lbl2"> ${flags.has(q.id)?'Flagged':'Flag'}</span></button></div>
- <div class="qbody"><p class="qtype">Question ${esc(q.number)} · ${esc(q.type)}</p>${prompt}${options}</div>
+ card.innerHTML=`<div class="qhead"><span class="qn">Q${esc(q.number)}</span><span class="qch" title="${esc(q.chapter||'')}">Ch ${String(q.chapterNo).padStart(2,'0')} · ${esc(q.chapter||'')}</span><div class="qacts"><button class="ib ${flags.has(q.id)?'on':''}" id="flagBtn" type="button" title="Bookmark for review (F)" aria-label="Bookmark for review" aria-pressed="${flags.has(q.id)}"><svg viewBox="0 0 24 24" width="18" height="18" fill="${flags.has(q.id)?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button><button class="ib rep" id="rptBtn" type="button" title="Report a problem with this question" aria-label="Report a problem"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/></svg></button></div>${tags?`<div class="tags">${tags}</div>`:''}</div>
+ <div class="qbody">${prompt}${options}</div>
  <p class="hint">${hint}</p>${mchk}${fb}${noteBox(q)}`;
  card.querySelectorAll('[data-option]').forEach(b=>b.addEventListener('click',()=>pick(b.dataset.option)));
- $('flagBtn').addEventListener('click',()=>toggleFlag(q));
+ $('flagBtn').addEventListener('click',()=>toggleFlag(q));$('rptBtn').addEventListener('click',()=>{$('rptBackdrop').hidden=false;});
  const cm=$('chkMulti');if(cm)cm.addEventListener('click',checkMulti);
  const nt=$('noteTa');if(nt)nt.addEventListener('input',()=>setNote(q.id,nt.value));
 }
@@ -538,9 +550,9 @@ function fillChapters(){const g=groupFilter.value;fillSel(chapterFilter,'All cha
 function populateFilters(){
  fillSel(examFilter,'All exams',[...new Set(DATA.questions.flatMap(q=>q.examTags.map(t=>t.family||t.label)).filter(Boolean))].sort((a,b)=>a.localeCompare(b)).map(x=>[x,x]));
  const ys=[...new Set(DATA.questions.flatMap(q=>q.examTags.flatMap(yrsOf)))].sort((a,b)=>a-b);
- fillSel(yearFilter,'All years',ys.map(y=>[String(y),String(y)]));$('yearWrap').hidden=!ys.length;
- const gs=DATA.groups||[];$('groupWrap').hidden=!gs.length;$('groupLbl').textContent=DATA.groupLabel||'Category';
- fillSel(groupFilter,'All '+(DATA.groupLabel||'Category').toLowerCase()+'s',gs.map(g=>[g,g]));fillChapters();
+ fillSel(yearFilter,'All years',ys.map(y=>[String(y),String(y)]));yearFilter.disabled=!ys.length;
+ const gs=DATA.groups||[];groupFilter.disabled=!gs.length;$('groupLbl').textContent='Section';
+ fillSel(groupFilter,'All sections',gs.map(g=>[g,g]));fillChapters();
 }
 groupFilter.addEventListener('change',()=>{fillChapters();userFilter();});yearFilter.addEventListener('change',userFilter);
 
@@ -912,32 +924,42 @@ $('mkGo').addEventListener('click',async()=>{
  toast(`${ids.length} questions · ${cmode}${lim?' · '+lim/60+' min (starts when you answer the first one)':''}`);});
 
 /* --- live rooms --- */
-const names=()=>[LIVE.name,...LIVE.players.keys()];
+const names=()=>[...LIVE.roster];
 const cast=m=>{if(LIVE.peer&&LIVE.peer.bc)LIVE.peer.bc(m);else LIVE.players.forEach(c=>{try{c.send(m)}catch(e){}});};
 const loadPeer=async()=>{if(!QM.enabled){toast('Live rooms need Supabase keys in config.js (see README).');return false;}try{await QM.load();return true;}catch(e){return false;}};
 const mkShow=H=>()=>H.ph==='live'||H.ph==='reveal'?(H.pz?'⏸ ':'')+mmss(Math.max(0,Math.ceil((H.pz?H.pr:H.end-Date.now())/1000))):'--:--';
 function liveTick(){if(!LIVE)return;if(LIVE.host)hostTick();paint();const c=$('lcd');if(c&&LIVE.show)c.textContent=LIVE.show();}
+function hostWire(H,peer,onOpen){
+ peer.on('open',()=>{H.up=1;onOpen()});
+ peer.on('error',e=>{toast(e.type==='unavailable-id'?'Room code clash — try again.':'Connection problem ('+(e.type||'error')+').');if(!H.up&&LIVE===H)liveLeave();});
+ peer.on('connection',c=>{c.on('data',m=>hostMsg(c,m));c.on('close',()=>{if(!c._n||LIVE!==H)return;if(H.ph==='lobby'){H.players.delete(c._n);H.roster.delete(c._n);lobbyCast();showRoom();}else H.off.add(c._n);});});}
 async function hostRoom(cfg){
  store.set('qm-name',myName());if(!await loadPeer()){toast('Could not connect to live rooms.');return;}
- const code=Array.from({length:5},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join(''),peer=new Peer('qm-'+code);
- const H=LIVE={host:1,peer,code,cfg,name:myName(),ph:'lobby',players:new Map(),picks:new Map(),i:-1,end:0,ci:-1,last:''};H.show=mkShow(H);H.iv=setInterval(liveTick,250);
- peer.on('open',()=>{H.up=1;$('mockBackdrop').hidden=true;showRoom();});
- peer.on('error',e=>{toast(e.type==='unavailable-id'?'Room code clash — try again.':'Connection problem ('+(e.type||'error')+').');if(!H.up&&LIVE===H)liveLeave();});
- peer.on('connection',c=>{c.on('data',m=>hostMsg(c,m));c.on('close',()=>{if(c._n&&LIVE===H){H.players.delete(c._n);if(H.ph==='lobby'){lobbyCast();showRoom();}}});});}
+ const code=Array.from({length:5},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join(''),peer=new Peer('qm-'+code),name=myName();
+ const H=LIVE={host:1,peer,code,cfg,name,ph:'lobby',players:new Map(),roster:new Set([name]),off:new Set(),picks:new Map(),i:-1,end:0,ci:-1,last:''};H.show=mkShow(H);H.iv=setInterval(liveTick,250);
+ hostWire(H,peer,()=>{$('mockBackdrop').hidden=true;showRoom();});}
+async function hostRestore(s){
+ if(!await loadPeer())return;const peer=new Peer('qm-'+s.code);
+ const H=LIVE={host:1,peer,code:s.code,cfg:s.cfg,name:s.name,ph:'wait',players:new Map(),roster:new Set(s.roster),off:new Set(s.roster.filter(n=>n!==s.name)),picks:new Map(s.picks.map(([q,m])=>[q,new Map(m)])),i:s.i,end:0,ci:-1,last:'',pz:s.pz,pr:s.rem};H.show=mkShow(H);H.iv=setInterval(liveTick,250);
+ hostWire(H,peer,async()=>{await liveBegin(s.cfg);if(LIVE!==H)return;const mine={};H.picks.forEach((pm,q)=>{const v=pm.get(H.name);if(v)mine[q]=v.sel;});restoreMine(mine);H.ph=s.ph;H.end=Date.now()+s.rem;castPh();toast('Room restored — players can rejoin.');});}
+function restoreMine(mine){for(const qid in mine){const q=byId.get(qid);if(!q)continue;const sel=mine[qid];answers.set(qid,{selected:sel[0]||null,sel,grade:mode==='exam'?'pending':gradeOf(q,{sel})});}}
 function lobbyCast(){const c=LIVE.cfg;cast({t:'lobby',players:names(),cfg:{mode:c.mode,qsec:c.qsec,neg:c.neg,n:c.n}});}
-function hostMsg(c,m){
- if(!LIVE||!m)return;
- if(m.t==='hi'){if(LIVE.ph!=='lobby'){c.send({t:'err',m:'This session has already started.'});return;}
-  const n=String(m.name||'Player').slice(0,16);let k=n,x=2;while(k===LIVE.name||LIVE.players.has(k))k=n+x++;c._n=k;LIVE.players.set(k,c);c.send({t:'me',name:k});lobbyCast();showRoom();}
+const mineOf=n=>{const o={};LIVE.picks.forEach((pm,q)=>{const v=pm.get(n);if(v)o[q]=v.sel;});return o;};
+function hostMsg(c,m){const H=LIVE;if(!H||!m)return;
+ if(m.t==='hi'){const n0=String(m.name||'Player').slice(0,16);
+  if(H.ph!=='lobby'){if(m.rj&&H.roster.has(n0)){c._n=n0;H.players.set(n0,c);H.off.delete(n0);c.send({t:'me',name:n0});c.send({t:'rj',cfg:H.cfg,mine:mineOf(n0),ph:phMsg(),names:names()});}else c.send({t:'err',m:'This session has already started.'});return;}
+  let k=n0,x=2;while(H.roster.has(k))k=n0+x++;c._n=k;H.players.set(k,c);H.roster.add(k);c.send({t:'me',name:k});lobbyCast();showRoom();}
  else if(m.t==='a'&&c._n)recPick(c._n,m);}
 function recPick(name,m){const H=LIVE;if(!H||H.ph!=='live'||H.pz||H.cfg.ids[H.i]!==m.qid||!Array.isArray(m.sel))return;
  let pm=H.picks.get(m.qid);if(!pm)H.picks.set(m.qid,pm=new Map());const o=pm.get(name);pm.set(name,{sel:m.sel,ms:o?o.ms:(+m.ms||0)});castPh();}
-const allIn=()=>{const pm=LIVE.picks.get(LIVE.cfg.ids[LIVE.i]);return!!pm&&names().every(n=>pm.has(n));};
+const allIn=()=>{const H=LIVE,pm=H.picks.get(H.cfg.ids[H.i]);return!!pm&&names().filter(n=>!H.off.has(n)).every(n=>pm.has(n));};
 function hostTick(){const H=LIVE;if(!H||H.ph==='over'||H.pz)return;const now=Date.now();
  if(H.ph==='live'){if(now>=H.end||allIn())toReveal();}else if(H.ph==='reveal'&&now>=H.end)nextQ();}
 function toReveal(){if(LIVE.cfg.mode==='exam')return nextQ();LIVE.ph='reveal';LIVE.end=Date.now()+REV*1000;castPh();}
 function nextQ(){const H=LIVE;if(!H||!H.host||H.ph==='over'||H.ph==='lobby')return;H.i++;if(H.i>=H.cfg.ids.length)return finish();H.ph='live';H.end=Date.now()+H.cfg.qsec*1000;castPh();}
-function castPh(){const H=LIVE,pm=H.picks.get(H.cfg.ids[H.i]),pk={};if(pm)pm.forEach((v,n)=>pk[n]=H.cfg.mode==='exam'?[]:v.sel);const m={t:'ph',i:H.i,ph:H.ph,rem:H.pz?H.pr:H.end-Date.now(),pz:H.pz?1:0,picks:pk};cast(m);onPh(m);}
+function phMsg(){const H=LIVE,pm=H.picks.get(H.cfg.ids[H.i]),pk={};if(pm)pm.forEach((v,n)=>pk[n]=H.cfg.mode==='exam'?[]:v.sel);return{t:'ph',i:H.i,ph:H.ph,rem:H.pz?H.pr:H.end-Date.now(),pz:H.pz?1:0,picks:pk};}
+function castPh(){const m=phMsg();cast(m);onPh(m);saveHost();}
+function saveHost(){const H=LIVE;try{localStorage.setItem('qm-host',JSON.stringify({code:H.code,cfg:H.cfg,name:H.name,i:H.i,ph:H.ph,rem:H.pz?H.pr:Math.max(0,H.end-Date.now()),pz:H.pz?1:0,roster:[...H.roster],picks:[...H.picks].map(([q,m])=>[q,[...m]])}));localStorage.setItem('qm-room',JSON.stringify({role:'h',code:H.code,t:Date.now()}));}catch(e){}}
 function onPh(m){const H=LIVE;if(!H||!byId.has(H.cfg.ids[m.i]))return;const first=H.ci!==m.i;
  if(first&&m.ph==='live'){H.qs=Date.now()-(H.cfg.qsec*1000-m.rem);H.last='';}
  H.ci=m.i;H.ph=m.ph;H.end=Date.now()+m.rem;H.cpicks=m.picks;H.pz=m.pz;H.pr=m.rem;
@@ -947,27 +969,38 @@ function finish(){const H=LIVE,ids=H.cfg.ids,neg=H.cfg.neg||0,rows=[],pk={};
  ids.forEach(id=>{pk[id]={};const pm=H.picks.get(id);if(pm)pm.forEach((v,n)=>pk[id][n]=v.sel);});
  names().forEach(n=>{let c=0,w=0,t=0,att=0;ids.forEach(id=>{const v=H.picks.get(id)&&H.picks.get(id).get(n);if(!v)return;att++;t+=v.ms||0;const g=gradeOf(byId.get(id),{sel:v.sel});if(g==='correct')c++;else if(g==='wrong')w++;});rows.push({n,c,w,u:ids.length-att,t,s:Math.round((c-w*neg)*100)/100});});
  rows.sort((a,b)=>b.s-a.s||a.t-b.t);const res={rows,ids,pk,neg};cast({t:'end',res});liveEnd(res);}
-function liveEnd(res){const H=LIVE;if(!H)return;H.res=res;H.ph='over';clearInterval(H.iv);gradePending();submitted=true;setPaused(false);stopClock();logSession('submitted');$('testSubmit').textContent='Summary';render();paint();showLB();}
+function liveEnd(res){const H=LIVE;if(!H)return;try{localStorage.removeItem('qm-room');localStorage.removeItem('qm-host');}catch(e){}H.res=res;H.ph='over';clearInterval(H.iv);gradePending();submitted=true;setPaused(false);stopClock();logSession('submitted');$('testSubmit').textContent='Summary';render();paint();showLB();}
 function showLB(){const r=LIVE.res,t=r.rows[0];
  $('lbBody').innerHTML=`<p class="weak" style="background:var(--ok-bg);color:var(--ok);border-color:var(--ok-line)">🏆 ${esc(t.n)} wins with ${t.s} point${t.s===1?'':'s'}</p><div style="overflow-x:auto"><table class="lbt"><tr><th>#</th><th>Player</th><th>Score</th><th>Correct</th><th>Wrong</th><th>Skipped</th><th>Avg time</th></tr>${r.rows.map((x,i)=>`<tr><td>${i+1}</td><td><b>${esc(x.n)}</b>${x.n===LIVE.name?' (you)':''}</td><td><b>${x.s}</b></td><td>${x.c}</td><td>${x.w}</td><td>${x.u}</td><td>${x.c+x.w?mmss(Math.round(x.t/(x.c+x.w)/1000)):'–'}</td></tr>`).join('')}</table></div><h3>Responses by question</h3><div style="overflow:auto;max-height:300px"><table class="lbt"><tr><th>Q</th><th>Key</th>${r.rows.map(x=>`<th>${esc(x.n)}</th>`).join('')}</tr>${r.ids.map((id,i)=>{const q=byId.get(id);return`<tr><td>${i+1}</td><td>${keyStr(q)}</td>${r.rows.map(x=>{const s=r.pk[id][x.n];if(!s)return'<td>–</td>';const g=gradeOf(q,{sel:s})==='correct';return`<td style="color:var(--${g?'ok':'bad'});font-weight:700">${lab(q,s)} ${g?'✓':'✗'}</td>`;}).join('')}</tr>`;}).join('')}</table></div>`;
  $('lbBackdrop').hidden=false;}
 function showRoom(){const H=LIVE;if(!H||H.ph!=='lobby'){$('roomBackdrop').hidden=true;return;}const ns=H.host?names():(H.players||[]),c=H.cfg||{};
  $('roomBody').innerHTML=`<div class="rcode" onclick="navigator.clipboard&&navigator.clipboard.writeText('${H.code}');toast('Code copied')">${esc(H.code)}</div><p style="margin:0;text-align:center">Friends tap Join room and enter this code.</p><p style="margin:8px 0 0;text-align:center;font-size:13px">${c.mode==='exam'?'Exam':'Practice'} · ${c.n||'?'} questions · ${c.qsec||'?'}s per question</p><h3>Players (${ns.length})</h3>`+ns.map((n,i)=>`<div class="mine"><span><b>${esc(n)}</b>${i===0?' <span class="chip">host</span>':''}</span></div>`).join('')+(H.host?'':'<p class="dnote">Waiting for the host to start…</p>');
  $('roomStart').hidden=!H.host;$('roomBackdrop').hidden=false;}
-function liveLeave(){const H=LIVE;if(!H)return;LIVE=null;clearInterval(H.iv);try{H.peer&&H.peer.destroy();}catch(e){}$('roomBackdrop').hidden=true;$('lbBackdrop').hidden=true;paint();if(DATA)render();}
+function liveLeave(){const H=LIVE;if(!H)return;LIVE=null;try{localStorage.removeItem('qm-room');localStorage.removeItem('qm-host');}catch(e){}clearInterval(H.iv);try{H.peer&&H.peer.destroy();}catch(e){}$('roomBackdrop').hidden=true;$('lbBackdrop').hidden=true;paint();if(DATA)render();}
 async function joinRoom(){
  const code=$('mkCode').value.trim().toUpperCase();if(code.length<4){toast('Enter the room code.');return;}
- store.set('qm-name',myName());if(!await loadPeer()){toast('Could not connect to live rooms.');return;}
- const peer=new Peer(),H=LIVE={host:0,peer,code,name:myName(),ph:'lobby',players:[],cfg:null,ci:-1,last:''};H.show=mkShow(H);H.iv=setInterval(liveTick,250);
- peer.on('open',()=>{const c=peer.connect('qm-'+code,{reliable:true});H.conn=c;c.on('open',()=>c.send({t:'hi',name:H.name}));c.on('data',guestMsg);
-  c.on('close',()=>{if(LIVE===H&&H.ph!=='over'){toast('The host left the room.');liveLeave();}});
-  setTimeout(()=>{if(LIVE===H&&!H.cfg){toast('Could not reach that room.');liveLeave();}},12000);});
- peer.on('error',e=>{if(LIVE!==H)return;toast(e.type==='peer-unavailable'?'Room not found — check the code.':'Connection problem.');liveLeave();});}
+ store.set('qm-name',myName());await startGuest(code,myName(),false);}
+async function startGuest(code,name,rj){
+ if(!await loadPeer()){toast('Could not connect to live rooms.');return;}
+ const H=LIVE={host:0,peer:new Peer(),code,name,ph:rj?'wait':'lobby',players:[],cfg:null,ci:-1,last:'',back:0};H.show=mkShow(H);H.iv=setInterval(liveTick,250);connectGuest(H,rj);}
+function connectGuest(H,rj){const peer=H.peer;
+ peer.on('open',()=>{const c=peer.connect('qm-'+H.code,{reliable:true});H.conn=c;c.on('open',()=>c.send({t:'hi',name:H.name,rj:rj?1:0}));c.on('data',guestMsg);
+  c.on('close',()=>{if(LIVE===H&&H.ph!=='over'&&H.conn===c){H.conn=null;reconnect(H);}});
+  setTimeout(()=>{if(LIVE===H&&!H.cfg&&!H.back){toast('Could not reach that room.');liveLeave();}},12000);});
+ peer.on('error',e=>{if(LIVE!==H||H.back||H.rc)return;toast(e.type==='peer-unavailable'?'Room not found — check the code.':'Connection problem.');liveLeave();});}
+function reconnect(H){if(H.rc)return;H.rc=1;H.back=0;let n=0;toast('Connection lost — reconnecting…');
+ const t=setInterval(()=>{if(LIVE!==H||H.ph==='over'){clearInterval(t);return;}
+  if(H.back){clearInterval(t);H.rc=0;return;}
+  if(++n>30){clearInterval(t);H.rc=0;toast('Could not reconnect. Your answers are kept — you can submit them.');liveLeave();return;}
+  try{H.peer.destroy();}catch(e){}H.peer=new Peer();connectGuest(H,true);},3000);}
+const rejoin=s=>startGuest(s.code,s.name,true);
 function guestMsg(m){const H=LIVE;if(!H||!m)return;H.ch=(H.ch||Promise.resolve()).then(async()=>{if(LIVE!==H)return;
- if(m.t==='me')H.name=m.name;
- else if(m.t==='lobby'){H.players=m.players;H.cfg=m.cfg;$('mockBackdrop').hidden=true;showRoom();}
+ const keep=()=>{try{localStorage.setItem('qm-room',JSON.stringify({role:'g',code:H.code,name:H.name,t:Date.now()}));}catch(e){}};
+ if(m.t==='me'){H.name=m.name;keep();}
+ else if(m.t==='lobby'){H.back=1;H.players=m.players;H.cfg=m.cfg;$('mockBackdrop').hidden=true;showRoom();}
  else if(m.t==='start')await liveBegin(m.cfg);
- else if(m.t==='ph')onPh(m);
+ else if(m.t==='rj'){H.back=1;H.rc=0;await liveBegin(m.cfg);if(LIVE!==H)return;restoreMine(m.mine||{});H.players=m.names||[];H.ph='wait';onPh(m.ph);toast('Back in the room.');}
+ else if(m.t==='ph'){H.back=1;keep();onPh(m);}
  else if(m.t==='end')liveEnd(m.res);
  else if(m.t==='err'){toast(m.m);liveLeave();}});}
 async function liveBegin(cfg){
@@ -983,7 +1016,12 @@ function liveAns(){const H=L();if(!H||H.ph!=='live'||H.pz)return;const q=current
  const sel=selKeys(a),k=q.id+sel.join(',');if(H.last===k)return;H.last=k;const m={t:'a',qid:q.id,sel,ms:Date.now()-(H.qs||Date.now())};H.host?recPick(H.name,m):H.conn.send(m);}
 const _pick=pick;pick=function(k){const H=L();if(H&&(H.ph!=='live'||H.pz)){toast(H.pz?'Paused by the host.':H.ph==='reveal'?'Time is up for this question.':'Waiting for the first question…');return;}_pick(k);liveAns();};
 const _cm=checkMulti;checkMulti=function(){_cm();liveAns();};
-const _sb=syncBar;syncBar=function(q){_sb(q);if(L()){['prevBtn','nextBtn','clearBtn','testSubmit','pauseBtn'].forEach(i=>$(i).disabled=true);}};
+const _sb=syncBar;syncBar=function(q){_sb(q);const H=L();if(!H)return;['prevBtn','clearBtn','testSubmit'].forEach(i=>$(i).disabled=true);
+ $('nextBtn').disabled=!(H.host&&(H.ph==='live'||H.ph==='reveal'));if(H.host)$('nextBtn').classList.add('primary');
+ const p=$('pauseBtn');p.disabled=!H.host;p.textContent=H.pz?'▶':'❚❚';p.title=H.host?(H.pz?'Resume for everyone':'Pause for everyone'):'Only the host can pause';};
+const _sp=setPaused;setPaused=function(p){if(L())return;_sp(p);};
+$('pauseBtn').addEventListener('click',e=>{const H=L();if(!H)return;e.stopImmediatePropagation();if(H.host)hostPause();},true);
+$('nextBtn').addEventListener('click',e=>{const H=L();if(!H)return;e.stopImmediatePropagation();if(H.host){if(H.ph==='reveal')nextQ();else if(H.ph==='live')toReveal();}},true);
 const _rn=render;render=function(){_rn();liveUI();};
 function liveUI(){const H=L(),q=currentQ();if(!H||!H.cfg||!H.cfg.ids||!q||H.ci<0)return;
  const mine=answers.get(q.id),done=revealed(mine),prac=H.cfg.mode==='practice',pk=H.cpicks||{},nm=H.host?names():H.players;
@@ -992,13 +1030,13 @@ function liveUI(){const H=L(),q=currentQ();if(!H||!H.cfg||!H.cfg.ids||!q||H.ci<0
   return`<div class="mine"><span>${esc(n)}${n===H.name?' (you)':''}</span><span>${v}</span></div>`;}).join('');
  const ex='';
  const p=document.createElement('div');p.id='livePanel';p.className='lpanel';
- p.innerHTML=`<div class="lhead"><b>Room ${esc(H.code)}</b><span>Question ${H.ci+1} / ${H.cfg.ids.length}</span><span id="lcd">${H.show()}</span></div>${prac?'':'<p class="dnote" style="margin:0 0 6px">Exam: friends’ answers stay hidden until the end.</p>'}${H.pz?'<p style="margin:0 0 6px;font-weight:700">⏸ Test paused by the host</p>':''}${rows}${ex}${H.host&&(H.ph==='live'||H.ph==='reveal')?`<button class="btn" id="lPause" type="button">${H.pz?'▶ Resume':'⏸ Pause'}</button> `:''}${H.host&&H.ph==='reveal'?'<button class="btn primary" id="lNext" type="button">Next question →</button>':''}`;
- card.append(p);const nb=$('lNext');if(nb)nb.onclick=nextQ;const pb=$('lPause');if(pb)pb.onclick=hostPause;}
+ p.innerHTML=`<div class="lhead"><b>Room ${esc(H.code)}</b><span>Question ${H.ci+1} / ${H.cfg.ids.length}</span><span id="lcd">${H.show()}</span></div>${prac?'':'<p class="dnote" style="margin:0 0 6px">Exam: friends’ answers stay hidden until the end.</p>'}${H.pz?'<p style="margin:0 0 6px;font-weight:700">⏸ Test paused by the host</p>':''}${rows}${ex}`;
+ card.append(p);}
 function hostPause(){const H=LIVE;if(!H||!H.host)return;if(H.pz){H.pz=0;H.end=Date.now()+H.pr;}else{H.pr=Math.max(0,H.end-Date.now());H.pz=1;}castPh();}
 
 /* ===== v5: sync hooks · reports · shared banks ===== */
 {const ks=kv.set.bind(kv);kv.set=async(k,v)=>{const r=await ks(k,v);QM.touch&&QM.touch(k);return r;};const ss=store.set;store.set=(k,v)=>{ss(k,v);if(/^(pq-state|qm-state)/.test(k)&&QM.dirty)QM.dirty();};}
-const _rn3=render;render=function(){_rn3();const q=currentQ(),hd=card.querySelector('.qhead');if(q&&hd&&!$('rptBtn')){const b=document.createElement('button');b.id='rptBtn';b.type='button';b.className='btn flagbtn';b.textContent='🚩';b.title='Report a wrong answer or typo';b.setAttribute('aria-label','Report this question');b.onclick=()=>{$('rptBackdrop').hidden=false;};hd.append(b);}};
+const _rn3=render;render=function(){_rn3();{const nt=$('navToggle');if(nt)nt.innerHTML='☷ <b>'+(order.length?current+1:0)+'/'+order.length+'</b>';}const q=currentQ(),hd=card.querySelector('.qhead');if(q&&hd&&!$('rptBtn')){const b=document.createElement('button');b.id='rptBtn';b.type='button';b.className='btn flagbtn';b.textContent='🚩';b.title='Report a wrong answer or typo';b.setAttribute('aria-label','Report this question');b.onclick=()=>{$('rptBackdrop').hidden=false;};hd.append(b);}};
 $('rptCancel').addEventListener('click',()=>$('rptBackdrop').hidden=true);
 $('rptSend').addEventListener('click',async()=>{const q=currentQ();if(!q)return;const ok=await QM.report({subject_id:SUBJ.id,subject_name:SUBJ.name,qid:q.id,chapter:q.chapter,qno:q.chapterNo+'.'+q.number,prompt:String(q.prompt).slice(0,400),reason:$('rptReason').value,note:$('rptNote').value.trim().slice(0,500)});
  $('rptBackdrop').hidden=true;$('rptNote').value='';toast(ok?'Thanks — report sent to the mentor.':'Saved. It will be sent when you are signed in and online.');});
@@ -1008,6 +1046,42 @@ $('mySubj').addEventListener('click',async e=>{const b=e.target.closest('[data-s
  const u=new URL('index.html?bank='+slug,location.href).href;try{await navigator.clipboard.writeText(u);}catch(x){}toast('Share link copied: '+u);});
 const _os=openSubject;openSubject=async function(...a){const r=await _os(...a);let ch=0;for(const id in NOTES)if(!NTS[id]){NTS[id]=nMeta(id);ch=1;}if(ch)persistSoon();return r;};
 document.addEventListener('visibilitychange',()=>{if(document.hidden){try{flushPersist()}catch(e){}}});
+function parseMatch(p){
+ if(!p||!/List[\s-]*I\b/i.test(p))return null;
+ const lines=String(p).replace(/\r/g,'').split('\n');const LR=/^\(?([A-Fa-f]|[P-Sp-s])[.)]\s*(.*)$/,RR=/^\(?(\d{1,2}|i{1,3}|iv|vi{0,3}|v)[.)]\s*(.*)$/i;
+ const pre=[],L=[],R=[];let tgt=null,started=false,stop=false;
+ for(const raw of lines){if(stop)break;const ln=raw.trim();if(!ln)continue;
+  if(/^Codes?\s*[:–-]?\s*$|^Codes?\s*[:–-]/i.test(ln)&&started){stop=true;break}
+  const parts=ln.split(/\t+/).map(s=>s.trim()).filter(Boolean);let hit=false;
+  for(const part of parts){let m;
+   if((m=part.match(LR))){L.push({k:m[1].toUpperCase(),t:m[2]});tgt=L;hit=true;started=true;}
+   else if(started&&(m=part.match(RR))){R.push({k:m[1],t:m[2]});tgt=R;hit=true;}
+   else if(started&&tgt){const a=tgt[tgt.length-1];a.t=(a.t+' '+part).trim();}
+  }
+  if(parts.length>1&&L.length&&R.length)tgt=L;
+  if(!started)pre.push(ln);
+ }
+ if(L.length<3||R.length<3)return null;
+ // header / intro / subheads
+ let hi=pre.findIndex(l=>/^List[\s-]*I\b/i.test(l)&&!/\bwith\b|\bmatch\b/i.test(l));
+ const intro=(hi<0?pre:pre.slice(0,hi)).join(' ').replace(/\s+/g,' ').trim();
+ let subL='',subR='';
+ if(hi>=0){const sub=pre.slice(hi+1).filter(l=>!/^List[\s-]*I{1,2}\s*$/i.test(l));const sg=[];
+  for(const l of sub){const ps=l.split(/\t+/).map(s=>s.trim()).filter(Boolean);if(ps.length>=2){subL+=' '+ps[0];subR+=' '+ps[1]}else sg.push(l)}
+  if(!subL&&!subR&&sg.length===2){subL=sg[0];subR=sg[1]}else if(!subL&&!subR&&sg.length)subL=sg.join(' ');
+ }
+ const tidy=a=>a.map(x=>({k:x.k,t:x.t.replace(/\s+/g,' ').trim()}));
+ return{intro,subL:subL.trim(),subR:subR.trim(),L:tidy(L),R:tidy(R)};
+}
+function mapOpt(t,m){if(!m)return null;const s=String(t||'');const pr=[...s.matchAll(/([A-F]|[P-S])\s*[-–→:]?\s*\(?(\d{1,2}|[ivx]+)\)?/g)].map(x=>[x[1],x[2]]);
+ if(pr.length===m.L.length&&pr.every((p,i)=>p[0]===m.L[i].k))return pr;
+ const tk=s.split(/[\s,;]+/).filter(Boolean);if(tk.length===m.L.length&&tk.every(x=>/^(\d{1,2}|[ivx]+)$/i.test(x)))return tk.map((x,i)=>[m.L[i].k,x]);return null}
+
+
+function matchHTML(m){const c=(a,b)=>`<td>${a?'<b>'+esc(a.k)+'.</b>':''}</td><td>${a?esc(a.t):''}</td>`,sh=t=>t?`<small>${esc(t.replace(/^\(|\)$/g,''))}</small>`:'';let r='';
+ for(let i=0;i<Math.max(m.L.length,m.R.length);i++)r+='<tr>'+c(m.L[i])+c(m.R[i])+'</tr>';
+ return(m.intro?`<p class="prompt">${esc(m.intro)}</p>`:'')+`<div class="mtf"><table><thead><tr><th colspan="2">List I${sh(m.subL)}</th><th colspan="2">List II${sh(m.subR)}</th></tr></thead><tbody>${r}</tbody></table></div>`;}
+const optMatch=(t,m)=>{const p=mapOpt(t,m);return p?p.map(x=>`<b>${esc(x[0])}</b>→${esc(x[1])}`).join('<i></i>'):null;};
 /* ---------- storage health + error safety net ---------- */
 (function(){let ok=true;try{localStorage.setItem('qm-probe','1');ok=localStorage.getItem('qm-probe')==='1';localStorage.removeItem('qm-probe');}catch(e){ok=false;}
  if(!ok){const w=$('warnBar');w.textContent='⚠ This browser is not letting the app save data (private mode or a restricted viewer). Progress will be lost when you close the page — open the file normally in Safari or Chrome.';w.hidden=false;}
@@ -1023,10 +1097,12 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
  SUBJECTS.push({id:'polity',name:'Indian Polity & Governance',builtin:true,reflow:true,sourceHtml:POLITY_SRC},
   {id:'history',name:'Indian History',builtin:true,reflow:true,sourceHtml:'<b>Source:</b> Indian History — Complete Booklet (consolidated exam papers, printed pages B9–B760). Question text, options, answer key and explanations are extracted from the supplied booklet; questions with no printed answer key are not scored.'});
  for(const k of await kv.keys('subj:')){const d=await kv.get(k);if(d&&d.questions)SUBJECTS.push({id:k.slice(5),name:d.title,builtin:false,data:d,sourceHtml:'<b>Source:</b> '+esc(d.source||'Imported subject')+'. Imported on this device.'});}
- try{for(const r of await QM.subjects()){const i=SUBJECTS.findIndex(s=>s.id===r.id);if(r.status==='hidden'){if(i>=0&&SUBJECTS[i].builtin)SUBJECTS.splice(i,1);continue}if(r.status!=='live'||!r.path)continue;const o={id:r.id,name:r.name,builtin:false,cloud:r,sourceHtml:'<b>Source:</b> '+esc(r.subtitle||r.name)};if(i>=0)SUBJECTS[i]=o;else SUBJECTS.push(o)}}catch(e){}
+ const applyRows=rows=>{for(const r of rows){const i=SUBJECTS.findIndex(s=>s.id===r.id);if(r.status==='hidden'){if(i>=0&&SUBJECTS[i].builtin)SUBJECTS.splice(i,1);continue}if(r.status!=='live'||!r.path)continue;const o={id:r.id,name:r.name,builtin:false,cloud:r,sourceHtml:'<b>Source:</b> '+esc(r.subtitle||r.name)};if(i>=0)SUBJECTS[i]=o;else SUBJECTS.push(o)}};
+ try{const c0=await QM.kvGet('cache:subjects');applyRows(c0||await QM.subjects());const w=new URLSearchParams(location.search).get('s');if(c0&&w&&!SUBJECTS.some(s=>s.id===w))applyRows(await QM.subjects());else QM.subjects();}catch(e){}
  SESS=(await kv.get('sessions'))||[];DAILY=(await kv.get('daily'))||{};Object.assign(PREFS,(await kv.get('prefs'))||{});
  const qp=new URLSearchParams(location.search),last=qp.get('s')||store.get(LS_LAST);await openSubject(SUBJECTS.some(s=>s.id===last)?last:(SUBJECTS[0]||{}).id,true);buildSubjectSelect();
  if(qp.get('add')){if(QM.isAdmin)openAdd();else toast('Only admins can add subjects.');}if(qp.get('join')){who='join';openCustom();$('mkCode').value=qp.get('join').toUpperCase();}else if(qp.get('custom')){openCustom();}
+ try{const rs=JSON.parse(localStorage.getItem('qm-room')||'null');if(rs&&Date.now()-rs.t<4*36e5&&!qp.get('join')){if(rs.role==='g'&&rs.name){toast('Rejoining room '+rs.code+'…');rejoin(rs);}else if(rs.role==='h'){const hs=JSON.parse(localStorage.getItem('qm-host')||'null');if(hs&&hs.code===rs.code){toast('Restoring your room…');hostRestore(hs);}}}}catch(e){}
  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
 
