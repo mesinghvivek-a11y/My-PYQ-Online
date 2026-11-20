@@ -377,8 +377,8 @@ function hay(q){return q._h||(q._h=(q.prompt+' '+q.options.map(o=>o.text).join('
 function matchQ(q){
  if(retryIds)return retryIds.has(q.id);
  const ex=examFilter.value,ch=chapterFilter.value,v=viewFilter.value,gp=groupFilter.value,yr=yearFilter.value,a=answers.get(q.id);
- if(ch!=='all'&&String(q.chapterNo)!==ch)return false;if(gp!=='all'&&q.group!==gp)return false;if(yr!=='all'&&!q.examTags.some(t=>yrsOf(t).includes(+yr)))return false;
- if(ex!=='all'&&!q.examTags.some(t=>(t.family||t.label)===ex))return false;
+ if(ch!=='all'&&String(q.chapterNo)!==ch)return false;if(gp!=='all'&&q.group!==gp)return false;
+ if((ex!=='all'||yr!=='all')&&!q.examTags.some(t=>(ex==='all'||(t.family||t.label)===ex)&&(yr==='all'||yrsOf(t).includes(+yr))))return false;
  if(v==='unattempted'&&a)return false;if(v==='incorrect'&&!(a&&a.grade==='wrong'))return false;if(v==='flagged'&&!flags.has(q.id))return false;
  if(v==='due'||v==='everwrong'||v==='weak'||v==='new'||v==='noted'){const s=QS[q.id];if(v==='due'&&!(s&&s.d<=Date.now()))return false;if(v==='everwrong'&&!(s&&s.w))return false;if(v==='weak'&&!(s&&s.a&&s.c/s.a<.6))return false;if(v==='new'&&s)return false;if(v==='noted'&&!NOTES[q.id])return false;}
  return !search||hay(q).includes(search);
@@ -560,7 +560,7 @@ groupFilter.addEventListener('change',()=>{fillChapters();userFilter();});yearFi
 
 /* subjects */
 async function ensureData(s){
- if(!s.data)s.data=s.builtin?await(window.__pre&&window.__pre.id===s.id?window.__pre.p:fetch('data/'+s.id+'.json').then(r=>r.json())):s.cloud?await QM.bank(s.cloud):await kv.get('subj:'+s.id);
+ if(!s.data)s.data=s.builtin?await(window.__pre&&window.__pre.id===s.id?window.__pre.p:fetch('data/'+s.id+'.json').then(r=>r.json())):s.cloud?await QM.bank(s.cloud,()=>toast('Showing the saved version. Reopen this subject when the latest download is available.')):await kv.get('subj:'+s.id);
  if(!s.prep){const g=new Map(s.data.chapters.map(c=>[c.no,c.group||'']));s.data.questions.forEach(q=>q.group=g.get(q.chapterNo)||'');s.data.groups=[...new Set(s.data.chapters.map(c=>c.group).filter(Boolean))];s.prep=1;}
  return s.data;}
 function buildSubjectSelect(){const el=$('subjectSel');el.innerHTML='';SUBJECTS.forEach(s=>el.append(new Option(s.name,s.id)));el.append(new Option('＋ Add subject…','__add'));if(SUBJ)el.value=SUBJ.id;}
@@ -737,6 +737,10 @@ function rowsToRaw(rows,info){
  const head=rows[h].map(c=>String(c??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()),find=(...k)=>head.findIndex(x=>k.includes(x));
  const col={ch:find('chapter','chapter name','topic','unit'),gr:find('group','era','category','branch','section'),q:find('question','questions','q','prompt'),an:find('answer','correct answer','correct','ans','key','correct option'),ex:find('explanation','solution','rationale','explain'),exam:find('exam','exams','exam tag','source','previous year','pyq'),yr:find('year')};
  const oi='abcdef'.split('').map(L=>find(L,'option '+L,'opt '+L,'options '+L,'choice '+L));
+ const pictureColumns=head.map((name,i)=>/^(?:image|images|picture|figure|diagram|question image|(?:img|image|picture) [a-f]|(?:opt|option) [a-f] image)$/.test(name)?i:-1).filter(i=>i>=0);
+ if(rows.slice(h+1).some(row=>pictureColumns.some(i=>String(row?.[i]??'').trim()))){
+  return {err:['This workbook references pictures. Import it on the admin page and select the picture files there.']};
+ }
  const err=[];if(col.q<0)err.push('No “Question” column found — the first row must hold the column headings (Chapter, Question, Option A …).');if(oi[0]<0||oi[1]<0)err.push('Columns “Option A” and “Option B” are required.');
  if(err.length)return{err};
  const qs=[];let lastCh='',lastGr='';
@@ -804,8 +808,16 @@ function normalizeImport(raw){
  const err=[];if(!raw||typeof raw!=='object'||Array.isArray(raw))return{err:['The file must contain a JSON object or an Excel sheet with a heading row.']};
  const name=String(raw.subject||raw.name||'').trim()||'Imported subject';
  if(!Array.isArray(raw.questions)||!raw.questions.length)return{err:['No questions were found in the file.']};
- const chs=[],byNo=new Map(),byT=new Map(),explicit=Array.isArray(raw.chapters)&&raw.chapters.length>0;
- const addCh=(no,title,group)=>{const c={no,title:String(title),group:group||''};chs.push(c);byNo.set(no,c);byT.set(c.title.toLowerCase(),c);return c;};
+ const chs=[],byNo=new Map(),byTitle=new Map(),explicit=Array.isArray(raw.chapters)&&raw.chapters.length>0;
+ const fold=value=>String(value??'').trim().toLowerCase();
+ function addCh(no,title,group){
+  const c={no,title:String(title).trim(),group:String(group||'').trim()};
+  chs.push(c);byNo.set(no,c);
+  const key=fold(c.title);
+  if(!byTitle.has(key))byTitle.set(key,[]);
+  byTitle.get(key).push(c);
+  return c;
+ }
  (explicit?raw.chapters:[]).forEach((c,i)=>{const o=c&&typeof c==='object'?c:{title:c};addCh(+o.no||i+1,o.title||o.name||'Chapter '+(i+1),String(o.group||o.category||''));});
  const qs=[],cnt=new Map(),seen=new Set();
  raw.questions.forEach((r,i)=>{const at=(r&&r._row?'Row '+r._row:'Question #'+(i+1))+': ';if(!r||typeof r!=='object'){err.push(at+'not an object.');return;}
@@ -814,11 +826,26 @@ function normalizeImport(raw){
   opts=opts.map(o=>String(o&&typeof o==='object'?o.text??'':o??'').trim());if(opts.some(o=>!o)){err.push(at+'an option cell is empty between filled options.');return;}
   const keys='abcdef'.slice(0,opts.length).split('');let a=r.answer??r.correct;a=a==null||a===''?[]:Array.isArray(a)?a:String(a).split(/[\s,;&\/]+/);
   a=[...new Set(a.map(x=>String(x).trim().toLowerCase().replace(/[().]/g,'')).filter(Boolean))];if(a.some(x=>!keys.includes(x))){err.push(at+'Answer “'+(Array.isArray(r.answer)?r.answer.join(','):r.answer)+'” must be one of '+keys.map(k=>k.toUpperCase()).join(', ')+'.');return;}
-  const cr=r.chapter;let ch;
-  if(cr==null||cr==='')ch=chs[0]||addCh(1,'General','');
-  else{ch=typeof cr==='number'?byNo.get(cr):(byT.get(String(cr).trim().toLowerCase())||byNo.get(+cr));
-   if(!ch){if(typeof cr==='number'&&explicit){err.push(at+'chapter '+cr+' is not listed in "chapters".');return;}ch=addCh(typeof cr==='number'?cr:(chs.reduce((m,c)=>Math.max(m,c.no),0)+1),typeof cr==='number'?'Chapter '+cr:String(cr).trim(),'');}}
-  if(!ch.group&&(r.group||r.category))ch.group=String(r.group||r.category).trim();
+  const cr=r.chapter,group=String(r.group||r.category||'').trim();
+  let ch;
+  if(typeof cr==='number'){
+   ch=byNo.get(cr);
+   if(!ch&&explicit){err.push(at+'chapter '+cr+' is not listed in "chapters".');return;}
+   if(!ch)ch=addCh(cr,'Chapter '+cr,group);
+  }else{
+   const missing=cr==null||String(cr).trim()==='';
+   const title=missing?'General':String(cr).trim();
+   const candidates=byTitle.get(fold(title))||[];
+   if(group){
+    ch=candidates.find(c=>fold(c.group)===fold(group));
+    if(!ch&&candidates.length===1&&!candidates[0].group)ch=candidates[0];
+   }else if(candidates.length>1){
+    err.push(at+'chapter "'+title+'" appears in multiple sections. Enter its Group.');return;
+   }else ch=candidates[0];
+   if(!ch&&!candidates.length)ch=missing?(group?undefined:chs[0]):byNo.get(+cr);
+   if(!ch)ch=addCh(chs.reduce((max,c)=>Math.max(max,c.no),0)+1,title,group);
+  }
+  if(group&&!ch.group)ch.group=group;
   const n=(cnt.get(ch.no)||0)+1;cnt.set(ch.no,n);let id='U'+h32(ch.title+'|'+text),dd=0;while(seen.has(id))id='U'+h32(ch.title+'|'+text)+'_'+(++dd);seen.add(id);
   const ex=Array.isArray(r.exams)?r.exams:r.exams?[r.exams]:[];
   qs.push({id,chapterNo:ch.no,chapter:ch.title,number:n,pdfPage:'',bookPage:r.page?String(r.page):'',prompt:text,options:opts.map((t,j)=>({key:keys[j],sourceLabel:keys[j],text:t})),correct:a,answerRaw:a.length?'Ans. ('+a.join(' & ')+')':'',type:a.length>1?'Multiple answer':'Multiple choice',explanation:String(r.explanation||''),examTags:ex.filter(Boolean).map(examTag),attemptable:true,gradeable:a.length>0,reviewFlags:[]});});
@@ -1104,7 +1131,9 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
   {id:'history',name:'Indian History',builtin:true,reflow:true,sourceHtml:'<b>Source:</b> Indian History — Complete Booklet (consolidated exam papers, printed pages B9–B760). Question text, options, answer key and explanations are extracted from the supplied booklet; questions with no printed answer key are not scored.'});
  for(const k of (QM.isAdmin?await kv.keys('subj:'):[])){const d=await kv.get(k);if(d&&d.questions)SUBJECTS.push({id:k.slice(5),name:d.title,builtin:false,data:d,sourceHtml:'<b>Source:</b> '+esc(d.source||'Imported subject')+'. Imported on this device.'});}
  const applyRows=rows=>{for(const r of rows){const i=SUBJECTS.findIndex(s=>s.id===r.id);if(r.status==='hidden'){if(i>=0&&SUBJECTS[i].builtin)SUBJECTS.splice(i,1);continue}if(r.status!=='live'||!r.path)continue;const o={id:r.id,name:r.name,builtin:false,cloud:r,sourceHtml:'<b>Source:</b> '+esc(r.subtitle||r.name)};if(i>=0)SUBJECTS[i]=o;else SUBJECTS.push(o)}};
- try{const c0=await QM.kvGet('cache:subjects');applyRows(c0||await QM.subjects());const w=new URLSearchParams(location.search).get('s');if(c0&&w&&!SUBJECTS.some(s=>s.id===w))applyRows(await QM.subjects());else QM.subjects();}catch(e){}
+ // Resolve the current published version before choosing the question bank.
+ // QM.subjects() falls back to the stored catalog when the network is unavailable.
+ try{applyRows(await QM.subjects());}catch(e){}
  SESS=(await kv.get('sessions'))||[];DAILY=(await kv.get('daily'))||{};Object.assign(PREFS,(await kv.get('prefs'))||{});
  const qp=new URLSearchParams(location.search),last=qp.get('s')||store.get(LS_LAST);await openSubject(SUBJECTS.some(s=>s.id===last)?last:(SUBJECTS[0]||{}).id,true);buildSubjectSelect();
  if(qp.get('add')){if(QM.isAdmin)openAdd();else toast('Only admins can add subjects.');}if(qp.get('join')){who='join';openCustom();$('mkCode').value=qp.get('join').toUpperCase();}else if(qp.get('custom')){openCustom();}
