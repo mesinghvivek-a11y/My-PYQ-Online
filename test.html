@@ -225,7 +225,16 @@ body[data-stage=active] #fbar,body[data-stage=setup] #shell,body[data-stage=setu
 body[data-stage=review] #fbar,body[data-stage=setup] #fbar{position:static!important;inset:auto!important;transform:none!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;display:block!important;width:min(960px,calc(100% - 32px))!important;max-height:none!important;margin:28px auto!important;padding:clamp(16px,3vw,32px)!important;border:1px solid var(--line);border-radius:22px;background:var(--surface);box-shadow:var(--shadow)}
 #fbar .filters{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(165px,100%),1fr));gap:12px}
 .setuphead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}.setuphead h2,#routeDialog h2{margin:0;font-size:clamp(22px,3vw,32px);letter-spacing:-.04em}.setuphead p{margin:4px 0;color:var(--muted)}#routeDialog{width:min(390px,90vw);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:var(--shadow)}#routeDialog::backdrop{background:#141e34aa}.routeChoices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}.routeChoices button{height:52px}#routeClose{float:right}.memberName{font:inherit;color:var(--brand);border:0;background:transparent;padding:5px;cursor:pointer;text-decoration:underline}.room-member-actions[hidden]{display:none!important}
-</style><style>.chapterBox{grid-column:1/-1;border:1px solid var(--line);background:var(--surface2);border-radius:14px;padding:12px 15px}.chapterBox summary{cursor:pointer;font-weight:700}.chapterBox summary span{float:right;font-weight:500;color:var(--muted)}.chapterBox .chpick{background:var(--surface)}#mkMarks,#mkNeg{width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;color:var(--ink);background:var(--surface)}</style></head>
+</style><style>.chapterBox{grid-column:1/-1;border:1px solid var(--line);background:var(--surface2);border-radius:14px;padding:12px 15px}.chapterBox summary{cursor:pointer;font-weight:700}.chapterBox summary span{float:right;font-weight:500;color:var(--muted)}.chapterBox .chpick{background:var(--surface)}#mkMarks,#mkNeg{width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;color:var(--ink);background:var(--surface)}</style><style>
+body:not([data-stage="active"]) #timerBox,#timerBox[hidden]{display:none!important}
+#nextBtn.phase-clock{position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;gap:1px;padding:3px 5px;color:white;background:#27344d;border-color:transparent;font-variant-numeric:tabular-nums}
+#nextBtn.phase-clock:disabled{opacity:1;cursor:default}
+#nextBtn.phase-clock::before{content:"";position:absolute;inset:0;background:var(--phase-color,#3454be);z-index:-1;transform-origin:left;transform:scaleX(var(--remaining,1));transition:transform .25s linear}
+#nextBtn.review-clock{--phase-color:#157366}
+#nextBtn.phase-urgent{--phase-color:#bc303d;background:#602231;border-color:#e55362}
+#nextBtn small{font-size:11px;line-height:1.1}
+@media(prefers-reduced-motion:reduce){#nextBtn.phase-clock::before{transition:none}}
+</style></head>
 <body data-stage="setup">
 <div class="warnbar" id="warnBar" hidden></div>
 <header class="top" id="top">
@@ -288,7 +297,7 @@ body[data-stage=review] #fbar,body[data-stage=setup] #fbar{position:static!impor
  <div class="pstats" id="pStats"></div><div id="pExtra"></div><p class="dnote" id="bkNote" style="margin:0 0 12px"></p><div class="card ptable" id="pList"></div>
 </section>
 <footer class="bottom"><div class="bar">
- <div class="navbtns"><button class="btn" id="prevBtn" type="button" aria-label="Previous question">←<span class="lbl2"> Prev</span></button><button class="btn" id="clearBtn" type="button" title="Clear this answer"><span class="lbl2">Clear</span><span class="only-s">✕</span></button><button class="btn" id="nextBtn" type="button" aria-label="Next question"><span class="lbl2">Next </span>→</button><button class="btn mobile-only" id="navToggle" type="button">☷</button></div>
+ <div class="navbtns"><button class="btn" id="prevBtn" type="button" aria-label="Previous question">←<span class="lbl2"> Prev</span></button><button class="btn" id="clearBtn" type="button" title="Clear this answer"><span class="lbl2">Clear</span><span class="only-s">✕</span></button><button class="btn" id="nextBtn" type="button" aria-label="Next question"><span id="nextAction">Next →</span><small id="nextTime" hidden></small></button><button class="btn mobile-only" id="navToggle" type="button">☷</button></div>
  <div class="stats"><span class="stat good">Correct <b id="correctCount">0</b></span><span class="stat bad">Incorrect <b id="incorrectCount">0</b></span><span class="stat neutral">Ungraded <b id="ungradedCount">0</b></span><span class="stat">Attempted <b id="attemptedCount">0</b></span></div>
  <span class="acc" id="scorePercent">Not started</span>
 </div></footer>
@@ -324,7 +333,7 @@ body[data-stage=review] #fbar,body[data-stage=setup] #fbar{position:static!impor
   <label class="sel"><span>Questions</span><select id="mkN"><option>10</option><option selected>25</option><option>50</option><option>100</option><option>200</option><option value="9999">All available</option></select></label>
   <label class="sel"><span>Draw from</span><select id="mkSrc"><option value="all">Any question</option><option value="new">Unattempted</option><option value="due">Due for revision</option><option value="wrong">Missed before</option><option value="weak">Weak: under 60%</option></select></label>
   <label class="sel solo-only"><span>Time limit</span><select id="mkT"><option value="0">No limit</option><option value="10">10 min</option><option value="20">20 min</option><option value="30" selected>30 min</option><option value="60">60 min</option><option value="120">120 min</option></select></label>
-  <label class="sel host-only" hidden><span>Seconds per question</span><select id="mkQS"><option>20</option><option>30</option><option selected>40</option><option>45</option><option>60</option><option>90</option><option>120</option></select></label>
+  <label class="sel" id="qsecSetting"><span>Seconds per question</span><select id="mkQS"><option>20</option><option>30</option><option selected>40</option><option>45</option><option>60</option><option>90</option><option>120</option></select></label>
   <label class="sel"><span>Marks per correct answer</span><input id="mkMarks" type="number" min="0.01" step="0.01" value="1"></label><label class="sel"><span>Deduction per wrong answer</span><input id="mkNeg" type="number" min="0" step="0.01" value="0"></label>
  </div>
  <label class="chk"><input type="checkbox" id="mkShuf" checked><span>Shuffle question order</span></label><label class="chk"><input type="checkbox" id="mkBal"><span>Balance across chapters (equal share from each)</span></label></div>
@@ -404,7 +413,7 @@ function saveNow(){clearTimeout(_st);if(!KEY)return;store.set(KEY,JSON.stringify
 function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,4200);}
 function restore(){
  const raw=store.get(KEY);if(!raw)return null;
- try{const s=JSON.parse(raw);if(!QM.user&&!s?.s)return null;if(s?.x?.account&&s.x.account!==QM.user?.id)return null;if(!s||!s.a||!s.a.length&&!s.e)return null;
+ try{const s=JSON.parse(raw);if(!QM.user&&!s?.s)return null;if(s?.x?.account&&s.x.account!==QM.user?.id)return null;if(!s||!s.a||!s.a.length&&!s.e&&!s.x?.mock)return null;
   s.a.forEach(([id,a])=>{if(byId.has(id))answers.set(id,a)});(s.f||[]).forEach(id=>byId.has(id)&&flags.add(id));(s.t||[]).forEach(([id,n])=>byId.has(id)&&spent.set(id,n));
   elapsed=s.e||0;sess=s.x||{};submitted=!!s.s;mode=s.m==='exam'?'exam':'practice';return s;}catch(e){return null;}
 }
@@ -507,8 +516,55 @@ function updateScore(){
 
 /* stopwatch + time per question */
 const pad=n=>String(n).padStart(2,'0'),fmt=s=>`${pad(Math.floor(s/3600))}:${pad(Math.floor(s%3600/60))}:${pad(s%60)}`,mmss=s=>`${Math.floor(s/60)}:${pad(s%60)}`;
-const paint=()=>$('stopwatch').textContent=(LIVE&&LIVE.ph!=='over'&&LIVE.show)?LIVE.show():fmt(sess&&sess.lim?Math.max(0,sess.lim-(elapsed-(sess.eb||0))):elapsed);
-function startClock(){if(timer!==null||submitted)return;if(!sess.id){$('timerBox').classList.add('stopped');return;}$('timerBox').classList.remove('stopped');timer=setInterval(()=>{elapsed++;const q=currentQ();if(q&&!revealed(stateFor(q)))spent.set(q.id,(spent.get(q.id)||0)+1);paint();if(sess.lim&&!submitted&&elapsed-(sess.eb||0)>=sess.lim){autoSubmit();return;}if(elapsed%5===0)save();},1000);}
+function drawNext(label,remaining,duration,review,stopped){
+ const button=$('nextBtn'),timed=duration>0;
+ button.classList.toggle('phase-clock',timed);
+ button.classList.toggle('review-clock',timed&&review);
+ button.classList.toggle('phase-urgent',timed&&remaining<=10000);
+ $('nextTime').hidden=!timed;
+ $('nextAction').textContent=label;
+ if(timed){
+  button.style.setProperty('--remaining',String(Math.max(0,Math.min(1,remaining/duration))));
+  $('nextTime').textContent=(stopped?'Paused':review?'Review':'Answer')+' '+mmss(Math.ceil(Math.max(0,remaining)/1000));
+ }
+ button.setAttribute('aria-label',timed?label+' · '+$('nextTime').textContent:'Next question');
+}
+function soloPhase(){
+ const q=currentQ();
+ if(!q||!sess.qsec||sess.live||submitted||mode!=='practice')return null;
+ const review=revealed(stateFor(q))||FORCE.has(q.id);
+ let phase=sess.practiceClock;
+ if(!phase||phase.id!==q.id||(!phase.review&&review)){
+  phase=sess.practiceClock={id:q.id,review,start:elapsed};
+ }
+ return phase;
+}
+function paint(){
+ const H=L(),started=document.body.dataset.stage==='active'&&(!H||!!H.cfg?.ids&&H.ph!=='lobby');
+ $('timerBox').hidden=!started;
+ const liveMs=H?(H.watchMs||0)+(H.watchAnchor&&!H.pz?Date.now()-H.watchAnchor:0):0;
+ $('stopwatch').textContent=fmt(H?Math.floor(Math.max(0,liveMs)/1000):Math.max(0,elapsed-(sess.eb||0)));
+ if(started&&H&&H.cfg?.mode==='practice'&&['live','reveal'].includes(H.ph)){
+  const review=H.ph==='reveal';
+  drawNext(H.host?(review?'Next →':'Reveal →'):'Next →',H.pz?H.pr:H.end-Date.now(),1000*(review?REV:H.cfg.qsec),review,H.pz);
+ }else if(started&&!H&&soloPhase()){
+  const phase=sess.practiceClock,seconds=phase.review?REV:sess.qsec;
+  drawNext(current===order.length-1?'Finish':'Next →',1000*(seconds-elapsed+phase.start),1000*seconds,phase.review,paused);
+  $('nextBtn').disabled=paused;
+ }else drawNext('Next →',0,0,false,false);
+}
+function advanceSoloClock(){
+ const phase=!LIVE&&soloPhase();
+ if(!phase||paused||elapsed-phase.start<(phase.review?REV:sess.qsec))return;
+ if(!phase.review){
+  FORCE.add(phase.id);
+  const answer=stateFor(currentQ());
+  if(answer?.grade==='pending')checkMulti();
+  phase.review=true;phase.start=elapsed;render();
+ }else if(current<order.length-1)go(current+1);
+ else autoSubmit();
+}
+function startClock(){if(timer!==null||submitted)return;if(!sess.id){$('timerBox').classList.add('stopped');return;}$('timerBox').classList.remove('stopped');timer=setInterval(()=>{elapsed++;advanceSoloClock();if(submitted)return;const q=currentQ();if(q&&!revealed(stateFor(q)))spent.set(q.id,(spent.get(q.id)||0)+1);paint();if(sess.lim&&!submitted&&elapsed-(sess.eb||0)>=sess.lim){autoSubmit();return;}if(elapsed%5===0)save();},1000);}
 function stopClock(){if(timer!==null){clearInterval(timer);timer=null;}$('timerBox').classList.add('stopped');save();}
 
 /* in-page confirm (browser confirm() is blocked in many viewers) */
@@ -537,7 +593,7 @@ $('retryBtn').addEventListener('click',()=>{
  ids.forEach(id=>answers.delete(id));sess={eb:elapsed};retryIds=ids;submitted=false;$('testSubmit').textContent='Submit';$('summaryBackdrop').hidden=true;applyFilters();setPaused(false);startClock();
  toast(`Retrying ${ids.size} missed questions. Change any filter to leave this set.`);
 });
-$('prevBtn').addEventListener('click',()=>go(current-1));$('nextBtn').addEventListener('click',()=>go(current+1));
+$('prevBtn').addEventListener('click',()=>go(current-1));$('nextBtn').addEventListener('click',()=>{if(!LIVE&&soloPhase()&&current===order.length-1)$('testSubmit').click();else go(current+1);});
 $('clearBtn').addEventListener('click',()=>{const q=currentQ();if(q&&!submitted&&!paused){answers.delete(q.id);render();}});
 $('pauseBtn').addEventListener('click',()=>setPaused(!paused));$('resumeBtn').addEventListener('click',()=>setPaused(false));
 $('closeSummary').addEventListener('click',()=>$('summaryBackdrop').hidden=true);
@@ -620,7 +676,7 @@ async function openSubject(id,first){
  paused=false;document.body.classList.remove('paused');$('summaryBackdrop').hidden=true;
  populateFilters();store.set(LS_LAST,s.id);$('subjectSel').value=s.id;
  $('brandTitle').textContent=s.name;$('brandSub').textContent=`Master test · ${DATA.chapters.length} chapters`;document.title=s.name+' · My PYQ Online';$('sourceNote').innerHTML=s.sourceHtml||'';
- const prior=restore();if(sess.ids)retryIds=new Set(sess.ids);applyFilters();
+ const prior=restore();if(sess.ids)retryIds=new Set(sess.ids);const clock=prior&&sess.practiceClock;applyFilters();if(prior&&sess.ids)setOrder(sess.ids.filter(id=>byId.has(id)));if(clock){sess.practiceClock=clock;if(clock.review&&!answers.has(clock.id))FORCE.add(clock.id);}
  if(prior){const i=order.findIndex(q=>q.id===prior.c);if(i>0){current=i;render();}toast(submitted?'Restored your submitted test.':`Welcome back — restored ${answers.size} answers.`);}
  paint();$('pauseBtn').disabled=submitted;$('testSubmit').textContent=submitted?'Summary':'Submit';
  (submitted||tab!=='quiz')?stopClock():startClock();
@@ -998,7 +1054,7 @@ function buildIds(){
  return ids.map(q=>q.id);}
 function setWho(w){who=w;document.querySelectorAll('#mkWho button').forEach(b=>b.classList.toggle('on',b.dataset.w===w));document.querySelectorAll('#mkModeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.m===cmode));
  $('mkJoin').hidden=w!=='join';$('mkCfg').hidden=w==='join';$('mkModeSeg').hidden=w==='join';$('mkNameW').hidden=w==='host'&&$('mkAlone').checked;
- const al=w==='host'&&$('mkAlone').checked;document.querySelectorAll('.solo-only').forEach(x=>x.hidden=!al);document.querySelectorAll('.host-only').forEach(x=>x.hidden=!(w==='host'&&!al));$('mkAloneW').hidden=w!=='host';
+ const al=w==='host'&&$('mkAlone').checked;$('qsecSetting').hidden=w==='join'||(al&&cmode!=='practice');document.querySelectorAll('.solo-only').forEach(x=>x.hidden=!al);document.querySelectorAll('.host-only').forEach(x=>x.hidden=!(w==='host'&&!al));$('mkAloneW').hidden=w!=='host';
  $('mkGo').textContent=w==='join'?'Join room':$('mkAlone').checked?'Start session':'Create room';$('mkT0').textContent=w==='join'?'Join a test':$('mkAlone').checked?'Solo test':'Host a test';}
 $('mkAlone').addEventListener('change',()=>setWho(who));
 $('mkWho').addEventListener('click',e=>{const b=e.target.closest('[data-w]');if(b)setWho(b.dataset.w);});
@@ -1018,10 +1074,10 @@ $('mkGo').addEventListener('click',async()=>{
  if(who==='host'&&!$('mkAlone').checked)return hostRoom(cfg);
  const lim=+$('mkT').value*60;
  if(answers.size&&!await ask('Start this session?','Your current attempt in this subject will be ended (it stays in Performance).','Start'))return;
- logSession(submitted?'submitted':'ended');stopClock();answers.clear();flags.clear();spent.clear();submitted=false;elapsed=0;mode=cmode;
- retryIds=new Set(ids);sess={account:QM.user.id,eb:0,lim,marks:cfg.marks||1,neg:cfg.neg,mock:1,ids};
+ logSession(submitted?'submitted':'ended');stopClock();answers.clear();flags.clear();spent.clear();submitted=false;elapsed=0;FORCE.clear();mode=cmode;
+ retryIds=new Set(ids);sess={account:QM.user.id,id:uid(),st:Date.now(),qsec:cmode==='practice'?cfg.qsec:0,eb:0,lim,marks:cfg.marks||1,neg:cfg.neg,mock:1,ids};
  $('mockBackdrop').hidden=true;$('summaryBackdrop').hidden=true;$('testSubmit').textContent='Submit';setTab('quiz');applyFilters();setOrder(ids);setPaused(false);paint();
- toast(`${ids.length} questions · ${cmode}${lim?' · '+lim/60+' min (starts when you answer the first one)':''}`);});
+ toast(`${ids.length} questions · ${cmode}${lim?' · '+lim/60+' min':''}`);});
 
 /* --- live rooms --- */
 const names=()=>[...LIVE.roster];
@@ -1217,7 +1273,8 @@ function hostTick(){const H=LIVE;if(!H||H.ph==='over'||H.pz)return;const now=Dat
  if(H.ph==='live'){if(now>=H.end||allIn())toReveal();}else if(H.ph==='reveal'&&now>=H.end)nextQ();}
 function toReveal(){if(LIVE.cfg.mode==='exam')return nextQ();LIVE.ph='reveal';LIVE.end=Date.now()+REV*1000;castPh();}
 function nextQ(){const H=LIVE;if(!H||!H.host||H.ph==='over'||H.ph==='lobby')return;H.i++;if(H.i>=H.cfg.ids.length)return finish();H.ph='live';H.end=Date.now()+H.cfg.qsec*1000;castPh();}
-function phMsg(){const H=LIVE,pm=H.picks.get(H.cfg.ids[H.i]),pk=Object.create(null);if(pm)pm.forEach((v,n)=>{if(H.roster.has(n))pk[n]=H.cfg.mode==='exam'?[]:v.sel;});return{t:'ph',i:H.i,ph:H.ph,rem:H.pz?H.pr:H.end-Date.now(),pz:H.pz?1:0,picks:pk};}
+function hostWatch(H){return Math.max(0,(H.cfg.watchPausedAt||Date.now())-(H.cfg.watchStart||Date.now()));}
+function phMsg(){const H=LIVE,pm=H.picks.get(H.cfg.ids[H.i]),pk=Object.create(null);if(pm)pm.forEach((v,n)=>{if(H.roster.has(n))pk[n]=H.cfg.mode==='exam'?[]:v.sel;});return{t:'ph',watchMs:hostWatch(H),i:H.i,ph:H.ph,rem:H.pz?H.pr:H.end-Date.now(),pz:H.pz?1:0,picks:pk};}
 function castPh(){const m=phMsg();cast(m);onPh(m);saveHost();}
 async function queueCheckpoint(H,snapshot){
  H.pendingSnapshot=snapshot;if(H.saving)return;H.saving=true;
@@ -1243,7 +1300,7 @@ async function findHost(code){
 function saveHost(){const H=LIVE;const snapshot={account:QM.user?.id,code:H.code,cursor:H.peer.cursor,session:H.peer.session,ownerKey:H.ownerKey,attemptId:H.attemptId,members:[...H.members],cfg:H.cfg,name:H.name,i:H.i,ph:H.ph,deadline:H.end,rem:H.pz?H.pr:Math.max(0,H.end-Date.now()),pz:H.pz?1:0,roster:[...H.roster],picks:[...H.picks].map(([q,m])=>[q,[...m]])};queueCheckpoint(H,snapshot);try{localStorage.setItem('qm-host',JSON.stringify(snapshot));localStorage.setItem('qm-room',JSON.stringify({role:'h',code:H.code,session:H.peer.session,t:Date.now()}));}catch(e){}}
 function onPh(m){const H=LIVE;if(!H||!H.cfg?.ids||!byId.has(H.cfg.ids[m.i]))return;const first=H.ci!==m.i;
  if(first&&m.ph==='live'){H.qs=Date.now()-(H.cfg.qsec*1000-m.rem);H.last='';}
- H.ci=m.i;H.ph=m.ph;H.end=Date.now()+m.rem;H.cpicks=m.picks;H.pz=m.pz;H.pr=m.rem;
+ H.watchMs=m.watchMs??H.watchMs??0;H.watchAnchor=Date.now();H.ci=m.i;H.ph=m.ph;H.end=Date.now()+m.rem;H.cpicks=m.picks;H.pz=m.pz;H.pr=m.rem;
  if(m.ph==='reveal'&&H.cfg.mode==='practice'){const qq=H.cfg.ids[m.i],a=answers.get(qq);if(!a)FORCE.add(qq);else if(a.grade==='pending'){const g=gradeOf(byId.get(qq),a);answers.set(qq,{...a,grade:g});recordResult(byId.get(qq),g);}}
  if(current!==m.i){current=m.i;selected=null;scrollTo({top:0});}render();}
 function finish(){const H=LIVE,ids=H.cfg.ids,neg=H.cfg.neg||0,rows=[],pk={};
@@ -1367,19 +1424,19 @@ async function liveBegin(cfg){
  submitted=false;FORCE.clear();mode=cfg.mode;paused=false;document.body.classList.remove('paused');
  sess={account:QM.user.id,id:H.attemptId,st:started,eb:0,lim:0,marks:cfg.marks||1,neg:cfg.neg,mock:1,live:1,ids:cfg.ids};retryIds=new Set(cfg.ids);H.cfg=cfg;H.ph='wait';H.ci=-1;H.last='';
  ['roomBackdrop','mockBackdrop','summaryBackdrop'].forEach(i=>$(i).hidden=true);$('testSubmit').textContent='Submit';setTab('quiz');applyFilters();setOrder(cfg.ids);paint();}
-$('roomStart').addEventListener('click',async()=>{const H=LIVE;if(!H||!H.host||H.ph!=='lobby')return;H.ph='wait';H.i=-1;saveHost();cast({t:'start',cfg:H.cfg});await liveBegin(H.cfg);setTimeout(()=>{if(LIVE===H)nextQ();},1800);});
+$('roomStart').addEventListener('click',async()=>{const H=LIVE;if(!H||!H.host||H.ph!=='lobby')return;H.ph='wait';H.cfg.watchStart=Date.now();H.i=-1;saveHost();cast({t:'start',cfg:H.cfg});await liveBegin(H.cfg);setTimeout(()=>{if(LIVE===H)nextQ();},1800);});
 $('roomLeave').addEventListener('click',()=>{if(confirm(LIVE?.host?'Close this room for everyone?':'Leave this room?'))liveLeave();});$('lbClose').addEventListener('click',()=>liveLeave());$('lbSum').addEventListener('click',showSummary);
 function liveAns(){const H=L();if(!H||H.ph!=='live'||H.pz)return;const q=currentQ(),a=q&&answers.get(q.id);if(!a||(mode==='practice'&&a.grade==='pending'))return;
  const sel=selKeys(a),k=q.id+sel.join(',');if(H.last===k)return;H.last=k;const m={t:'a',qid:q.id,sel,ms:Date.now()-(H.qs||Date.now())};if(H.host)recPick(H.name,m);else{try{localStorage.setItem(H.pendingKey,JSON.stringify(m));}catch(e){}H.conn.send(m);}}
 const _pick=pick;pick=function(k){const H=L();if(H&&(H.ph!=='live'||H.pz)){toast(H.pz?'Paused by the host.':H.ph==='reveal'?'Time is up for this question.':'Waiting for the first question…');return;}_pick(k);liveAns();};
 const _cm=checkMulti;checkMulti=function(){_cm();liveAns();};
 const _sb=syncBar;syncBar=function(q){_sb(q);const H=L();if(!H)return;['prevBtn','clearBtn','testSubmit'].forEach(i=>$(i).disabled=true);
- $('nextBtn').disabled=!(H.host&&(H.ph==='live'||H.ph==='reveal'));if(H.host)$('nextBtn').classList.add('primary');
+ $('nextBtn').disabled=!(H.host&&!H.pz&&(H.ph==='live'||H.ph==='reveal'));if(H.host)$('nextBtn').classList.add('primary');
  const p=$('pauseBtn');p.disabled=!H.host;p.textContent=H.pz?'▶':'❚❚';p.title=H.host?(H.pz?'Resume for everyone':'Pause for everyone'):'Only the host can pause';};
-const _sp=setPaused;setPaused=function(p){if(L())return;_sp(p);};
+const _sp=setPaused;setPaused=function(p){if(L())return;_sp(p);paint();};
 $('pauseBtn').addEventListener('click',e=>{const H=L();if(!H)return;e.stopImmediatePropagation();if(H.host)hostPause();},true);
-$('nextBtn').addEventListener('click',e=>{const H=L();if(!H)return;e.stopImmediatePropagation();if(H.host){if(H.ph==='reveal')nextQ();else if(H.ph==='live')toReveal();}},true);
-const _rn=render;render=function(){_rn();liveUI();};
+$('nextBtn').addEventListener('click',e=>{const H=L();if(!H)return;e.stopImmediatePropagation();if(H.host&&!H.pz){if(H.ph==='reveal')nextQ();else if(H.ph==='live')toReveal();}},true);
+const _rn=render;render=function(){_rn();liveUI();paint();};
 function liveUI(){const H=L(),q=currentQ();if(!H||!H.cfg||!H.cfg.ids||!q||H.ci<0)return;
  const mine=answers.get(q.id),done=revealed(mine),prac=H.cfg.mode==='practice',pk=H.cpicks||{},nm=H.host?names():H.players;
  const rows=nm.map(n=>{const s=Object.hasOwn(pk,n)?pk[n]:null;let v;if(!s)v=`<span style="color:var(--muted)">${H.ph==='reveal'?'no answer':'thinking…'}</span>`;
@@ -1387,9 +1444,9 @@ function liveUI(){const H=L(),q=currentQ();if(!H||!H.cfg||!H.cfg.ids||!q||H.ci<0
   return`<div class="mine"><span>${memberName(H,n)}${n===H.name?' (you)':''}</span><span>${v}</span>${moderationControls(H,n)}</div>`;}).join('');
  const ex='';
  const p=document.createElement('div');p.id='livePanel';p.className='lpanel';
- p.innerHTML=`<div class="lhead"><b>Room ${esc(H.code)}</b><span>Question ${H.ci+1} / ${H.cfg.ids.length}</span><span id="lcd">${H.show()}</span></div>${prac?'':'<p class="dnote" style="margin:0 0 6px">Exam: friends’ answers stay hidden until the end.</p>'}${H.pz?'<p style="margin:0 0 6px;font-weight:700">⏸ Test paused by the host</p>':''}${rows}${ex}`;
+ p.innerHTML=`<div class="lhead"><b>Room ${esc(H.code)}</b><span>Question ${H.ci+1} / ${H.cfg.ids.length}</span>${prac?'':'<span id="lcd">'+H.show()+'</span>'}</div>${prac?'':'<p class="dnote" style="margin:0 0 6px">Exam: friends’ answers stay hidden until the end.</p>'}${H.pz?'<p style="margin:0 0 6px;font-weight:700">⏸ Test paused by the host</p>':''}${rows}${ex}`;
  card.append(p);}
-function hostPause(){const H=LIVE;if(!H||!H.host)return;if(H.pz){H.pz=0;H.end=Date.now()+H.pr;}else{H.pr=Math.max(0,H.end-Date.now());H.pz=1;}castPh();}
+function hostPause(){const H=LIVE;if(!H||!H.host)return;if(H.pz){if(H.cfg.watchPausedAt)H.cfg.watchStart+=Date.now()-H.cfg.watchPausedAt;delete H.cfg.watchPausedAt;H.pz=0;H.end=Date.now()+H.pr;}else{H.cfg.watchPausedAt=Date.now();H.pr=Math.max(0,H.end-Date.now());H.pz=1;}castPh();}
 
 /* ===== v5: sync hooks · reports · shared banks ===== */
 {const ks=kv.set.bind(kv);kv.set=async(k,v)=>{const r=await ks(k,v);QM.touch&&QM.touch(k);return r;};const ss=store.set;store.set=(k,v)=>{ss(k,v);if(/^(pq-state|qm-state)/.test(k)&&QM.dirty)QM.dirty();};}
