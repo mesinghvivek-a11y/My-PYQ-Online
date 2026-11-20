@@ -244,6 +244,19 @@ $('rvA').onclick=()=>{rvRead();const b=badOf(RV.r).length;RV.r=normalizeImport(R
 $('rvP').onclick=()=>{rvRead();const r=normalizeImport(RV.raw);if(!r.data)return toast('Nothing valid to publish yet.');const n=badOf(r).length;$('rvB').hidden=true;RV.res(r.data);RV=null;if(n)toast(n+' problem row(s) were left out.')};
 $('rvX').onclick=()=>{$('rvB').hidden=true;if(RV)RV.res(null);RV=null};
 $('rvL').onclick=e=>{if(e.target.id==='rvM'){rvRead();RV.show+=40;drawRv()}};
+const imgName=s=>String(s).split(/[\\/]/).pop().trim().toLowerCase();
+async function shrink(f){if(/svg|gif/i.test(f.type)||(f.size<70000&&/jpe?g|webp/i.test(f.type)))return{blob:f,ext:(f.name.split('.').pop()||'jpg').toLowerCase()};
+ const b=await createImageBitmap(f),sc=Math.min(1,1100/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=Math.round(b.width*sc);c.height=Math.round(b.height*sc);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(b,0,0,c.width,c.height);
+ return{blob:await new Promise(r=>c.toBlob(r,'image/jpeg',.85)),ext:'jpg'}}
+async function attachImages(data,id,files){const need=new Set();data.questions.forEach(q=>{(q.images||[]).forEach(n=>need.add(imgName(n)));q.options.forEach(o=>{if(o.image)need.add(imgName(o.image))})});if(!need.size)return;
+ const have=new Map([...files].map(f=>[imgName(f.name),f])),miss=[...need].filter(n=>!have.has(n));
+ if(miss.length)throw new Error('Missing picture file(s): '+miss.slice(0,6).join(', ')+(miss.length>6?' …':'')+'. Select them together with the Excel file.');
+ const urls=new Map(),list=[...need];let done=0;
+ const up=async n=>{const{blob,ext}=await shrink(have.get(n)),path=id+'/'+slug(n.replace(/\.[^.]+$/,''))+'-'+Date.now().toString(36)+'.'+ext;
+  const r=await sb().storage.from('qimg').upload(path,blob,{cacheControl:'31536000',contentType:blob.type||'image/jpeg'});if(r.error)throw new Error(/row-level|policy/i.test(r.error.message)?'Picture storage permission missing — run supabase/images.sql in Supabase.':'Picture upload failed: '+r.error.message);
+  urls.set(n,QM_CONFIG.SUPABASE_URL+'/storage/v1/object/public/qimg/'+path);toast('Uploading pictures '+(++done)+'/'+list.length+'…')};
+ for(let i=0;i<list.length;i+=4)await Promise.all(list.slice(i,i+4).map(up));
+ data.questions.forEach(q=>{if(q.images)q.images=q.images.map(n=>urls.get(imgName(n)));q.options.forEach(o=>{if(o.image)o.image=urls.get(imgName(o.image))})})}
 $('aT').onclick=()=>dlBlob(templateBlob(),'subject-template.xlsx');
 $('aGo').onclick=async()=>{let name=$('aN').value.trim();const f=$('aF').files[0];if(!name&&!f)return toast('Enter a name or choose an Excel file.');let id=slug(name);
  if(!f){const{error}=await sb().from('subjects').upsert({id,name,subtitle:$('aS').value.trim(),status:'upcoming',eta:$('aE').value.trim()||null});if(error)return toast(error.message);toast('Added as upcoming (no file yet).');await loadAll();return}
