@@ -77,7 +77,7 @@ $('edSave').onclick=async()=>{const r=ED.r,name=$('edN').value.trim();if(!name)r
  const{error}=await sb().from('subjects').update(upd).eq('id',r.id);if(error)return toast(error.message);$('edB').hidden=true;toast('Saved.');loadAll()};
 async function publish({id,name,subtitle,status,eta,data}){const row=ROWS.find(r=>r.id===id);
  if(!data||!Array.isArray(data.chapters)||!Array.isArray(data.questions)){toast('Not a valid question bank.');return false}
- const path=id+'.json',pyq=data.questions.filter(q=>q.examTags&&q.examTags.length).length;
+ const path=id+'-'+crypto.randomUUID()+'.json',pyq=data.questions.filter(q=>q.examTags&&q.examTags.length).length;
  const up=await sb().storage.from('banks').upload(path,new Blob([JSON.stringify(data)],{type:'application/json'}),{upsert:true,contentType:'application/json'});if(up.error){toast(/row-level security|policy/i.test(up.error.message)?'Storage permission missing — run supabase/storage-fix.sql in Supabase, then retry.':'Upload failed: '+up.error.message);return false}
  const{error}=await sb().from('subjects').upsert({id,name,subtitle:subtitle||'',status,eta:eta||null,chapters:data.chapters.length,questions:data.questions.length,pyq,version:row?row.version+1:1,path,updated_at:new Date().toISOString()});
  if(error){toast(error.message);return false}const sectionCount=new Set(data.chapters.map(c=>c.group).filter(Boolean)).size;toast('Published “'+name+'” · '+sectionCount+' sections · '+data.chapters.length+' chapters · '+data.questions.length+' questions.');await loadAll();return true}
