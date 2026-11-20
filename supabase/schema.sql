@@ -22,4 +22,4 @@ create policy "send report" on public.reports for insert with check(auth.uid()=u
 create policy "read own or admin" on public.reports for select using(auth.uid()=user_id or exists(select 1 from public.profiles p where p.id=auth.uid() and p.is_admin));
 create policy "admin updates" on public.reports for update using(exists(select 1 from public.profiles p where p.id=auth.uid() and p.is_admin));
 -- Make yourself admin (mentor): update public.profiles set is_admin=true where id=(select id from auth.users where email='you@example.com');
--- Live rooms use Realtime Broadcast/Presence: no table needed. Enable Realtime in project settings (default on).
+-- For hosted tests, also run supabase/live-rooms.sql.

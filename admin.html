@@ -80,7 +80,7 @@ async function publish({id,name,subtitle,status,eta,data}){const row=ROWS.find(r
  const path=id+'.json',pyq=data.questions.filter(q=>q.examTags&&q.examTags.length).length;
  const up=await sb().storage.from('banks').upload(path,new Blob([JSON.stringify(data)],{type:'application/json'}),{upsert:true,contentType:'application/json'});if(up.error){toast(/row-level security|policy/i.test(up.error.message)?'Storage permission missing — run supabase/storage-fix.sql in Supabase, then retry.':'Upload failed: '+up.error.message);return false}
  const{error}=await sb().from('subjects').upsert({id,name,subtitle:subtitle||'',status,eta:eta||null,chapters:data.chapters.length,questions:data.questions.length,pyq,version:row?row.version+1:1,path,updated_at:new Date().toISOString()});
- if(error){toast(error.message);return false}toast('Published “'+name+'”.');await loadAll();return true}
+ if(error){toast(error.message);return false}const sectionCount=new Set(data.chapters.map(c=>c.group).filter(Boolean)).size;toast('Published “'+name+'” · '+sectionCount+' sections · '+data.chapters.length+' chapters · '+data.questions.length+' questions.');await loadAll();return true}
 /* ---- Excel importer (same converter as the test portal) ---- */
 const h32=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return(h>>>0).toString(36);};
 function examTag(l){const ys=new Set();String(l).replace(/\b((?:19|20)\d{2})\b/g,(_,y)=>ys.add(+y));
@@ -95,24 +95,30 @@ function unzip(buf){const u8=new Uint8Array(buf),dv=new DataView(buf);let e=u8.l
  return files;}
 const fileText=async f=>new TextDecoder().decode(f.meth===0?f.data:await inflateRaw(f.data));
 const unent=s=>s.indexOf('&')<0?s:s.replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos);/gi,(m,e)=>{e=e.toLowerCase();return e==='amp'?'&':e==='lt'?'<':e==='gt'?'>':e==='quot'?'"':e==='apos'?"'":String.fromCodePoint(e[1]==='x'?parseInt(e.slice(2),16):+e.slice(1));});
-const tText=x=>{let o='',m;const re=/<t\b[^>]*?(?:\/>|>([\s\S]*?)<\/t>)/g;x=x.replace(/<rPh\b[\s\S]*?<\/rPh>/g,'');while((m=re.exec(x)))o+=m[1]||'';return unent(o);};
+const tText=x=>{let o='',m;const re=/<(?:\w+:)?t\b[^>]*?(?:\/>|>([\s\S]*?)<\/(?:\w+:)?t>)/g;x=x.replace(/<(?:\w+:)?rPh\b[\s\S]*?<\/(?:\w+:)?rPh>/g,'');while((m=re.exec(x)))o+=m[1]||'';return unent(o);};
 function parseSheet(x,ss){
- const rows=[],re=/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;let m;
+ const rows=[],re=/<(?:\w+:)?c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:\w+:)?c>)/g;let m;
  while((m=re.exec(x))){const at=m[1],r=/\br="([A-Z]+)(\d+)"/.exec(at);if(!r)continue;let ci=0;for(const ch of r[1])ci=ci*26+ch.charCodeAt(0)-64;ci--;
   const ty=(/\bt="(\w+)"/.exec(at)||[])[1],body=m[2]||'';let v='';
-  if(ty==='inlineStr')v=tText(body);else{const vm=/<v[^>]*>([\s\S]*?)<\/v>/.exec(body);v=vm?unent(vm[1]):'';if(ty==='s')v=ss[+v]??'';else if(ty==='b')v=v==='1'?'TRUE':'FALSE';else if(ty==='e')v='';}
+  if(ty==='inlineStr')v=tText(body);else{const vm=/<(?:\w+:)?v\b[^>]*>([\s\S]*?)<\/(?:\w+:)?v>/.exec(body);v=vm?unent(vm[1]):'';if(ty==='s')v=ss[+v]??'';else if(ty==='b')v=v==='1'?'TRUE':'FALSE';else if(ty==='e')v='';}
   (rows[+r[2]-1]||(rows[+r[2]-1]=[]))[ci]=v;}
  return Array.from(rows,r=>r||[]);}
 async function parseXlsx0(buf){
- const z=unzip(buf),X=n=>z[n]?fileText(z[n]):Promise.resolve(null),dp=new DOMParser(),P=s=>dp.parseFromString(s,'application/xml');
+ const z0=unzip(buf),z={};for(const k in z0)z[k.replace(/\\/g,'/').toLowerCase()]=z0[k];
+ const X=n=>z[n.toLowerCase()]?fileText(z[n.toLowerCase()]):Promise.resolve(null),at=(s,k)=>{const m=new RegExp('\\b'+k+'="([^"]*)"').exec(s);return m?unent(m[1]):''};
+ const norm=p=>{const o=[];p.split('/').forEach(s=>{if(s==='..')o.pop();else if(s&&s!=='.')o.push(s)});return o.join('/')};
  const wbx=await X('xl/workbook.xml');if(!wbx)throw new Error('This is not a valid Excel workbook.');
- const wb=P(wbx),rels=P(await X('xl/_rels/workbook.xml.rels')),sst=await X('xl/sharedStrings.xml');
- const ss=sst?(sst.match(/<si\b[\s\S]*?<\/si>|<si\s*\/>/g)||[]).map(tText):[];const out=[];
- for(const sh of wb.getElementsByTagName('sheet')){
-  const rid=sh.getAttribute('r:id'),rel=[...rels.getElementsByTagName('Relationship')].find(r=>r.getAttribute('Id')===rid);if(!rel)continue;
-  let t=rel.getAttribute('Target');t=t.startsWith('/')?t.slice(1):'xl/'+t.replace(/^\.\//,'');if(!z[t])continue;
-  out.push({name:sh.getAttribute('name')||'Sheet',rows:parseSheet(await X(t),ss)});}
- if(!out.length)throw new Error('No sheets were found in this workbook.');return out;}
+ const relx=(await X('xl/_rels/workbook.xml.rels'))||'',sst=await X('xl/sharedStrings.xml');
+ const ss=sst?(sst.match(/<(?:\w+:)?si\b[\s\S]*?<\/(?:\w+:)?si>|<(?:\w+:)?si\s*\/>/g)||[]).map(tText):[];
+ const rels={};(relx.match(/<(?:\w+:)?Relationship\b[^>]*>/g)||[]).forEach(t=>{rels[at(t,'Id')]=at(t,'Target')});
+ const out=[],used=new Set();
+ for(const t of (wbx.match(/<(?:\w+:)?sheet\b[^>]*>/g)||[])){const rid=(/\b(?:\w+:)?id="([^"]*)"/.exec(t)||[])[1],tg=rels[rid];if(!tg)continue;
+  const p=tg.startsWith('/')?norm(tg.slice(1)):norm('xl/'+tg);if(!z[p.toLowerCase()])continue;used.add(p.toLowerCase());
+  out.push({name:at(t,'name')||'Sheet',rows:parseSheet(await X(p),ss)});}
+ if(!out.length){const ws=Object.keys(z).filter(k=>/^xl\/worksheets\/[^\/]+\.xml$/.test(k)).sort((x,y)=>x.localeCompare(y,undefined,{numeric:true}));
+  for(let i=0;i<ws.length;i++)out.push({name:'Sheet'+(i+1),rows:parseSheet(await X(ws[i]),ss)});}
+ if(!out.length)throw new Error('No sheets were found in this workbook (files inside: '+Object.keys(z0).slice(0,8).join(', ')+').');return out;}
+
 function parseCsv(t){
  t=t.replace(/^\uFEFF/,'');const first=t.split('\n',1)[0],d=[',',';','\t'].map(x=>[x,first.split(x).length]).sort((a,b)=>b[1]-a[1])[0][0],rows=[];let r=[],f='',q=false;
  for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++;}else q=false;}else f+=c;}
@@ -120,7 +126,7 @@ function parseCsv(t){
  if(f!==''||r.length){r.push(f);rows.push(r);}return rows;}
 
 /* ---------- sheet rows → subject ---------- */
-function normAns(s,opts){let t=String(s||'').trim();if(!t)return[];const low=t.toLowerCase(),i=opts.findIndex(o=>o&&String(o).trim().toLowerCase()===low);if(i>=0)return['abcdef'[i]];
+function normAns(s,opts){let t=String(s||'').trim();if(!t)return[];if(/^[^A-Za-z0-9]+$/.test(t)||/^(n\/?a|nil|tbd)$/i.test(t))return[];const low=t.toLowerCase(),i=opts.findIndex(o=>o&&String(o).trim().toLowerCase()===low);if(i>=0)return['abcdef'[i]];
  t=low.replace(/^(?:correct\s+)?(?:answer|ans|option|opt|key)\s*[:\-–.]?\s*/,'').replace(/[().\[\]:]/g,' ');
  return t.split(/[\s,;&\/|]+/).filter(x=>x&&x!=='and'&&x!=='or').map(x=>/^[1-6]$/.test(x)?'abcdef'[+x-1]:x.replace(/[^a-z0-9]/g,'')).filter(Boolean);}
 function rowsToRaw(rows,info){
@@ -194,8 +200,16 @@ function normalizeImport(raw){
  const err=[];if(!raw||typeof raw!=='object'||Array.isArray(raw))return{err:['The file must contain a JSON object or an Excel sheet with a heading row.']};
  const name=String(raw.subject||raw.name||'').trim()||'Imported subject';
  if(!Array.isArray(raw.questions)||!raw.questions.length)return{err:['No questions were found in the file.']};
- const chs=[],byNo=new Map(),byT=new Map(),explicit=Array.isArray(raw.chapters)&&raw.chapters.length>0;
- const addCh=(no,title,group)=>{const c={no,title:String(title),group:group||''};chs.push(c);byNo.set(no,c);byT.set(c.title.toLowerCase(),c);return c;};
+ const chs=[],byNo=new Map(),byTitle=new Map(),explicit=Array.isArray(raw.chapters)&&raw.chapters.length>0;
+ const fold=value=>String(value??'').trim().toLowerCase();
+ function addCh(no,title,group){
+  const c={no,title:String(title).trim(),group:String(group||'').trim()};
+  chs.push(c);byNo.set(no,c);
+  const key=fold(c.title);
+  if(!byTitle.has(key))byTitle.set(key,[]);
+  byTitle.get(key).push(c);
+  return c;
+ }
  (explicit?raw.chapters:[]).forEach((c,i)=>{const o=c&&typeof c==='object'?c:{title:c};addCh(+o.no||i+1,o.title||o.name||'Chapter '+(i+1),String(o.group||o.category||''));});
  const qs=[],cnt=new Map(),seen=new Set();
  raw.questions.forEach((r,i)=>{const at=(r&&r._row?'Row '+r._row:'Question #'+(i+1))+': ';if(!r||typeof r!=='object'){err.push(at+'not an object.');return;}
@@ -204,11 +218,26 @@ function normalizeImport(raw){
   opts=opts.map(o=>String(o&&typeof o==='object'?o.text??'':o??'').trim());if(opts.some((o,j)=>!o&&!(r.optImages&&r.optImages[j]))){err.push(at+'an option cell is empty between filled options.');return;}
   const keys='abcdef'.slice(0,opts.length).split('');let a=r.answer??r.correct;a=a==null||a===''?[]:Array.isArray(a)?a:String(a).split(/[\s,;&\/]+/);
   a=[...new Set(a.map(x=>String(x).trim().toLowerCase().replace(/[().]/g,'')).filter(Boolean))];if(a.some(x=>!keys.includes(x))){err.push(at+'Answer “'+(Array.isArray(r.answer)?r.answer.join(','):r.answer)+'” must be one of '+keys.map(k=>k.toUpperCase()).join(', ')+'.');return;}
-  const cr=r.chapter;let ch;
-  if(cr==null||cr==='')ch=chs[0]||addCh(1,'General','');
-  else{ch=typeof cr==='number'?byNo.get(cr):(byT.get(String(cr).trim().toLowerCase())||byNo.get(+cr));
-   if(!ch){if(typeof cr==='number'&&explicit){err.push(at+'chapter '+cr+' is not listed in "chapters".');return;}ch=addCh(typeof cr==='number'?cr:(chs.reduce((m,c)=>Math.max(m,c.no),0)+1),typeof cr==='number'?'Chapter '+cr:String(cr).trim(),'');}}
-  if(!ch.group&&(r.group||r.category))ch.group=String(r.group||r.category).trim();
+  const cr=r.chapter,group=String(r.group||r.category||'').trim();
+  let ch;
+  if(typeof cr==='number'){
+   ch=byNo.get(cr);
+   if(!ch&&explicit){err.push(at+'chapter '+cr+' is not listed in "chapters".');return;}
+   if(!ch)ch=addCh(cr,'Chapter '+cr,group);
+  }else{
+   const missing=cr==null||String(cr).trim()==='';
+   const title=missing?'General':String(cr).trim();
+   const candidates=byTitle.get(fold(title))||[];
+   if(group){
+    ch=candidates.find(c=>fold(c.group)===fold(group));
+    if(!ch&&candidates.length===1&&!candidates[0].group)ch=candidates[0];
+   }else if(candidates.length>1){
+    err.push(at+'chapter "'+title+'" appears in multiple sections. Enter its Group.');return;
+   }else ch=candidates[0];
+   if(!ch&&!candidates.length)ch=missing?(group?undefined:chs[0]):byNo.get(+cr);
+   if(!ch)ch=addCh(chs.reduce((max,c)=>Math.max(max,c.no),0)+1,title,group);
+  }
+  if(group&&!ch.group)ch.group=group;
   const n=(cnt.get(ch.no)||0)+1;cnt.set(ch.no,n);let id='U'+h32(ch.title+'|'+text),dd=0;while(seen.has(id))id='U'+h32(ch.title+'|'+text)+'_'+(++dd);seen.add(id);
   const ex=Array.isArray(r.exams)?r.exams:r.exams?[r.exams]:[];
   qs.push({id,chapterNo:ch.no,chapter:ch.title,number:n,pdfPage:'',bookPage:r.page?String(r.page):'',prompt:text,...(r.images&&r.images.length?{images:r.images}:{}),options:opts.map((t,j)=>({key:keys[j],sourceLabel:keys[j],text:t,...(r.optImages&&r.optImages[j]?{image:r.optImages[j]}:{})})),correct:a,answerRaw:a.length?'Ans. ('+a.join(' & ')+')':'',type:a.length>1?'Multiple answer':'Multiple choice',explanation:String(r.explanation||''),examTags:ex.filter(Boolean).map(examTag),attemptable:true,gradeable:a.length>0,reviewFlags:[]});});
@@ -230,7 +259,7 @@ function drawRv(){const{raw,r}=RV,bad=badOf(r),items=bad.map(m=>({m,i:rvIdx(raw,
  bad.forEach(m=>{const t=rvTxt(m).replace(/“[^”]*”/,'“…”').replace(/\(found \d+\)/,'').trim();gr[t]=(gr[t]||0)+1});
  $('rvS').innerHTML=(r.data?`<b>${r.data.questions.length}</b> questions are ready. `:'No valid questions yet. ')+`<b>${bad.length}</b> row(s) have problems. Fix them below and press <b>Apply fixes</b>, or publish without them.`;
  $('rvSum').innerHTML=Object.entries(gr).sort((x,y)=>y[1]-x[1]).slice(0,6).map(([t,n])=>`<span class="chip b" style="white-space:normal">${n}× ${esc(t)}</span>`).join(' ');
- $('rvL').innerHTML=items.slice(0,RV.show).map(x=>{const q=raw.questions[x.i],n=Math.min(6,Math.max(4,(q.options||[]).length));
+ $('rvL').innerHTML=items.slice(0,RV.show).map(x=>{const q=raw.questions[x.i],mx=Math.max(-1,...(q.answer||[]).map(l=>'abcdef'.indexOf(l))),n=Math.min(6,Math.max(4,(q.options||[]).length,mx+1));
   return`<div class="rvc" data-i="${x.i}"><div class="bad">Sheet row ${esc(q._row||x.i+1)} · ${esc(rvTxt(x.m))}</div><textarea data-q>${esc(q.question||'')}</textarea>${Array.from({length:n},(_,k)=>`<div class="rvo"><b>${'ABCDEF'[k]}</b><input data-o="${k}" value="${esc((q.options||[])[k]||'')}"></div>`).join('')}<div class="rvo"><b>Ans</b><input data-a value="${esc((q.answer||[]).join(', ').toUpperCase())}" placeholder="e.g. B   or   A, C"></div></div>`}).join('')+(items.length>RV.show?`<button class="btn" id="rvM" type="button">Show ${Math.min(40,items.length-RV.show)} more</button>`:'');
  $('rvP').disabled=!r.data}
 function rvRead(){const{raw}=RV;document.querySelectorAll('#rvL .rvc').forEach(el=>{const q=raw.questions[+el.dataset.i];q.question=el.querySelector('[data-q]').value.trim();const o=[...el.querySelectorAll('[data-o]')].map(i=>i.value.trim());let n=o.length;while(n>0&&!o[n-1])n--;q.options=o.slice(0,n);q.optImages=(q.optImages||[]).slice(0,n);q.answer=normAns(el.querySelector('[data-a]').value,q.options)})}
@@ -238,6 +267,19 @@ $('rvA').onclick=()=>{rvRead();const b=badOf(RV.r).length;RV.r=normalizeImport(R
 $('rvP').onclick=()=>{rvRead();const r=normalizeImport(RV.raw);if(!r.data)return toast('Nothing valid to publish yet.');const n=badOf(r).length;$('rvB').hidden=true;RV.res(r.data);RV=null;if(n)toast(n+' problem row(s) were left out.')};
 $('rvX').onclick=()=>{$('rvB').hidden=true;if(RV)RV.res(null);RV=null};
 $('rvL').onclick=e=>{if(e.target.id==='rvM'){rvRead();RV.show+=40;drawRv()}};
+const imgName=s=>String(s).split(/[\\/]/).pop().trim().toLowerCase();
+async function shrink(f){if(/svg|gif/i.test(f.type)||(f.size<70000&&/jpe?g|webp/i.test(f.type)))return{blob:f,ext:(f.name.split('.').pop()||'jpg').toLowerCase()};
+ const b=await createImageBitmap(f),sc=Math.min(1,1100/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=Math.round(b.width*sc);c.height=Math.round(b.height*sc);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(b,0,0,c.width,c.height);
+ return{blob:await new Promise(r=>c.toBlob(r,'image/jpeg',.85)),ext:'jpg'}}
+async function attachImages(data,id,files){const need=new Set();data.questions.forEach(q=>{(q.images||[]).forEach(n=>need.add(imgName(n)));q.options.forEach(o=>{if(o.image)need.add(imgName(o.image))})});if(!need.size)return;
+ const have=new Map([...files].map(f=>[imgName(f.name),f])),miss=[...need].filter(n=>!have.has(n));
+ if(miss.length)throw new Error('Missing picture file(s): '+miss.slice(0,6).join(', ')+(miss.length>6?' …':'')+'. Select them together with the Excel file.');
+ const urls=new Map(),list=[...need];let done=0;
+ const up=async n=>{const{blob,ext}=await shrink(have.get(n)),path=id+'/'+slug(n.replace(/\.[^.]+$/,''))+'-'+Date.now().toString(36)+'.'+ext;
+  const r=await sb().storage.from('qimg').upload(path,blob,{cacheControl:'31536000',contentType:blob.type||'image/jpeg'});if(r.error)throw new Error(/row-level|policy/i.test(r.error.message)?'Picture storage permission missing — run supabase/images.sql in Supabase.':'Picture upload failed: '+r.error.message);
+  urls.set(n,QM_CONFIG.SUPABASE_URL+'/storage/v1/object/public/qimg/'+path);toast('Uploading pictures '+(++done)+'/'+list.length+'…')};
+ for(let i=0;i<list.length;i+=4)await Promise.all(list.slice(i,i+4).map(up));
+ data.questions.forEach(q=>{if(q.images)q.images=q.images.map(n=>urls.get(imgName(n)));q.options.forEach(o=>{if(o.image)o.image=urls.get(imgName(o.image))})})}
 $('aT').onclick=()=>dlBlob(templateBlob(),'subject-template.xlsx');
 $('aGo').onclick=async()=>{let name=$('aN').value.trim();const f=$('aF').files[0];if(!name&&!f)return toast('Enter a name or choose an Excel file.');let id=slug(name);
  if(!f){const{error}=await sb().from('subjects').upsert({id,name,subtitle:$('aS').value.trim(),status:'upcoming',eta:$('aE').value.trim()||null});if(error)return toast(error.message);toast('Added as upcoming (no file yet).');await loadAll();return}

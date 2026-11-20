@@ -44,22 +44,6 @@ QM.signIn=async()=>{await QM.load();await sb.auth.signInWithOAuth({provider:'goo
 QM.signOut=async()=>{await sb.auth.signOut();QM.user=null;emit('auth')};
 QM.report=async r=>{if(QM.user&&sb){const{error}=await sb.from('reports').insert(r);if(!error)return true}let q=[];try{q=JSON.parse(localStorage.getItem('qm-rq')||'[]')}catch(e){}q.push(r);localStorage.setItem('qm-rq',JSON.stringify(q));return false};
 QM.subjects=async()=>{const ck='cache:subjects';if(!enabled)return[];try{await Promise.race([QM.load(),new Promise((_,j)=>setTimeout(j,4000))]);const r=await Promise.race([sb.from('subjects').select('*').order('sort').order('created_at'),new Promise((_,j)=>setTimeout(j,5000))]);if(r.error)throw r.error;await tx('readwrite',s=>s.put(r.data,ck));return r.data}catch(e){return(await QM.kvGet(ck))||[]}};
-QM.bank=async row=>{const k='bank:'+row.id,c=await QM.kvGet(k);if(c&&c.v===row.version)return c.data;try{const r=await fetch(C.SUPABASE_URL+'/storage/v1/object/public/banks/'+row.path+'?v='+row.version);if(!r.ok)throw 0;const data=await r.json();await tx('readwrite',s=>s.put({v:row.version,data},k));return data}catch(e){if(c)return c.data;throw e}};
+QM.bank=async (row,onStale)=>{const k='bank:'+row.id,c=await QM.kvGet(k);if(c&&c.v===row.version)return c.data;try{const r=await fetch(C.SUPABASE_URL+'/storage/v1/object/public/banks/'+row.path+'?v='+row.version);if(!r.ok)throw 0;const data=await r.json();await tx('readwrite',s=>s.put({v:row.version,data},k));return data}catch(e){if(c){if(onStale)onStale();return c.data}throw e}};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)emit('resume')});addEventListener('pageshow',e=>{if(e.persisted)emit('resume')});
-/* PeerJS-compatible shim over Supabase Realtime (broadcast + presence): no public relays, no size cap on rooms */
-const rid=()=>Math.random().toString(36).slice(2,10);
-window.Peer=function(hostId){const me=hostId||rid(),ev={},self=this,em=(e,a)=>(ev[e]||[]).forEach(f=>f(a));let ch=null;
- self.on=(e,f)=>{(ev[e]=ev[e]||[]).push(f)};self.destroy=()=>{try{ch&&sb.removeChannel(ch)}catch(e){}};
- const open=room=>ch=sb.channel('qm:'+room.replace(/^qm-/,''),{config:{broadcast:{self:false,ack:false},presence:{key:me}}});
- const conn=send=>{const h={};return{on:(e,f)=>{(h[e]=h[e]||[]).push(f)},emit:(e,a)=>(h[e]||[]).forEach(f=>f(a)),send}};
- if(hostId){const c=open(hostId),cs={};
-  self.bc=m=>c.send({type:'broadcast',event:'m',payload:{to:'*',msg:m}});
-  c.on('broadcast',{event:'m'},({payload:p})=>{if(p.to!=='host')return;let k=cs[p.from];if(!k){k=cs[p.from]=conn(m=>c.send({type:'broadcast',event:'m',payload:{to:p.from,msg:m}}));em('connection',k)}k.emit('data',p.msg)});
-  c.on('presence',{event:'leave'},({key})=>{const k=cs[key];if(k){delete cs[key];k.emit('close')}});
-  c.subscribe(s=>{if(s==='SUBSCRIBED')setTimeout(async()=>{const st=c.presenceState();if(Object.keys(st).some(k=>k!==me&&st[k].some(x=>x.host))){em('error',{type:'unavailable-id'});return}await c.track({host:1});em('open',me)},700)})}
- else{setTimeout(()=>em('open',me));
-  self.connect=hid=>{const c=open(hid),k=conn(m=>c.send({type:'broadcast',event:'m',payload:{to:'host',from:me,msg:m}}));
-   c.on('broadcast',{event:'m'},({payload:p})=>{if(p.to===me||p.to==='*')k.emit('data',p.msg)});
-   c.on('presence',{event:'leave'},({leftPresences:l})=>{if((l||[]).some(x=>x.host))k.emit('close')});
-   c.subscribe(async s=>{if(s!=='SUBSCRIBED')return;await c.track({});let n=0;const t=setInterval(()=>{const st=c.presenceState();if(Object.keys(st).some(x=>st[x].some(y=>y.host))){clearInterval(t);k.emit('open')}else if(++n>25){clearInterval(t);em('error',{type:'peer-unavailable'})}},300)});return k}}};
 })();
