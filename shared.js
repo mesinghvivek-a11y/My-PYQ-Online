@@ -40,7 +40,7 @@ QM.init=async(w=2500)=>{if(!enabled)return;if(!QM.inited){QM.inited=1;try{await 
  sb.auth.onAuthStateChange((ev,s)=>{const u=s?s.user:null,was=QM.user;QM.user=u;if(u&&(!was||was.id!==u.id))setTimeout(after,0);if(!u&&was){QM.isAdmin=false;emit('auth')}});
  if(QM.user)QM.ready=after()}
  if(QM.ready&&w)await Promise.race([QM.ready,new Promise(r=>setTimeout(r,w))])};
-QM.signIn=async()=>{await QM.load();await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}})};
+QM.signIn=async()=>{await QM.load();await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname+location.search}})};
 QM.signOut=async()=>{await sb.auth.signOut();QM.user=null;emit('auth')};
 QM.report=async r=>{if(QM.user&&sb){const{error}=await sb.from('reports').insert(r);if(!error)return true}let q=[];try{q=JSON.parse(localStorage.getItem('qm-rq')||'[]')}catch(e){}q.push(r);localStorage.setItem('qm-rq',JSON.stringify(q));return false};
 QM.subjects=async()=>{const ck='cache:subjects';if(!enabled)return[];try{await Promise.race([QM.load(),new Promise((_,j)=>setTimeout(j,4000))]);const r=await Promise.race([sb.from('subjects').select('*').order('sort').order('created_at'),new Promise((_,j)=>setTimeout(j,5000))]);if(r.error)throw r.error;await tx('readwrite',s=>s.put(r.data,ck));return r.data}catch(e){return(await QM.kvGet(ck))||[]}};

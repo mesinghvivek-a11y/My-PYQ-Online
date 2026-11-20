@@ -225,7 +225,7 @@ body[data-stage=active] #fbar,body[data-stage=setup] #shell,body[data-stage=setu
 body[data-stage=review] #fbar,body[data-stage=setup] #fbar{position:static!important;inset:auto!important;transform:none!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;display:block!important;width:min(960px,calc(100% - 32px))!important;max-height:none!important;margin:28px auto!important;padding:clamp(16px,3vw,32px)!important;border:1px solid var(--line);border-radius:22px;background:var(--surface);box-shadow:var(--shadow)}
 #fbar .filters{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(165px,100%),1fr));gap:12px}
 .setuphead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}.setuphead h2,#routeDialog h2{margin:0;font-size:clamp(22px,3vw,32px);letter-spacing:-.04em}.setuphead p{margin:4px 0;color:var(--muted)}#routeDialog{width:min(390px,90vw);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:var(--shadow)}#routeDialog::backdrop{background:#141e34aa}.routeChoices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}.routeChoices button{height:52px}#routeClose{float:right}.memberName{font:inherit;color:var(--brand);border:0;background:transparent;padding:5px;cursor:pointer;text-decoration:underline}.room-member-actions[hidden]{display:none!important}
-</style></head>
+</style><style>.chapterBox{grid-column:1/-1;border:1px solid var(--line);background:var(--surface2);border-radius:14px;padding:12px 15px}.chapterBox summary{cursor:pointer;font-weight:700}.chapterBox summary span{float:right;font-weight:500;color:var(--muted)}.chapterBox .chpick{background:var(--surface)}#mkMarks,#mkNeg{width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;color:var(--ink);background:var(--surface)}</style></head>
 <body data-stage="setup">
 <div class="warnbar" id="warnBar" hidden></div>
 <header class="top" id="top">
@@ -252,7 +252,8 @@ body[data-stage=review] #fbar,body[data-stage=setup] #fbar{position:static!impor
  <div class="filters"><label class="sel" id="groupWrap"><span id="groupLbl">Era</span><select id="groupFilter"><option value="all">All</option></select></label>
    <label class="sel"><span>Exam</span><select id="examFilter"><option value="all">All exams</option></select></label>
    <label class="sel" id="yearWrap"><span>Year</span><select id="yearFilter"><option value="all">All years</option></select></label>
-   <label class="sel wide"><span>Chapter</span><select id="chapterFilter"><option value="all">All chapters</option></select></label>
+   <details class="chapterBox"><summary>Chapters <span id="chSummary">All chapters</span></summary><div class="dhead" style="margin-top:12px;align-items:center"><b style="font-size:13px">Chapters <small style="font-weight:500;color:var(--muted)">· select any combination</small></b><span><button class="btn" id="mkAll" type="button" style="height:30px">All</button> <button class="btn" id="mkNone" type="button" style="height:30px">None</button></span></div>
+ <div class="chpick" id="mkChs"></div></details>
    <label class="sel" id="viewWrap"><span>Show</span><select id="viewFilter"><option value="all">All questions</option><option value="unattempted">Unattempted</option><option value="incorrect">Incorrect</option><option value="flagged">Flagged</option><option value="due">Due for revision</option><option value="everwrong">Missed before</option><option value="weak">Weak: under 60%</option><option value="new">Never attempted</option><option value="noted">With my notes</option></select></label>
    <input class="search" id="searchBox" type="search" placeholder="Search questions…" aria-label="Search questions and explanations">
    <button class="btn" id="shuffleBtn" type="button" title="Shuffle the questions in this view" aria-label="Reshuffle">⇄<span class="lbl"> Reshuffle</span></button>
@@ -318,14 +319,13 @@ body[data-stage=review] #fbar,body[data-stage=setup] #fbar{position:static!impor
  <div class="mockgrid" style="margin-bottom:6px"><div class="seg" id="mkWho" hidden><button type="button" data-w="host" class="on">Host room</button><button type="button" data-w="join">Join room</button></div><div class="seg" id="mkModeSeg"><button type="button" data-m="practice" class="on">Practice</button><button type="button" data-m="exam">Exam</button></div></div>
  <div id="mkJoin" hidden><div class="impname"><label>Room code<input id="mkCode" maxlength="8" autocapitalize="characters" autocomplete="off" placeholder="e.g. K7M2Q"></label></div></div>
  <div class="impname" id="mkNameW"><label>Your name<input id="mkName" maxlength="16" autocomplete="off" placeholder="Shown to friends"></label></div>
- <div id="mkCfg"><div class="dhead" style="margin-top:12px;align-items:center"><b style="font-size:13px">Chapters <small style="font-weight:500;color:var(--muted)">· select any combination</small></b><span><button class="btn" id="mkAll" type="button" style="height:30px">All</button> <button class="btn" id="mkNone" type="button" style="height:30px">None</button></span></div>
- <div class="chpick" id="mkChs"></div><p class="dnote" id="mkAvail" style="margin:6px 0 0"></p>
+ <div id="mkCfg"><p class="dnote" id="mkAvail" style="margin:6px 0 0"></p>
  <div class="mockgrid">
   <label class="sel"><span>Questions</span><select id="mkN"><option>10</option><option selected>25</option><option>50</option><option>100</option><option>200</option><option value="9999">All available</option></select></label>
   <label class="sel"><span>Draw from</span><select id="mkSrc"><option value="all">Any question</option><option value="new">Unattempted</option><option value="due">Due for revision</option><option value="wrong">Missed before</option><option value="weak">Weak: under 60%</option></select></label>
   <label class="sel solo-only"><span>Time limit</span><select id="mkT"><option value="0">No limit</option><option value="10">10 min</option><option value="20">20 min</option><option value="30" selected>30 min</option><option value="60">60 min</option><option value="120">120 min</option></select></label>
   <label class="sel host-only" hidden><span>Seconds per question</span><select id="mkQS"><option>20</option><option>30</option><option selected>40</option><option>45</option><option>60</option><option>90</option><option>120</option></select></label>
-  <label class="sel"><span>Negative marking</span><select id="mkNeg"><option value="0">None</option><option value="0.25">¼ per wrong</option><option value="0.33">⅓ per wrong</option><option value="0.5">½ per wrong</option></select></label>
+  <label class="sel"><span>Marks per correct answer</span><input id="mkMarks" type="number" min="0.01" step="0.01" value="1"></label><label class="sel"><span>Deduction per wrong answer</span><input id="mkNeg" type="number" min="0" step="0.01" value="0"></label>
  </div>
  <label class="chk"><input type="checkbox" id="mkShuf" checked><span>Shuffle question order</span></label><label class="chk"><input type="checkbox" id="mkBal"><span>Balance across chapters (equal share from each)</span></label></div>
  <label class="chk" id="mkAloneW" hidden><input type="checkbox" id="mkAlone"><span>Just me — no room needed (works offline)</span></label><div class="dfoot" style="justify-content:flex-end"><button class="btn primary" id="mkGo" type="button">Start session</button></div>
@@ -344,7 +344,7 @@ let KEY='',byId=new Map();
 let filtered=[],order=[],current=0,selected=null,shuffled=false,submitted=false,elapsed=0,timer=null,mode='practice',retryIds=null,search='',fontScale=+(store.get('pq-font')||1)||1;
 let paused=false;
 const answers=new Map(),flags=new Set(),spent=new Map();
-const examFilter=$('examFilter'),groupFilter=$('groupFilter'),yearFilter=$('yearFilter'),chapterFilter=$('chapterFilter'),viewFilter=$('viewFilter'),card=$('questionCard'),navList=$('navList');
+const examFilter=$('examFilter'),groupFilter=$('groupFilter'),yearFilter=$('yearFilter'),viewFilter=$('viewFilter'),card=$('questionCard'),navList=$('navList');
 
 
 const stateFor=q=>answers.get(q.id)||null,currentQ=()=>order[current]||null,revealed=a=>!!a&&a.grade!=='pending';
@@ -388,8 +388,8 @@ function matchQ(q){
  if(retryIds)return retryIds.has(q.id);return setupMatch(q);
 }
 function setupMatch(q,ignoreChapter=false){
- const ex=examFilter.value,ch=chapterFilter.value,v=viewFilter.value,gp=groupFilter.value,yr=yearFilter.value,a=answers.get(q.id);
- if(!ignoreChapter&&ch!=='all'&&String(q.chapterNo)!==ch)return false;if(gp!=='all'&&q.group!==gp)return false;
+ const ex=examFilter.value,v=viewFilter.value,gp=groupFilter.value,yr=yearFilter.value,a=answers.get(q.id);
+ if(!ignoreChapter&&chosenChapters.size&&!chosenChapters.has(q.chapterNo))return false;if(gp!=='all'&&q.group!==gp)return false;
  if((ex!=='all'||yr!=='all')&&!q.examTags.some(t=>(ex==='all'||(t.family||t.label)===ex)&&(yr==='all'||yrsOf(t).includes(+yr))))return false;
  if(v==='unattempted'&&a)return false;if(v==='incorrect'&&!(a&&a.grade==='wrong'))return false;if(v==='flagged'&&!flags.has(q.id))return false;
  if(v==='due'||v==='everwrong'||v==='weak'||v==='new'||v==='noted'){const s=QS[q.id];if(v==='due'&&!(s&&s.d<=Date.now()))return false;if(v==='everwrong'&&!(s&&s.w))return false;if(v==='weak'&&!(s&&s.a&&s.c/s.a<.6))return false;if(v==='new'&&s)return false;if(v==='noted'&&!NOTES[q.id])return false;}
@@ -404,15 +404,38 @@ function saveNow(){clearTimeout(_st);if(!KEY)return;store.set(KEY,JSON.stringify
 function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,4200);}
 function restore(){
  const raw=store.get(KEY);if(!raw)return null;
- try{const s=JSON.parse(raw);if(!s||!s.a||!s.a.length&&!s.e)return null;
+ try{const s=JSON.parse(raw);if(!QM.user&&!s?.s)return null;if(s?.x?.account&&s.x.account!==QM.user?.id)return null;if(!s||!s.a||!s.a.length&&!s.e)return null;
   s.a.forEach(([id,a])=>{if(byId.has(id))answers.set(id,a)});(s.f||[]).forEach(id=>byId.has(id)&&flags.add(id));(s.t||[]).forEach(([id,n])=>byId.has(id)&&spent.set(id,n));
   elapsed=s.e||0;sess=s.x||{};submitted=!!s.s;mode=s.m==='exam'?'exam':'practice';return s;}catch(e){return null;}
 }
 
 /* render */
+function testRunning(){return !!(L()||(!submitted&&(sess.mock||sess.id||retryIds)));}
+let leavingPage=false;
+function warnUnload(e){if(!leavingPage&&testRunning()){e.preventDefault();e.returnValue='';}}
+function syncExitGuard(){
+ if(testRunning()){
+  addEventListener('beforeunload',warnUnload);
+  if(!history.state?.testGuard)history.pushState({testGuard:true},'');
+ }else removeEventListener('beforeunload',warnUnload);
+}
+addEventListener('popstate',()=>{
+ if(history.state?.testGuard||!testRunning()||leavingPage)return;
+ if(!confirm('A test is running. Leave this test and go back?')){history.pushState({testGuard:true},'');return;}
+ leavingPage=true;
+ if(document.referrer||history.length>2)history.back();else location.assign('index.html');
+});
+addEventListener('pageshow',()=>{leavingPage=false;});
+document.querySelector('a[aria-label="Home"]').addEventListener('click',e=>{
+ if(!testRunning()||e.metaKey||e.ctrlKey||e.shiftKey)return;
+ if(!confirm('A test is running. Leave this test and go home?'))e.preventDefault();
+ else{leavingPage=true;setTimeout(()=>{leavingPage=false;},1000);}
+});
 function render(){
+ syncExitGuard();
  const active=!submitted&&!!(retryIds||sess.mock||sess.id||L());
  document.body.dataset.stage=active?'active':submitted?'review':'setup';
+ $('chSummary').textContent=chosenChapters.size?chosenChapters.size+' selected':'All chapters';
  if(!active&&DATA)$('poolCount').textContent=DATA.questions.filter(q=>setupMatch(q)&&q.attemptable&&q.gradeable&&q.options.length).length+' eligible questions';
 
  const q=currentQ();
@@ -454,7 +477,7 @@ function render(){
 function syncBar(q){const a=q&&stateFor(q);$('prevBtn').disabled=!q||current===0;$('nextBtn').disabled=!q||current>=order.length-1;$('clearBtn').disabled=!a||submitted;$('nextBtn').classList.toggle('primary',!!q&&(mode==='exam'||revealed(a)));}
 function setPaused(p){if(submitted)p=false;paused=p;document.body.classList.toggle('paused',p);const b=$('pauseBtn');b.textContent=p?'▶':'❚❚';b.setAttribute('aria-label',p?'Resume test':'Pause test');b.title=(p?'Resume':'Pause')+' (P)';b.disabled=submitted;if(p)stopClock();else if(!submitted)startClock();}
 function pick(key){
- const q=currentQ();if(!q||submitted)return;const a=stateFor(q);if(revealed(a))return;ensureSess();startClock();
+ const q=currentQ();if(!q||submitted||!signedIn())return;const a=stateFor(q);if(revealed(a))return;ensureSess();startClock();
  if(isMulti(q)){let s=selKeys(a).slice();s=s.includes(key)?s.filter(x=>x!==key):[...s,key];if(!s.length)answers.delete(q.id);else answers.set(q.id,{selected:s[0],sel:s,grade:'pending'});render();return;}
  if(mode==='exam'){answers.set(q.id,{selected:key,grade:'pending'});render();return;}
  selected=key;check(q);
@@ -508,6 +531,7 @@ $('testSubmit').addEventListener('click',async()=>{
 });
 $('resetTest').addEventListener('click',async()=>{if(await ask('Reset the test?','All answers, flags and the stopwatch will be cleared.','Reset'))resetAll();});
 $('retryBtn').addEventListener('click',()=>{
+ if(!signedIn())return;
  if(summaryCtx.rec){retryFromRec(summaryCtx.rec);return;}
  const ids=new Set(order.filter(q=>answers.get(q.id)?.grade==='wrong').map(q=>q.id));if(!ids.size)return;
  ids.forEach(id=>answers.delete(id));sess={eb:elapsed};retryIds=ids;submitted=false;$('testSubmit').textContent='Submit';$('summaryBackdrop').hidden=true;applyFilters();setPaused(false);startClock();
@@ -518,7 +542,7 @@ $('clearBtn').addEventListener('click',()=>{const q=currentQ();if(q&&!submitted&
 $('pauseBtn').addEventListener('click',()=>setPaused(!paused));$('resumeBtn').addEventListener('click',()=>setPaused(false));
 $('closeSummary').addEventListener('click',()=>$('summaryBackdrop').hidden=true);
 $('summaryBackdrop').addEventListener('click',e=>{if(e.target===$('summaryBackdrop'))$('summaryBackdrop').hidden=true;});
-examFilter.addEventListener('change',userFilter);chapterFilter.addEventListener('change',userFilter);viewFilter.addEventListener('change',userFilter);
+examFilter.addEventListener('change',userFilter);viewFilter.addEventListener('change',userFilter);
 let sh;$('searchBox').addEventListener('input',e=>{clearTimeout(sh);sh=setTimeout(()=>{search=e.target.value.trim().toLowerCase();userFilter();},220);});
 $('shuffleBtn').addEventListener('click',()=>{order=[...filtered];for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}shuffled=true;current=0;selected=null;render();});
 function setNavC(c){$('shell').classList.toggle('navc',c);const b=$('navCollapse');b.textContent=c?'‹':'›';b.setAttribute('aria-expanded',String(!c));b.setAttribute('aria-label',c?'Expand navigator':'Collapse navigator');b.title=(c?'Expand':'Collapse')+' (N)';store.set('pq-navc',c?'1':'0');}
@@ -565,7 +589,13 @@ const kv={db:null,
  async keys(p){const r=await this.run('readonly',s=>s.getAllKeys());if(r.ok)return(r.v||[]).filter(k=>k.startsWith(p));try{return Object.keys(localStorage).filter(k=>k.startsWith('qmkv:'+p)).map(k=>k.slice(5))}catch(e){return[]}}};
 
 /* filters */
-function fillChapters(){const g=groupFilter.value;fillSel(chapterFilter,'All chapters',DATA.chapters.filter(c=>g==='all'||c.group===g).map(c=>[String(c.no),`${String(c.no).padStart(2,'0')} · ${c.title}`]));}
+const chosenChapters=new Set();
+function fillChapters(){
+ const visible=DATA.chapters.filter(c=>groupFilter.value==='all'||c.group===groupFilter.value);
+ const allowed=new Set(visible.map(c=>c.no));
+ for(const n of chosenChapters)if(!allowed.has(n))chosenChapters.delete(n);
+ $('mkChs').innerHTML=visible.map(c=>`<label class="chk"><input type="checkbox" value="${c.no}" ${chosenChapters.has(c.no)?'checked':''}><span>${esc(c.title)}</span></label>`).join('');
+}
 function populateFilters(){
  fillSel(examFilter,'All exams',[...new Set(DATA.questions.flatMap(q=>q.examTags.map(t=>t.family||t.label)).filter(Boolean))].sort((a,b)=>a.localeCompare(b)).map(x=>[x,x]));
  const ys=[...new Set(DATA.questions.flatMap(q=>q.examTags.flatMap(yrsOf)))].sort((a,b)=>a-b);
@@ -584,7 +614,7 @@ function buildSubjectSelect(){const el=$('subjectSel');el.innerHTML='';SUBJECTS.
 async function openSubject(id,first){
  const s=SUBJECTS.find(x=>x.id===id)||SUBJECTS[0];
  if(!first){logSession(submitted?'submitted':'in-progress');saveNow();flushPersist();stopClock();}
- await ensureData(s);await loadSubjData(s);SUBJ=s;DATA=s.data;KEY=s.id==='polity'?'pq-state-v2':'qm-state:'+s.id;
+ if(SUBJ?.id!==s.id)chosenChapters.clear();await ensureData(s);await loadSubjData(s);SUBJ=s;DATA=s.data;KEY=s.id==='polity'?'pq-state-v2':'qm-state:'+s.id;
  byId=new Map(DATA.questions.map(q=>[q.id,q]));buildWords();
  answers.clear();flags.clear();spent.clear();elapsed=0;submitted=false;mode='practice';sess={};retryIds=null;search='';$('searchBox').value='';viewFilter.value='all';
  paused=false;document.body.classList.remove('paused');$('summaryBackdrop').hidden=true;
@@ -605,8 +635,8 @@ function tally(){
   const s=spent.get(q.id)||0;tt+=s;if(!slow||s>slow.s)slow={s,label:`${q.chapterNo}·${q.number}`};
   if(a.grade==='correct'){c++;r.c++}else if(a.grade==='wrong'){w++;r.w++;wrong.push({id:q.id,i,label:`${q.chapterNo}·${q.number}`,ch:q.chapter})}else if(a.grade==='ungraded')u++;
   items.push([q.id,selKeys(a).join(','),a.grade,s]);});
- return{c,w,u,att,tt,slow,wrong,total:order.length,rows:[...byCh.values()],items,neg:sess.neg||0,mock:!!sess.mock,lim:sess.lim||0};}
-function filterDesc(){const f=[],sel=x=>x.value!=='all';if(retryIds)f.push(sess.live?'Live room':sess.mock?'Custom session':'Retry missed');if(sel(groupFilter))f.push(groupFilter.value);if(sel(examFilter))f.push(examFilter.value);if(sel(yearFilter))f.push(yearFilter.value);if(sel(chapterFilter))f.push('Ch '+chapterFilter.value);if(sel(viewFilter))f.push(viewFilter.options[viewFilter.selectedIndex].text);if(search)f.push('“'+search+'”');return f.join(' · ')||'All questions';}
+ return{c,w,u,att,tt,slow,wrong,total:order.length,rows:[...byCh.values()],items,marks:sess.marks||1,neg:sess.neg||0,mock:!!sess.mock,lim:sess.lim||0};}
+function filterDesc(){const f=[],sel=x=>x.value!=='all';if(retryIds)f.push(sess.live?'Live room':sess.mock?'Custom session':'Retry missed');if(sel(groupFilter))f.push(groupFilter.value);if(sel(examFilter))f.push(examFilter.value);if(sel(yearFilter))f.push(yearFilter.value);if(chosenChapters.size)f.push('Chapters '+[...chosenChapters].join(', '));if(sel(viewFilter))f.push(viewFilter.options[viewFilter.selectedIndex].text);if(search)f.push('“'+search+'”');return f.join(' · ')||'All questions';}
 function logSession(status){
  if(!SUBJ||!sess.id||!order.length)return;const d=tally();if(!d.att)return;
  const rec={id:sess.id,subj:SUBJ.id,subjName:SUBJ.name,mode,status,st:sess.st,en:Date.now(),dur:Math.max(0,elapsed-(sess.eb||0)),filt:filterDesc(),...d};
@@ -620,7 +650,7 @@ function paintSummary(d,rec){
  summaryCtx={rec};const ex=d.mode==='exam';
  $('summaryTitle').textContent=rec?`${d.subjName} · ${d.mock?'Mock test':ex?'Test':'Practice'} session`:'Test summary';
  $('summaryTime').textContent=rec?`${fmtDate(d.st)} · ${fmt(d.dur)} · ${d.total} questions${d.status==='in-progress'?' · in progress':''}`:`Completed in ${fmt(elapsed)} · ${d.total} questions in this test`;
- if(d.mock||d.neg){const sc=Math.round((d.c-d.w*d.neg)*100)/100;$('summaryTime').textContent+=` · Score ${sc} / ${d.total}`;}$('summaryCorrect').textContent=d.c;$('summaryIncorrect').textContent=d.w;$('summaryUnattempted').textContent=d.total-d.att;$('summaryUngraded').textContent=d.u;
+ if(d.mock||d.neg){const sc=Math.round((d.c*(d.marks||1)-d.w*d.neg)*100)/100;$('summaryTime').textContent+=` · Score ${sc} / ${d.total*(d.marks||1)}`;}$('summaryCorrect').textContent=d.c;$('summaryIncorrect').textContent=d.w;$('summaryUnattempted').textContent=d.total-d.att;$('summaryUngraded').textContent=d.u;
  $('summaryAvg').textContent=d.att?mmss(Math.round(d.tt/d.att)):'–';$('summarySlow').textContent=d.slow&&d.slow.s?mmss(d.slow.s):'–';$('summarySlowQ').textContent=d.slow&&d.slow.s?`Slowest · ${d.slow.label}`:'Slowest question';
  const pct=d.c+d.w?Math.round(d.c/(d.c+d.w)*100):0;$('ringPct').textContent=pct+'%';$('ringFg').style.strokeDashoffset=402.1;
  requestAnimationFrame(()=>requestAnimationFrame(()=>$('ringFg').style.strokeDashoffset=402.1*(1-pct/100)));
@@ -641,6 +671,7 @@ async function showReview(rec,qid){
  box.innerHTML=`<div class="review"><b>${q.chapterNo}·${q.number} · ${esc(q.chapter)}</b><p class="prompt" style="font-size:16px;margin:8px 0">${esc(rfs(s,q.prompt))}</p>`+q.options.map(o=>{const ok=q.correct.includes(o.sourceLabel),pk=sel.includes(o.key);return`<div class="opt ${ok?'correct':pk?'wrong':''}"><span class="letter">${esc(o.sourceLabel.toUpperCase())}</span><span>${esc(rfs(s,o.text))}</span><span class="mark">${ok?'✓':pk?'✗':''}</span></div>`}).join('')+(q.explanation?`<details open style="margin-top:10px"><summary><b>Explanation</b></summary><div style="font-family:var(--read);font-size:15px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere">${esc(rfs(s,q.explanation))}</div></details>`:'')+'</div>';
  box.scrollIntoView({behavior:'smooth',block:'nearest'});}
 async function retryFromRec(rec){
+ if(!signedIn())return;
  const ids=new Set(rec.wrong.map(x=>x.id));if(!ids.size)return;
  if(SUBJ.id!==rec.subj){await openSubject(rec.subj);}
  else if(answers.size&&!await ask('Start a retry session?','Your current attempt in this subject will be ended (it stays in Performance).','Start retry'))return;
@@ -713,7 +744,7 @@ function refreshViewCounts(){
  for(const q of DATA.questions){const s=QS[q.id];if(!s)c.new++;else{if(s.d<=now)c.due++;if(s.w)c.everwrong++;if(s.a&&s.c/s.a<.6)c.weak++;}if(NOTES[q.id])c.noted++;}
  for(const o of viewFilter.options)if(VIEW_BASE[o.value])o.textContent=`${VIEW_BASE[o.value]} (${c[o.value]})`;return c;}
 $('reviseBtn').addEventListener('click',()=>{const c=refreshViewCounts();if(!c.due){toast('Nothing is due for revision right now — nice work!');return;}
- groupFilter.value='all';fillChapters();[examFilter,yearFilter,chapterFilter].forEach(s=>s.value='all');viewFilter.value='due';search='';$('searchBox').value='';setTab('quiz');document.body.classList.remove('fopen');userFilter();toast(`${c.due} questions due for revision.`);});
+ chosenChapters.clear();groupFilter.value='all';fillChapters();[examFilter,yearFilter].forEach(s=>s.value='all');viewFilter.value='due';search='';$('searchBox').value='';setTab('quiz');document.body.classList.remove('fopen');userFilter();toast(`${c.due} questions due for revision.`);});
 
 /* ---------- Excel / CSV reading (no external library) ---------- */
 async function inflateRaw(u8){const ds=new DecompressionStream('deflate-raw'),w=ds.writable.getWriter();w.write(u8);w.close();return new Uint8Array(await new Response(ds.readable).arrayBuffer());}
@@ -931,7 +962,14 @@ const shufA=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(
 const lab=(q,s)=>s.map(k=>((q.options.find(o=>o.key===k)||{}).sourceLabel||'?')).join(',').toUpperCase();
 let who='host',cmode='practice';
 const routeDialog=$('routeDialog');
+function signedIn(){
+ if(QM.user)return true;
+ if(!QM.enabled){toast('Sign-in is unavailable. Check your connection and site configuration.');return false;}
+ if(confirm('Sign in with Google to start or join a test?'))QM.signIn().catch(()=>toast('Sign-in could not start. Please try again.'));
+ return false;
+}
 function chooseRoute(live=false){
+ if(!signedIn())return;
  $('routeTitle').textContent=live?'Live test':'Start test';
  $('routeA').textContent=live?'Host a room':'Solo';
  $('routeB').textContent=live?'Join a room':'Live';
@@ -945,8 +983,6 @@ function chooseRoute(live=false){
 $('startPortal').onclick=()=>{if(DATA&&!L())chooseRoute();};
 $('routeClose').onclick=()=>routeDialog.close();
 function openCustom(){
- const cc=new Map(),pre=chapterFilter.value;DATA.questions.forEach(q=>{if(setupMatch(q,true)&&q.gradeable&&q.attemptable&&q.options.length)cc.set(q.chapterNo,(cc.get(q.chapterNo)||0)+1);});
- $('mkChs').innerHTML=DATA.chapters.filter(c=>cc.get(c.no)).map(c=>`<label class="chk"><input type="checkbox" value="${c.no}" ${String(c.no)===pre?'checked':''}><span>${String(c.no).padStart(2,'0')} · ${esc(c.title)}</span><em>${cc.get(c.no)}</em></label>`).join('');
  $('mkName').value=store.get('qm-name')||'';setWho(who);document.body.classList.remove('fopen');$('mockBackdrop').hidden=false;updAvail();}
 function poolOf(){
  const src=$('mkSrc').value,now=Date.now(),sel=new Set([...$('mkChs').querySelectorAll('input:checked')].map(i=>+i.value));
@@ -956,7 +992,7 @@ function updAvail(){const{sel,pool}=poolOf();$('mkAvail').textContent=`${pool.le
 function buildIds(){
  const n=+$('mkN').value,{sel,pool}=poolOf();if(!pool.length){toast('No questions match that selection.');return null;}
  let ids;
- if($('mkBal').checked&&sel.size>1){const g=[...sel].map(no=>shufA(pool.filter(q=>q.chapterNo===no))).filter(a=>a.length);ids=[];while(ids.length<n&&g.some(a=>a.length))for(const a of g)if(a.length&&ids.length<n)ids.push(a.pop());}
+ if($('mkBal').checked){const g=[...new Set(pool.map(q=>q.chapterNo))].map(no=>shufA(pool.filter(q=>q.chapterNo===no))).filter(a=>a.length);ids=[];while(ids.length<n&&g.some(a=>a.length))for(const a of g)if(a.length&&ids.length<n)ids.push(a.pop());}
  else ids=shufA(pool.slice()).slice(0,n);
  if(!$('mkShuf').checked){const ix=new Map(DATA.questions.map((q,i)=>[q.id,i]));ids.sort((a,b)=>ix.get(a.id)-ix.get(b.id));}
  return ids.map(q=>q.id);}
@@ -967,19 +1003,23 @@ function setWho(w){who=w;document.querySelectorAll('#mkWho button').forEach(b=>b
 $('mkAlone').addEventListener('change',()=>setWho(who));
 $('mkWho').addEventListener('click',e=>{const b=e.target.closest('[data-w]');if(b)setWho(b.dataset.w);});
 $('mkModeSeg').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(b){cmode=b.dataset.m;setWho(who);}});
-$('mkChs').addEventListener('change',updAvail);$('mkSrc').addEventListener('change',updAvail);
-$('mkAll').addEventListener('click',()=>{$('mkChs').querySelectorAll('input').forEach(i=>i.checked=true);updAvail();});$('mkNone').addEventListener('click',()=>{$('mkChs').querySelectorAll('input').forEach(i=>i.checked=false);updAvail();});
+function updateChapters(){chosenChapters.clear();for(const box of $('mkChs').querySelectorAll('input:checked'))chosenChapters.add(+box.value);userFilter();updAvail();}
+$('mkChs').addEventListener('change',updateChapters);$('mkSrc').addEventListener('change',updAvail);
+$('mkAll').addEventListener('click',()=>{$('mkChs').querySelectorAll('input').forEach(i=>i.checked=true);updateChapters();});$('mkNone').addEventListener('click',()=>{$('mkChs').querySelectorAll('input').forEach(i=>i.checked=false);updateChapters();});
 $('mkCancel').addEventListener('click',()=>$('mockBackdrop').hidden=true);
 function setOrder(ids){order=ids.map(id=>byId.get(id));shuffled=true;current=0;selected=null;render();}
 $('mkGo').addEventListener('click',async()=>{
+ if(!signedIn())return;
  if(who==='join')return joinRoom();
  const ids=buildIds();if(!ids)return;
- const cfg={subj:SUBJ.id,ids,mode:cmode,neg:+$('mkNeg').value,qsec:+$('mkQS').value,n:ids.length};
+ const marks=Number($('mkMarks').value);if(!Number.isFinite(marks)||marks<=0||!$('mkMarks').checkValidity()){toast('Enter a positive mark per correct answer.');return;}
+ if(!$('mkNeg').value||!$('mkNeg').checkValidity()){toast('Enter a deduction of zero or more.');return;}
+ const cfg={marks,subj:SUBJ.id,ids,mode:cmode,neg:+$('mkNeg').value,qsec:+$('mkQS').value,n:ids.length};
  if(who==='host'&&!$('mkAlone').checked)return hostRoom(cfg);
  const lim=+$('mkT').value*60;
  if(answers.size&&!await ask('Start this session?','Your current attempt in this subject will be ended (it stays in Performance).','Start'))return;
  logSession(submitted?'submitted':'ended');stopClock();answers.clear();flags.clear();spent.clear();submitted=false;elapsed=0;mode=cmode;
- retryIds=new Set(ids);sess={eb:0,lim,neg:cfg.neg,mock:1,ids};
+ retryIds=new Set(ids);sess={account:QM.user.id,eb:0,lim,marks:cfg.marks||1,neg:cfg.neg,mock:1,ids};
  $('mockBackdrop').hidden=true;$('summaryBackdrop').hidden=true;$('testSubmit').textContent='Submit';setTab('quiz');applyFilters();setOrder(ids);setPaused(false);paint();
  toast(`${ids.length} questions · ${cmode}${lim?' · '+lim/60+' min (starts when you answer the first one)':''}`);});
 
@@ -1014,6 +1054,7 @@ function finishRoomOpening(opening){
  setWho(who);
 }
 function cancelRoomOpening(){
+ ++joinLookupVersion;
  const opening=roomOpening;
  if(!opening)return;
  opening.cancelled=true;
@@ -1038,6 +1079,7 @@ function wireLink(H){
  H.show=mkShow(H);H.iv=setInterval(liveTick,250);
 }
 async function openHost(cfg,saved){
+ if(!signedIn())return;
  const opening=beginRoomOpening(saved?'Restoring room…':'Opening room…');
  if(!opening)return;
  const previous=localStorage.getItem('qm-room');
@@ -1051,7 +1093,7 @@ async function openHost(cfg,saved){
    if(opening.cancelled)return;
    code=saved?.code||Array.from(crypto.getRandomValues(new Uint8Array(5)),x=>alphabet[x%32]).join('');
    peer=opening.peer=new LiveRoomLink(code,key,true);
-   try{await peer.open(saved?'restore':'create',false);break;}
+   try{await peer.open(saved?'restore':'create',false,{cfg,name:myName(),ph:'lobby',i:-1});break;}
    catch(error){
     peer.destroy();
     if(saved||error.reason!=='unavailable'||tries===2)throw error;
@@ -1069,7 +1111,7 @@ async function openHost(cfg,saved){
    picks:new Map((saved?.picks||[]).map(([q,m])=>[q,new Map(m)])),presenceReady:false,
    i:saved?.i??-1,end:0,ci:-1,last:'',pz:saved?.pz,pr:saved?.rem
   };
-  wireLink(H);
+  wireLink(H);syncExitGuard();
   if(saved&&Number.isSafeInteger(saved.cursor))peer.cursor=saved.cursor;
   peer.onCheckpoint=()=>{if(LIVE===H&&H.ph!=='over')saveHost();};
   peer.onMessage=(connection,message)=>{if(LIVE===H)hostMsg(connection,message);};
@@ -1177,7 +1219,28 @@ function toReveal(){if(LIVE.cfg.mode==='exam')return nextQ();LIVE.ph='reveal';LI
 function nextQ(){const H=LIVE;if(!H||!H.host||H.ph==='over'||H.ph==='lobby')return;H.i++;if(H.i>=H.cfg.ids.length)return finish();H.ph='live';H.end=Date.now()+H.cfg.qsec*1000;castPh();}
 function phMsg(){const H=LIVE,pm=H.picks.get(H.cfg.ids[H.i]),pk=Object.create(null);if(pm)pm.forEach((v,n)=>{if(H.roster.has(n))pk[n]=H.cfg.mode==='exam'?[]:v.sel;});return{t:'ph',i:H.i,ph:H.ph,rem:H.pz?H.pr:H.end-Date.now(),pz:H.pz?1:0,picks:pk};}
 function castPh(){const m=phMsg();cast(m);onPh(m);saveHost();}
-function saveHost(){const H=LIVE;try{localStorage.setItem('qm-host',JSON.stringify({code:H.code,cursor:H.peer.cursor,session:H.peer.session,ownerKey:H.ownerKey,attemptId:H.attemptId,members:[...H.members],cfg:H.cfg,name:H.name,i:H.i,ph:H.ph,deadline:H.end,rem:H.pz?H.pr:Math.max(0,H.end-Date.now()),pz:H.pz?1:0,roster:[...H.roster],picks:[...H.picks].map(([q,m])=>[q,[...m]])}));localStorage.setItem('qm-room',JSON.stringify({role:'h',code:H.code,session:H.peer.session,t:Date.now()}));}catch(e){}}
+async function queueCheckpoint(H,snapshot){
+ H.pendingSnapshot=snapshot;if(H.saving)return;H.saving=true;
+ try{while(H.pendingSnapshot&&LIVE===H){
+  const next=H.pendingSnapshot;H.pendingSnapshot=null;
+  try{await H.peer.rpc('checkpoint',next);}catch(e){if(!e.reason&&LIVE===H){H.pendingSnapshot=H.pendingSnapshot||next;await new Promise(r=>setTimeout(r,1500));}else break;}
+ }}finally{H.saving=false;}
+}
+async function findHost(code){
+ if(!QM.user)return null;
+ const local=JSON.parse(localStorage.getItem('qm-host')||'null');
+ const matching=local?.ownerKey&&(!local.account||local.account===QM.user.id)&&(!code||local.code===code);
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),4000);
+ let result;
+ try{result=await QM.client().rpc('qm_host_room',{room_code:code||null}).abortSignal(controller.signal);}
+ finally{clearTimeout(timeout);}
+ const {data,error}=result;
+ if(error&&matching)return local;
+ if(error)throw new Error('Could not check your hosted room. Check your connection and the live-room SQL update.');
+ return matching&&(!data||data.session===local.session&&local.cursor>=data.cursor)?local:data;
+}
+function saveHost(){const H=LIVE;const snapshot={account:QM.user?.id,code:H.code,cursor:H.peer.cursor,session:H.peer.session,ownerKey:H.ownerKey,attemptId:H.attemptId,members:[...H.members],cfg:H.cfg,name:H.name,i:H.i,ph:H.ph,deadline:H.end,rem:H.pz?H.pr:Math.max(0,H.end-Date.now()),pz:H.pz?1:0,roster:[...H.roster],picks:[...H.picks].map(([q,m])=>[q,[...m]])};queueCheckpoint(H,snapshot);try{localStorage.setItem('qm-host',JSON.stringify(snapshot));localStorage.setItem('qm-room',JSON.stringify({role:'h',code:H.code,session:H.peer.session,t:Date.now()}));}catch(e){}}
 function onPh(m){const H=LIVE;if(!H||!H.cfg?.ids||!byId.has(H.cfg.ids[m.i]))return;const first=H.ci!==m.i;
  if(first&&m.ph==='live'){H.qs=Date.now()-(H.cfg.qsec*1000-m.rem);H.last='';}
  H.ci=m.i;H.ph=m.ph;H.end=Date.now()+m.rem;H.cpicks=m.picks;H.pz=m.pz;H.pr=m.rem;
@@ -1185,7 +1248,7 @@ function onPh(m){const H=LIVE;if(!H||!H.cfg?.ids||!byId.has(H.cfg.ids[m.i]))retu
  if(current!==m.i){current=m.i;selected=null;scrollTo({top:0});}render();}
 function finish(){const H=LIVE,ids=H.cfg.ids,neg=H.cfg.neg||0,rows=[],pk={};
  ids.forEach(id=>{pk[id]=Object.create(null);const pm=H.picks.get(id);if(pm)pm.forEach((v,n)=>{if(H.roster.has(n))pk[id][n]=v.sel;});});
- names().forEach(n=>{let c=0,w=0,t=0,att=0;ids.forEach(id=>{const v=H.picks.get(id)&&H.picks.get(id).get(n);if(!v)return;att++;t+=v.ms||0;const g=gradeOf(byId.get(id),{sel:v.sel});if(g==='correct')c++;else if(g==='wrong')w++;});rows.push({n,c,w,u:ids.length-att,t,s:Math.round((c-w*neg)*100)/100});});
+ names().forEach(n=>{let c=0,w=0,t=0,att=0;ids.forEach(id=>{const v=H.picks.get(id)&&H.picks.get(id).get(n);if(!v)return;att++;t+=v.ms||0;const g=gradeOf(byId.get(id),{sel:v.sel});if(g==='correct')c++;else if(g==='wrong')w++;});rows.push({n,c,w,u:ids.length-att,t,s:Math.round((c*(H.cfg.marks||1)-w*neg)*100)/100});});
  rows.sort((a,b)=>b.s-a.s||a.t-b.t);const res={rows,ids,pk,neg};cast({t:'end',res});liveEnd(res);}
 function liveEnd(res){const H=LIVE;if(!H)return;try{const saved=JSON.parse(localStorage.getItem('qm-room')||'null');if(saved?.session===H.peer.session){localStorage.removeItem('qm-room');if(H.host)localStorage.removeItem('qm-host');}}catch(e){}H.res=res;H.ph='over';clearInterval(H.iv);H.peer.outbox.finally(()=>H.peer.destroy());gradePending();submitted=true;setPaused(false);stopClock();logSession('submitted');$('testSubmit').textContent='Summary';render();paint();showLB();}
 function showLB(){const r=LIVE.res,t=r.rows[0];
@@ -1222,11 +1285,16 @@ function liveLeave(explicit=true){
  if(H.ph!=='over')clearLiveAttempt();
  finishRoomOpening(H.opening);paint();if(DATA)render();
 }
+let findingHost=false,joinLookupVersion=0;
 async function joinRoom(){
  const code=$('mkCode').value.trim().toUpperCase();if(!/^[A-Z0-9]{5}$/.test(code)){toast('Enter the five-character room code.');return;}
- store.set('qm-name',myName());await startGuest(code,myName(),false);
+ if(!signedIn()||roomOpening||findingHost)return;
+ const lookup=++joinLookupVersion;findingHost=true;$('mkGo').disabled=true;$('mkGo').textContent='Joining…';
+ try{const saved=await findHost(code);if(lookup!==joinLookupVersion)return;if(saved)await hostRestore(saved);else{store.set('qm-name',myName());await startGuest(code,myName(),false);}}
+ catch(e){toast(e.message);}finally{findingHost=false;if(!roomOpening){$('mkGo').disabled=false;setWho(who);}}
 }
 async function startGuest(code,name,auto){
+ if(!signedIn())return;
  const opening=beginRoomOpening(auto?'Rejoining…':'Joining…');
  if(!opening)return;
  const previous=localStorage.getItem('qm-room');
@@ -1239,7 +1307,7 @@ async function startGuest(code,name,auto){
   await peer.open('join',!auto);
   if(opening.cancelled){await peer.rpc('leave').catch(()=>{});return;}
   H=LIVE={host:false,opening,peer,code,name,ph:'wait',players:[],cfg:null,ci:-1,last:'',attemptId:'live-'+peer.memberId};
-  wireLink(H);
+  wireLink(H);syncExitGuard();
   H.conn={send:m=>peer.send(m)};
   H.pendingKey='qm-last-pick:'+peer.memberId;
   const hello=()=>peer.send({t:'hi',name:H.name});
@@ -1287,9 +1355,9 @@ async function guestMsg(H,m){
  else if(m.t==='end'&&H.cfg?.ids)liveEnd(m.res);
 }
 async function liveBegin(cfg){
- const H=LIVE;if(!SUBJECTS.some(s=>s.id===cfg.subj)){toast('You don’t have this subject — import the same subject file first.');liveLeave();return;}
+ const H=LIVE;if(!SUBJECTS.some(s=>s.id===cfg.subj)){toast('Subject unavailable. Reopen the room when the subject is available.');liveLeave(false);return;}
  if(SUBJ.id!==cfg.subj)await openSubject(cfg.subj);if(LIVE!==H)return;
- if(!cfg.ids.every(id=>byId.has(id))){toast('Your copy of this subject differs from the host’s. Import the same file.');liveLeave();return;}
+ if(!cfg.ids.every(id=>byId.has(id))){toast('Your copy of this subject differs from the host’s. Import the same file.');liveLeave(false);return;}
  const sameAttempt=sess.id===H.attemptId;
  if(!sameAttempt)logSession(submitted?'submitted':'ended');
  const prior=SESS.find(entry=>entry.id===H.attemptId);
@@ -1297,10 +1365,10 @@ async function liveBegin(cfg){
  stopClock();answers.clear();
  if(!sameAttempt){flags.clear();spent.clear();elapsed=prior?.dur||0;}
  submitted=false;FORCE.clear();mode=cfg.mode;paused=false;document.body.classList.remove('paused');
- sess={id:H.attemptId,st:started,eb:0,lim:0,neg:cfg.neg,mock:1,live:1,ids:cfg.ids};retryIds=new Set(cfg.ids);H.cfg=cfg;H.ph='wait';H.ci=-1;H.last='';
+ sess={account:QM.user.id,id:H.attemptId,st:started,eb:0,lim:0,marks:cfg.marks||1,neg:cfg.neg,mock:1,live:1,ids:cfg.ids};retryIds=new Set(cfg.ids);H.cfg=cfg;H.ph='wait';H.ci=-1;H.last='';
  ['roomBackdrop','mockBackdrop','summaryBackdrop'].forEach(i=>$(i).hidden=true);$('testSubmit').textContent='Submit';setTab('quiz');applyFilters();setOrder(cfg.ids);paint();}
-$('roomStart').addEventListener('click',async()=>{const H=LIVE;if(!H||!H.host||H.ph!=='lobby')return;H.ph='wait';H.i=-1;cast({t:'start',cfg:H.cfg});await liveBegin(H.cfg);setTimeout(()=>{if(LIVE===H)nextQ();},1800);});
-$('roomLeave').addEventListener('click',()=>liveLeave());$('lbClose').addEventListener('click',()=>liveLeave());$('lbSum').addEventListener('click',showSummary);
+$('roomStart').addEventListener('click',async()=>{const H=LIVE;if(!H||!H.host||H.ph!=='lobby')return;H.ph='wait';H.i=-1;saveHost();cast({t:'start',cfg:H.cfg});await liveBegin(H.cfg);setTimeout(()=>{if(LIVE===H)nextQ();},1800);});
+$('roomLeave').addEventListener('click',()=>{if(confirm(LIVE?.host?'Close this room for everyone?':'Leave this room?'))liveLeave();});$('lbClose').addEventListener('click',()=>liveLeave());$('lbSum').addEventListener('click',showSummary);
 function liveAns(){const H=L();if(!H||H.ph!=='live'||H.pz)return;const q=currentQ(),a=q&&answers.get(q.id);if(!a||(mode==='practice'&&a.grade==='pending'))return;
  const sel=selKeys(a),k=q.id+sel.join(',');if(H.last===k)return;H.last=k;const m={t:'a',qid:q.id,sel,ms:Date.now()-(H.qs||Date.now())};if(H.host)recPick(H.name,m);else{try{localStorage.setItem(H.pendingKey,JSON.stringify(m));}catch(e){}H.conn.send(m);}}
 const _pick=pick;pick=function(k){const H=L();if(H&&(H.ph!=='live'||H.pz)){toast(H.pz?'Paused by the host.':H.ph==='reveal'?'Time is up for this question.':'Waiting for the first question…');return;}_pick(k);liveAns();};
@@ -1382,7 +1450,11 @@ const savedTheme=store.get('pq-theme');setTheme(savedTheme?savedTheme==='dark':m
 applyFont();setNavC(store.get('pq-navc')==='1');
 new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('top').offsetHeight+'px')).observe($('top'));
 (async function boot(){
- try{await QM.init();}catch(e){}
+ try{await QM.init(0);}catch(e){}
+ const linkedAtOpen=new URLSearchParams(location.search).get('join')?.trim().toUpperCase();
+ const pointer=JSON.parse(localStorage.getItem('qm-room')||'null');
+ const hostLookup=QM.user&&(linkedAtOpen||pointer?.role!=='g')?
+  findHost(linkedAtOpen||null).catch(e=>{toast(e.message);return null;}):Promise.resolve(null);
  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();}catch(e){}
  SUBJECTS.push({id:'polity',name:'Indian Polity & Governance',builtin:true,reflow:true,sourceHtml:POLITY_SRC},
   {id:'history',name:'Indian History',builtin:true,reflow:true,sourceHtml:'<b>Source:</b> Indian History — Complete Booklet (consolidated exam papers, printed pages B9–B760). Question text, options, answer key and explanations are extracted from the supplied booklet; questions with no printed answer key are not scored.'});
@@ -1404,17 +1476,19 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
  addEventListener('online',refreshCatalog);
 
  SESS=(await kv.get('sessions'))||[];DAILY=(await kv.get('daily'))||{};Object.assign(PREFS,(await kv.get('prefs'))||{});
- const qp=new URLSearchParams(location.search),last=qp.get('s')||store.get(LS_LAST);await openSubject(SUBJECTS.some(s=>s.id===last)?last:(SUBJECTS[0]||{}).id,true);buildSubjectSelect();
+ const qp=new URLSearchParams(location.search),localHost=await hostLookup,last=localHost?.cfg?.subj||qp.get('s')||store.get(LS_LAST);await openSubject(SUBJECTS.some(s=>s.id===last)?last:(SUBJECTS[0]||{}).id,true);buildSubjectSelect();
  const linkedCode=(qp.get('join')||'').trim().toUpperCase();
  let savedRoom;
  try{savedRoom=JSON.parse(localStorage.getItem('qm-room')||'null');}catch(e){}
  const resume=savedRoom&&Date.now()-savedRoom.t<36*3600000&&(!linkedCode||linkedCode===savedRoom.code);
  if(qp.get('add')){if(QM.isAdmin)openAdd();else toast('Only admins can add subjects.');}
- if(resume&&savedRoom.role==='g'&&savedRoom.name){
+ let recovering=null;
+ if(QM.user&&(!resume||savedRoom.role==='h'||linkedCode)){
+  recovering=localHost;
+ }
+ if(recovering){toast('Restoring room '+recovering.code+'…');await hostRestore(recovering);}
+ else if(QM.user&&resume&&savedRoom.role==='g'&&savedRoom.name){
   toast('Rejoining room '+savedRoom.code+'…');rejoin(savedRoom);
- }else if(resume&&savedRoom.role==='h'){
-  const savedHost=JSON.parse(localStorage.getItem('qm-host')||'null');
-  if(savedHost?.code===savedRoom.code){toast('Restoring your room…');hostRestore(savedHost);}
  }else{
   clearLiveAttempt();
   if(linkedCode){who='join';openCustom();$('mkCode').value=linkedCode;}
@@ -1435,9 +1509,9 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
  $('fToggle').addEventListener('click',()=>open(!document.body.classList.contains('fopen')));
  $('fDone').addEventListener('click',()=>open(false));$('fScrim').addEventListener('click',()=>open(false));
  addEventListener('keydown',e=>{if(e.key==='Escape')open(false);});
- window.updateFCount=function(){let n=[groupFilter,examFilter,yearFilter,chapterFilter,viewFilter].filter(s=>s.value!=='all').length+(search?1:0)+(retryIds?1:0);const c=$('fCount');c.textContent=n;c.hidden=!n;};
+ window.updateFCount=function(){let n=[groupFilter,examFilter,yearFilter,viewFilter].filter(s=>s.value!=='all').length+(search?1:0)+(retryIds?1:0);const c=$('fCount');c.textContent=n;c.hidden=!n;};
  const af=applyFilters;applyFilters=function(){af();updateFCount();refreshViewCounts();};
- $('fClear').addEventListener('click',()=>{groupFilter.value='all';fillChapters();[examFilter,yearFilter,chapterFilter,viewFilter].forEach(s=>s.value='all');search='';$('searchBox').value='';userFilter();});
+ $('fClear').addEventListener('click',()=>{chosenChapters.clear();groupFilter.value='all';fillChapters();[examFilter,yearFilter,viewFilter].forEach(s=>s.value='all');search='';$('searchBox').value='';userFilter();});
  /* swipe left / right to move between questions */
  let x0=null,y0=0,t0=0;const c=$('questionCard');
  c.addEventListener('touchstart',e=>{const t=e.touches[0];x0=t.clientX;y0=t.clientY;t0=Date.now();},{passive:true});

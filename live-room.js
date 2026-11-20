@@ -36,6 +36,7 @@ window.LiveRoomLink = class LiveRoomLink {
       const result = reply.data;
       if (result.error) {
         const messages = {
+          signin: 'Sign in to enter a test.',
           unavailable: 'Room unavailable. Check the code or contact the host.',
           kicked: 'The host removed you. Use Join room to return.',
           superseded: 'This room is open in another tab or device.'
@@ -48,14 +49,14 @@ window.LiveRoomLink = class LiveRoomLink {
     }
   }
 
-  async open(action, manual) {
+  async open(action, manual, snapshot) {
     let result;
     try {
-      result = await this.rpc(action, {manual});
+      result = await this.rpc(action, {manual,snapshot});
     } catch (error) {
       // A dropped response can follow a committed join. Retry with the same session.
       if (error.reason || this.closed) throw error;
-      result = await this.rpc(action, {manual});
+      result = await this.rpc(action, {manual,snapshot});
     }
     this.cursor = result.cursor;
     this.hostSession = result.hostSession;
