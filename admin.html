@@ -95,24 +95,30 @@ function unzip(buf){const u8=new Uint8Array(buf),dv=new DataView(buf);let e=u8.l
  return files;}
 const fileText=async f=>new TextDecoder().decode(f.meth===0?f.data:await inflateRaw(f.data));
 const unent=s=>s.indexOf('&')<0?s:s.replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos);/gi,(m,e)=>{e=e.toLowerCase();return e==='amp'?'&':e==='lt'?'<':e==='gt'?'>':e==='quot'?'"':e==='apos'?"'":String.fromCodePoint(e[1]==='x'?parseInt(e.slice(2),16):+e.slice(1));});
-const tText=x=>{let o='',m;const re=/<t\b[^>]*?(?:\/>|>([\s\S]*?)<\/t>)/g;x=x.replace(/<rPh\b[\s\S]*?<\/rPh>/g,'');while((m=re.exec(x)))o+=m[1]||'';return unent(o);};
+const tText=x=>{let o='',m;const re=/<(?:\w+:)?t\b[^>]*?(?:\/>|>([\s\S]*?)<\/(?:\w+:)?t>)/g;x=x.replace(/<(?:\w+:)?rPh\b[\s\S]*?<\/(?:\w+:)?rPh>/g,'');while((m=re.exec(x)))o+=m[1]||'';return unent(o);};
 function parseSheet(x,ss){
- const rows=[],re=/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;let m;
+ const rows=[],re=/<(?:\w+:)?c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:\w+:)?c>)/g;let m;
  while((m=re.exec(x))){const at=m[1],r=/\br="([A-Z]+)(\d+)"/.exec(at);if(!r)continue;let ci=0;for(const ch of r[1])ci=ci*26+ch.charCodeAt(0)-64;ci--;
   const ty=(/\bt="(\w+)"/.exec(at)||[])[1],body=m[2]||'';let v='';
-  if(ty==='inlineStr')v=tText(body);else{const vm=/<v[^>]*>([\s\S]*?)<\/v>/.exec(body);v=vm?unent(vm[1]):'';if(ty==='s')v=ss[+v]??'';else if(ty==='b')v=v==='1'?'TRUE':'FALSE';else if(ty==='e')v='';}
+  if(ty==='inlineStr')v=tText(body);else{const vm=/<(?:\w+:)?v\b[^>]*>([\s\S]*?)<\/(?:\w+:)?v>/.exec(body);v=vm?unent(vm[1]):'';if(ty==='s')v=ss[+v]??'';else if(ty==='b')v=v==='1'?'TRUE':'FALSE';else if(ty==='e')v='';}
   (rows[+r[2]-1]||(rows[+r[2]-1]=[]))[ci]=v;}
  return Array.from(rows,r=>r||[]);}
 async function parseXlsx0(buf){
- const z=unzip(buf),X=n=>z[n]?fileText(z[n]):Promise.resolve(null),dp=new DOMParser(),P=s=>dp.parseFromString(s,'application/xml');
+ const z0=unzip(buf),z={};for(const k in z0)z[k.replace(/\\/g,'/').toLowerCase()]=z0[k];
+ const X=n=>z[n.toLowerCase()]?fileText(z[n.toLowerCase()]):Promise.resolve(null),at=(s,k)=>{const m=new RegExp('\\b'+k+'="([^"]*)"').exec(s);return m?unent(m[1]):''};
+ const norm=p=>{const o=[];p.split('/').forEach(s=>{if(s==='..')o.pop();else if(s&&s!=='.')o.push(s)});return o.join('/')};
  const wbx=await X('xl/workbook.xml');if(!wbx)throw new Error('This is not a valid Excel workbook.');
- const wb=P(wbx),rels=P(await X('xl/_rels/workbook.xml.rels')),sst=await X('xl/sharedStrings.xml');
- const ss=sst?(sst.match(/<si\b[\s\S]*?<\/si>|<si\s*\/>/g)||[]).map(tText):[];const out=[];
- for(const sh of wb.getElementsByTagName('sheet')){
-  const rid=sh.getAttribute('r:id'),rel=[...rels.getElementsByTagName('Relationship')].find(r=>r.getAttribute('Id')===rid);if(!rel)continue;
-  let t=rel.getAttribute('Target');t=t.startsWith('/')?t.slice(1):'xl/'+t.replace(/^\.\//,'');if(!z[t])continue;
-  out.push({name:sh.getAttribute('name')||'Sheet',rows:parseSheet(await X(t),ss)});}
- if(!out.length)throw new Error('No sheets were found in this workbook.');return out;}
+ const relx=(await X('xl/_rels/workbook.xml.rels'))||'',sst=await X('xl/sharedStrings.xml');
+ const ss=sst?(sst.match(/<(?:\w+:)?si\b[\s\S]*?<\/(?:\w+:)?si>|<(?:\w+:)?si\s*\/>/g)||[]).map(tText):[];
+ const rels={};(relx.match(/<(?:\w+:)?Relationship\b[^>]*>/g)||[]).forEach(t=>{rels[at(t,'Id')]=at(t,'Target')});
+ const out=[],used=new Set();
+ for(const t of (wbx.match(/<(?:\w+:)?sheet\b[^>]*>/g)||[])){const rid=(/\b(?:\w+:)?id="([^"]*)"/.exec(t)||[])[1],tg=rels[rid];if(!tg)continue;
+  const p=tg.startsWith('/')?norm(tg.slice(1)):norm('xl/'+tg);if(!z[p.toLowerCase()])continue;used.add(p.toLowerCase());
+  out.push({name:at(t,'name')||'Sheet',rows:parseSheet(await X(p),ss)});}
+ if(!out.length){const ws=Object.keys(z).filter(k=>/^xl\/worksheets\/[^\/]+\.xml$/.test(k)).sort((x,y)=>x.localeCompare(y,undefined,{numeric:true}));
+  for(let i=0;i<ws.length;i++)out.push({name:'Sheet'+(i+1),rows:parseSheet(await X(ws[i]),ss)});}
+ if(!out.length)throw new Error('No sheets were found in this workbook (files inside: '+Object.keys(z0).slice(0,8).join(', ')+').');return out;}
+
 function parseCsv(t){
  t=t.replace(/^\uFEFF/,'');const first=t.split('\n',1)[0],d=[',',';','\t'].map(x=>[x,first.split(x).length]).sort((a,b)=>b[1]-a[1])[0][0],rows=[];let r=[],f='',q=false;
  for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++;}else q=false;}else f+=c;}
@@ -120,7 +126,7 @@ function parseCsv(t){
  if(f!==''||r.length){r.push(f);rows.push(r);}return rows;}
 
 /* ---------- sheet rows → subject ---------- */
-function normAns(s,opts){let t=String(s||'').trim();if(!t)return[];const low=t.toLowerCase(),i=opts.findIndex(o=>o&&String(o).trim().toLowerCase()===low);if(i>=0)return['abcdef'[i]];
+function normAns(s,opts){let t=String(s||'').trim();if(!t)return[];if(/^[^A-Za-z0-9]+$/.test(t)||/^(n\/?a|nil|tbd)$/i.test(t))return[];const low=t.toLowerCase(),i=opts.findIndex(o=>o&&String(o).trim().toLowerCase()===low);if(i>=0)return['abcdef'[i]];
  t=low.replace(/^(?:correct\s+)?(?:answer|ans|option|opt|key)\s*[:\-–.]?\s*/,'').replace(/[().\[\]:]/g,' ');
  return t.split(/[\s,;&\/|]+/).filter(x=>x&&x!=='and'&&x!=='or').map(x=>/^[1-6]$/.test(x)?'abcdef'[+x-1]:x.replace(/[^a-z0-9]/g,'')).filter(Boolean);}
 function rowsToRaw(rows,info){
@@ -230,7 +236,7 @@ function drawRv(){const{raw,r}=RV,bad=badOf(r),items=bad.map(m=>({m,i:rvIdx(raw,
  bad.forEach(m=>{const t=rvTxt(m).replace(/“[^”]*”/,'“…”').replace(/\(found \d+\)/,'').trim();gr[t]=(gr[t]||0)+1});
  $('rvS').innerHTML=(r.data?`<b>${r.data.questions.length}</b> questions are ready. `:'No valid questions yet. ')+`<b>${bad.length}</b> row(s) have problems. Fix them below and press <b>Apply fixes</b>, or publish without them.`;
  $('rvSum').innerHTML=Object.entries(gr).sort((x,y)=>y[1]-x[1]).slice(0,6).map(([t,n])=>`<span class="chip b" style="white-space:normal">${n}× ${esc(t)}</span>`).join(' ');
- $('rvL').innerHTML=items.slice(0,RV.show).map(x=>{const q=raw.questions[x.i],n=Math.min(6,Math.max(4,(q.options||[]).length));
+ $('rvL').innerHTML=items.slice(0,RV.show).map(x=>{const q=raw.questions[x.i],mx=Math.max(-1,...(q.answer||[]).map(l=>'abcdef'.indexOf(l))),n=Math.min(6,Math.max(4,(q.options||[]).length,mx+1));
   return`<div class="rvc" data-i="${x.i}"><div class="bad">Sheet row ${esc(q._row||x.i+1)} · ${esc(rvTxt(x.m))}</div><textarea data-q>${esc(q.question||'')}</textarea>${Array.from({length:n},(_,k)=>`<div class="rvo"><b>${'ABCDEF'[k]}</b><input data-o="${k}" value="${esc((q.options||[])[k]||'')}"></div>`).join('')}<div class="rvo"><b>Ans</b><input data-a value="${esc((q.answer||[]).join(', ').toUpperCase())}" placeholder="e.g. B   or   A, C"></div></div>`}).join('')+(items.length>RV.show?`<button class="btn" id="rvM" type="button">Show ${Math.min(40,items.length-RV.show)} more</button>`:'');
  $('rvP').disabled=!r.data}
 function rvRead(){const{raw}=RV;document.querySelectorAll('#rvL .rvc').forEach(el=>{const q=raw.questions[+el.dataset.i];q.question=el.querySelector('[data-q]').value.trim();const o=[...el.querySelectorAll('[data-o]')].map(i=>i.value.trim());let n=o.length;while(n>0&&!o[n-1])n--;q.options=o.slice(0,n);q.optImages=(q.optImages||[]).slice(0,n);q.answer=normAns(el.querySelector('[data-a]').value,q.options)})}
