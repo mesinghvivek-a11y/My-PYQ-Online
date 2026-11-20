@@ -1,5 +1,5 @@
 # Quiz Master — deploy in ~15 minutes
-Static site (no build step). Works without Supabase as a guest/offline app; add Supabase for Google login, sync, shared banks, reports and live rooms.
+Static site (no build step). Browsing is available to guests. Starting a solo or live test requires Google sign-in through Supabase.
 
 1. **GitHub**: create a repo, upload everything in this folder, commit.
 2. **Supabase**: New project → SQL Editor → run `supabase/schema.sql`.
@@ -18,8 +18,8 @@ Pages: `index.html` landing + performance · `test.html` test portal (`?s=<subje
 2. Deploy the project files together at the root of the existing site. This includes `test.html`, `shared.js`, `live-room.js` and `sw.js`.
 3. Reload the site on both devices and create a new room. Finish tests created with the previous site version before switching versions.
 
-When someone refreshes the page or reopens a test, the room restores their name, recorded answers and current question. The same signed-in account keeps one seat across devices. Guests keep their seat in the browser profile they used to join, while its site data is retained. Opening a second tab transfers the connection to that tab. The host can resume from the browser that created the room.
+When someone refreshes the page or reopens a test, the room restores their name, recorded answers and current question. The same signed-in account keeps one seat across devices. Opening a second tab transfers the connection to that tab. The host can resume using the same account from Home or by entering the room code. Host state is saved locally and checkpointed in Supabase.
 
-The host can select **Kick** or **Block** beside a player in the lobby or on the live scoreboard. A kicked player can enter the code to return. A blocked player sees the same unavailable-room message as someone entering an unknown code. Account blocks follow the account to other devices. Guest blocks rely on the browser's saved identity. Each block applies to one room.
+The host can select **Kick** or **Block** beside a player in the lobby or on the live scoreboard. A kicked player can enter the code to return. A blocked player sees the same unavailable-room message as someone entering an unknown code. Account blocks follow the account to other devices. Each block applies to one room.
 
 Rooms expire after 36 hours. Creating another room clears expired records.

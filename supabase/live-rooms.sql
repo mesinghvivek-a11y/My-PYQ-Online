@@ -12,6 +12,16 @@ create table if not exists qm_live.rooms (
   expires_at timestamptz not null default now() + interval '36 hours'
 );
 
+alter table qm_live.rooms add column if not exists owner_id uuid;
+alter table qm_live.rooms add column if not exists checkpoint jsonb;
+create or replace function public.qm_host_room(room_code text default null) returns jsonb
+language sql stable security definer set search_path=pg_catalog,qm_live,pg_temp as $$
+ select checkpoint || jsonb_build_object('code',code,'ownerKey',owner_key,'account',owner_id)
+ from rooms where owner_id=auth.uid() and not ended and expires_at>now() and checkpoint is not null
+ and (room_code is null or code=room_code) order by expires_at desc limit 1
+$$;
+revoke all on function public.qm_host_room(text) from public,anon;
+grant execute on function public.qm_host_room(text) to authenticated;
 create table if not exists qm_live.members (
   code text references qm_live.rooms on delete cascade,
   identity_key text not null,
@@ -64,6 +74,7 @@ declare
   dest text;
   moderation_id uuid;
 begin
+  if account_id is null then return '{"error":"signin"}'; end if;
   if p_code is null or p_code !~ '^[A-Z0-9]{5}$' or p_key is null or p_session is null then
     return '{"error":"unavailable"}';
   end if;
@@ -71,7 +82,7 @@ begin
 
   if p_action = 'create' then
     delete from rooms where expires_at <= now();
-    insert into rooms (code, owner_key, host_session) values (p_code, p_key, p_session)
+    insert into rooms (code, owner_key, host_session,owner_id,checkpoint) values (p_code, p_key, p_session,account_id,p_data->'snapshot')
       on conflict do nothing;
   end if;
 
@@ -79,7 +90,7 @@ begin
   -- PostgreSQL sequence numbers alone do not guarantee commit order.
   select * into room from rooms where code = p_code and expires_at > now() for update;
   if not found then return '{"error":"unavailable"}'; end if;
-  host := room.owner_key = p_key;
+  host := room.owner_key = p_key and (room.owner_id is null or room.owner_id=account_id);
 
   if (p_action in ('create', 'restore') and not host)
     or (room.ended and p_action in ('create', 'restore', 'join')) then
@@ -137,6 +148,9 @@ begin
     select coalesce(max(seq), 0) into latest from messages where code = p_code;
     return jsonb_build_object('cursor', latest, 'hostSession', room.host_session, 'member', member.member_id);
 
+  elsif host and p_action='checkpoint' then
+    update rooms set checkpoint=p_data,owner_id=account_id where code=p_code and not ended;
+    return '{}';
   elsif host and p_action in ('kick', 'block') then
     moderation_id := (p_data->>'request')::uuid;
     if moderation_id is null then return '{"error":"invalid"}'; end if;

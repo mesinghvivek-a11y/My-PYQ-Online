@@ -1,4 +1,4 @@
-const V='qm-portal-v7',SHELL=['./','index.html','test.html','admin.html','shared.js','live-room.js','config.js','manifest.webmanifest','data/manifest.json','icon.svg'];
+const V='qm-portal-v8',SHELL=['./','index.html','test.html','admin.html','shared.js','live-room.js','config.js','manifest.webmanifest','data/manifest.json','icon.svg'];
 const ft=(r,ms)=>new Promise((res,rej)=>{const t=setTimeout(()=>rej('timeout'),ms);fetch(r,{cache:"no-store"}).then(x=>{clearTimeout(t);res(x)},e=>{clearTimeout(t);rej(e)})});
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>Promise.allSettled(SHELL.map(u=>c.add(u)))).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
