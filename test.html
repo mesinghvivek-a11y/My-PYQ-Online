@@ -219,8 +219,14 @@ body.perfmode .fbar,body.perfmode #fToggle,body.perfmode .bar2{display:none!impo
 .qimg{display:block;max-width:100%;height:auto;max-height:420px;object-fit:contain;margin:0 0 16px;border-radius:12px;border:1px solid var(--line);background:#fff;cursor:zoom-in}.oimg{display:block;max-width:100%;max-height:200px;margin-top:8px;border-radius:10px;background:#fff;cursor:zoom-in}
 #zoomB{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.85);display:grid;place-items:center;padding:12px}#zoomB img{max-width:100%;max-height:100%;background:#fff;border-radius:8px}
 </style>
-</head>
-<body>
+<style>
+#shuffleBtn,#hostBtn,#joinBtn,#modeSeg,#resetTest,#mkAloneW,#fToggle,.fextra,.fhead,#fScrim{display:none!important}
+body[data-stage=active] #fbar,body[data-stage=setup] #shell,body[data-stage=setup] .bottom,body[data-stage=setup] .bar2{display:none!important}
+body[data-stage=review] #fbar,body[data-stage=setup] #fbar{position:static!important;inset:auto!important;transform:none!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;display:block!important;width:min(960px,calc(100% - 32px))!important;max-height:none!important;margin:28px auto!important;padding:clamp(16px,3vw,32px)!important;border:1px solid var(--line);border-radius:22px;background:var(--surface);box-shadow:var(--shadow)}
+#fbar .filters{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(165px,100%),1fr));gap:12px}
+.setuphead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}.setuphead h2,#routeDialog h2{margin:0;font-size:clamp(22px,3vw,32px);letter-spacing:-.04em}.setuphead p{margin:4px 0;color:var(--muted)}#routeDialog{width:min(390px,90vw);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:var(--shadow)}#routeDialog::backdrop{background:#141e34aa}.routeChoices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}.routeChoices button{height:52px}#routeClose{float:right}.memberName{font:inherit;color:var(--brand);border:0;background:transparent;padding:5px;cursor:pointer;text-decoration:underline}.room-member-actions[hidden]{display:none!important}
+</style></head>
+<body data-stage="setup">
 <div class="warnbar" id="warnBar" hidden></div>
 <header class="top" id="top">
  <div class="bar bar1"><a class="btn" href="index.html" title="Back to home" aria-label="Home">⌂<span class="lbl2"> Home</span></a>
@@ -242,7 +248,7 @@ body.perfmode .fbar,body.perfmode #fToggle,body.perfmode .bar2{display:none!impo
 </header>
 <div class="fscrim" id="fScrim"></div>
 <section class="fbar" id="fbar" aria-label="Filters and options">
- <div class="fhead"><b>Filters &amp; options</b><button class="btn primary" id="fDone" type="button">Done</button></div>
+ <div class="setuphead"><div><h2>Build your test</h2><p id="poolCount" aria-live="polite">Loading questions…</p></div><button type="button" class="btn primary" id="startPortal">Start test →</button></div><div class="fhead"><b>Filters &amp; options</b><button class="btn primary" id="fDone" type="button">Done</button></div>
  <div class="filters"><label class="sel" id="groupWrap"><span id="groupLbl">Era</span><select id="groupFilter"><option value="all">All</option></select></label>
    <label class="sel"><span>Exam</span><select id="examFilter"><option value="all">All exams</option></select></label>
    <label class="sel" id="yearWrap"><span>Year</span><select id="yearFilter"><option value="all">All years</option></select></label>
@@ -306,12 +312,13 @@ body.perfmode .fbar,body.perfmode #fToggle,body.perfmode .bar2{display:none!impo
  </table><p class="dnote">Optional “Info” sheet: Subject, Subtitle, Group label. Re-importing a subject with the same name updates it and keeps progress on unchanged questions.</p></details>
  <div id="mySubj"></div>
 </section></div>
+<dialog id="routeDialog"><button id="routeClose" class="btn" aria-label="Close">×</button><h2 id="routeTitle">Start test</h2><div class="routeChoices"><button class="btn" id="routeA"></button><button class="btn primary" id="routeB"></button></div></dialog>
 <div class="backdrop" id="mockBackdrop" hidden style="z-index:88"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="mkT0">
  <div class="dhead"><div><h2 id="mkT0">Custom session</h2><p>Pick chapters, practice or exam, and play solo or with friends.</p></div><button class="btn" id="mkCancel" type="button">Close</button></div>
  <div class="mockgrid" style="margin-bottom:6px"><div class="seg" id="mkWho" hidden><button type="button" data-w="host" class="on">Host room</button><button type="button" data-w="join">Join room</button></div><div class="seg" id="mkModeSeg"><button type="button" data-m="practice" class="on">Practice</button><button type="button" data-m="exam">Exam</button></div></div>
  <div id="mkJoin" hidden><div class="impname"><label>Room code<input id="mkCode" maxlength="8" autocapitalize="characters" autocomplete="off" placeholder="e.g. K7M2Q"></label></div></div>
  <div class="impname" id="mkNameW"><label>Your name<input id="mkName" maxlength="16" autocomplete="off" placeholder="Shown to friends"></label></div>
- <div id="mkCfg"><div class="dhead" style="margin-top:12px;align-items:center"><b style="font-size:13px">Chapters <small style="font-weight:500;color:var(--muted)">· pick two or more (none = all)</small></b><span><button class="btn" id="mkAll" type="button" style="height:30px">All</button> <button class="btn" id="mkNone" type="button" style="height:30px">None</button></span></div>
+ <div id="mkCfg"><div class="dhead" style="margin-top:12px;align-items:center"><b style="font-size:13px">Chapters <small style="font-weight:500;color:var(--muted)">· select any combination</small></b><span><button class="btn" id="mkAll" type="button" style="height:30px">All</button> <button class="btn" id="mkNone" type="button" style="height:30px">None</button></span></div>
  <div class="chpick" id="mkChs"></div><p class="dnote" id="mkAvail" style="margin:6px 0 0"></p>
  <div class="mockgrid">
   <label class="sel"><span>Questions</span><select id="mkN"><option>10</option><option selected>25</option><option>50</option><option>100</option><option>200</option><option value="9999">All available</option></select></label>
@@ -378,9 +385,11 @@ const selKeys=a=>!a?[]:a.sel||(a.selected?[a.selected]:[]),isMulti=q=>q.correct.
 function gradeOf(q,a){if(!q.gradeable)return'ungraded';const L=new Set((typeof a==='string'?[a]:selKeys(a)).map(k=>(q.options.find(o=>o.key===k)||{}).sourceLabel));return L.size===q.correct.length&&q.correct.every(c=>L.has(c))?'correct':'wrong';}
 function hay(q){return q._h||(q._h=(q.prompt+' '+q.options.map(o=>o.text).join(' ')+' '+(q.explanation||'')+' '+q.chapter).toLowerCase());}
 function matchQ(q){
- if(retryIds)return retryIds.has(q.id);
+ if(retryIds)return retryIds.has(q.id);return setupMatch(q);
+}
+function setupMatch(q,ignoreChapter=false){
  const ex=examFilter.value,ch=chapterFilter.value,v=viewFilter.value,gp=groupFilter.value,yr=yearFilter.value,a=answers.get(q.id);
- if(ch!=='all'&&String(q.chapterNo)!==ch)return false;if(gp!=='all'&&q.group!==gp)return false;
+ if(!ignoreChapter&&ch!=='all'&&String(q.chapterNo)!==ch)return false;if(gp!=='all'&&q.group!==gp)return false;
  if((ex!=='all'||yr!=='all')&&!q.examTags.some(t=>(ex==='all'||(t.family||t.label)===ex)&&(yr==='all'||yrsOf(t).includes(+yr))))return false;
  if(v==='unattempted'&&a)return false;if(v==='incorrect'&&!(a&&a.grade==='wrong'))return false;if(v==='flagged'&&!flags.has(q.id))return false;
  if(v==='due'||v==='everwrong'||v==='weak'||v==='new'||v==='noted'){const s=QS[q.id];if(v==='due'&&!(s&&s.d<=Date.now()))return false;if(v==='everwrong'&&!(s&&s.w))return false;if(v==='weak'&&!(s&&s.a&&s.c/s.a<.6))return false;if(v==='new'&&s)return false;if(v==='noted'&&!NOTES[q.id])return false;}
@@ -402,6 +411,10 @@ function restore(){
 
 /* render */
 function render(){
+ const active=!submitted&&!!(retryIds||sess.mock||sess.id||L());
+ document.body.dataset.stage=active?'active':submitted?'review':'setup';
+ if(!active&&DATA)$('poolCount').textContent=DATA.questions.filter(q=>setupMatch(q)&&q.attemptable&&q.gradeable&&q.options.length).length+' eligible questions';
+
  const q=currentQ();
  $('filterSummary').textContent=retryIds?(sess.mock?`${sess.live?'Live room':'Custom session'} · ${order.length} questions`:`Retrying ${order.length} missed questions`):`${order.length} of ${DATA.questions.length} questions in view`;
  $('positionPill').textContent=order.length?`Question ${current+1} / ${order.length}`:'No questions';
@@ -489,7 +502,7 @@ $('modeSeg').addEventListener('click',e=>{const b=e.target.closest('[data-mode]'
 $('testSubmit').addEventListener('click',async()=>{
  if(submitted){showSummary();return;}
  const left=order.filter(q=>!answers.has(q.id)).length;
- if(!await ask('Submit this test?',`${left} of ${order.length} questions are unanswered. The stopwatch will stop and answers lock until you reset.`,'Submit'))return;
+ if(!await ask('Submit this test?',`${left} of ${order.length} questions are unanswered. The stopwatch will stop and your answers will be saved for review.`,'Submit'))return;
  gradePending();
  submitted=true;setPaused(false);stopClock();logSession('submitted');$('testSubmit').textContent='Summary';render();showSummary();
 });
@@ -519,6 +532,7 @@ $('themeBtn').addEventListener('click',()=>setTheme(!document.body.classList.con
 document.addEventListener('keydown',e=>{
  if(!$('confirmBackdrop').hidden){if(e.key==='Escape')$('cNo').click();return;}
  if(e.key==='Escape'){$('summaryBackdrop').hidden=true;$('subjBackdrop').hidden=true;$('mockBackdrop').hidden=true;$('navigator').classList.remove('open');return;}
+ if(document.body.dataset.stage==='setup'||$('routeDialog').open)return;
  if(e.ctrlKey||e.metaKey||e.altKey||!$('summaryBackdrop').hidden||!$('subjBackdrop').hidden||tab!=='quiz'||!$('mockBackdrop').hidden||/SELECT|INPUT|TEXTAREA/.test(document.activeElement.tagName))return;
  const q=currentQ();if(!q)return;const k=e.key.toLowerCase();
  if(k==='p'){setPaused(!paused);return;}if(paused)return;
@@ -916,13 +930,27 @@ const myName=()=>($('mkName').value.trim()||store.get('qm-name')||'Player').slic
 const shufA=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 const lab=(q,s)=>s.map(k=>((q.options.find(o=>o.key===k)||{}).sourceLabel||'?')).join(',').toUpperCase();
 let who='host',cmode='practice';
+const routeDialog=$('routeDialog');
+function chooseRoute(live=false){
+ $('routeTitle').textContent=live?'Live test':'Start test';
+ $('routeA').textContent=live?'Host a room':'Solo';
+ $('routeB').textContent=live?'Join a room':'Live';
+ const configure=(role,solo)=>{
+  routeDialog.close();who=role;cmode=mode;$('mkAlone').checked=solo;openCustom();
+ };
+ $('routeA').onclick=()=>configure('host',!live);
+ $('routeB').onclick=()=>live?configure('join',false):chooseRoute(true);
+ if(!routeDialog.open)routeDialog.showModal();
+}
+$('startPortal').onclick=()=>{if(DATA&&!L())chooseRoute();};
+$('routeClose').onclick=()=>routeDialog.close();
 function openCustom(){
- const cc=new Map(),pre=chapterFilter.value;DATA.questions.forEach(q=>{if(q.gradeable&&q.attemptable&&q.options.length)cc.set(q.chapterNo,(cc.get(q.chapterNo)||0)+1);});
+ const cc=new Map(),pre=chapterFilter.value;DATA.questions.forEach(q=>{if(setupMatch(q,true)&&q.gradeable&&q.attemptable&&q.options.length)cc.set(q.chapterNo,(cc.get(q.chapterNo)||0)+1);});
  $('mkChs').innerHTML=DATA.chapters.filter(c=>cc.get(c.no)).map(c=>`<label class="chk"><input type="checkbox" value="${c.no}" ${String(c.no)===pre?'checked':''}><span>${String(c.no).padStart(2,'0')} · ${esc(c.title)}</span><em>${cc.get(c.no)}</em></label>`).join('');
  $('mkName').value=store.get('qm-name')||'';setWho(who);document.body.classList.remove('fopen');$('mockBackdrop').hidden=false;updAvail();}
 function poolOf(){
  const src=$('mkSrc').value,now=Date.now(),sel=new Set([...$('mkChs').querySelectorAll('input:checked')].map(i=>+i.value));
- return{sel,pool:DATA.questions.filter(q=>{if(!(q.gradeable&&q.attemptable&&q.options.length)||(sel.size&&!sel.has(q.chapterNo)))return false;const s=QS[q.id];
+ return{sel,pool:DATA.questions.filter(q=>{if(!setupMatch(q,sel.size>0)||!(q.gradeable&&q.attemptable&&q.options.length)||(sel.size&&!sel.has(q.chapterNo)))return false;const s=QS[q.id];
   return src==='all'||(src==='new'?!s:src==='due'?s&&s.d<=now:src==='wrong'?s&&s.w:s&&s.a&&s.c/s.a<.6);})};}
 function updAvail(){const{sel,pool}=poolOf();$('mkAvail').textContent=`${pool.length} questions available from ${sel.size||'all'} chapter${sel.size===1?'':'s'}.`;}
 function buildIds(){
@@ -935,7 +963,7 @@ function buildIds(){
 function setWho(w){who=w;document.querySelectorAll('#mkWho button').forEach(b=>b.classList.toggle('on',b.dataset.w===w));document.querySelectorAll('#mkModeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.m===cmode));
  $('mkJoin').hidden=w!=='join';$('mkCfg').hidden=w==='join';$('mkModeSeg').hidden=w==='join';$('mkNameW').hidden=w==='host'&&$('mkAlone').checked;
  const al=w==='host'&&$('mkAlone').checked;document.querySelectorAll('.solo-only').forEach(x=>x.hidden=!al);document.querySelectorAll('.host-only').forEach(x=>x.hidden=!(w==='host'&&!al));$('mkAloneW').hidden=w!=='host';
- $('mkGo').textContent=w==='join'?'Join room':$('mkAlone').checked?'Start session':'Create room';$('mkT0').textContent=w==='join'?'Join a test':'Host a test';}
+ $('mkGo').textContent=w==='join'?'Join room':$('mkAlone').checked?'Start session':'Create room';$('mkT0').textContent=w==='join'?'Join a test':$('mkAlone').checked?'Solo test':'Host a test';}
 $('mkAlone').addEventListener('change',()=>setWho(who));
 $('mkWho').addEventListener('click',e=>{const b=e.target.closest('[data-w]');if(b)setWho(b.dataset.w);});
 $('mkModeSeg').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(b){cmode=b.dataset.m;setWho(who);}});
@@ -1111,12 +1139,22 @@ function publishRoster(H){
  if(H.ph==='lobby'){lobbyCast();showRoom();}
  else{cast({t:'roster',players:names()});render();}
 }
+function memberName(H,n){
+ if(!H.host||n===H.name)return esc(n);
+ return '<button class="memberName" type="button" aria-expanded="'+(H.selectedMember===n)+'">'+esc(n)+'</button>';
+}
+document.addEventListener('click',e=>{
+ const button=e.target.closest('.memberName'),H=LIVE;
+ if(!button||!H?.host)return;
+ const name=button.textContent;H.selectedMember=H.selectedMember===name?null:name;
+ if(H.ph==='lobby')showRoom();else render();
+});
 function moderationControls(H,n){
  if(!H.host||n===H.name||H.ph==='over')return '';
  const entry=[...H.members].find(([,name])=>name===n);
  if(!entry)return '';
  const id=esc(entry[0]),label=esc(n);
- return '<span class="room-member-actions"><button type="button" class="btn" aria-label="Kick '+label+'" data-room-action="kick" data-member="'+id+'">Kick</button><button type="button" class="btn" aria-label="Block '+label+'" data-room-action="block" data-member="'+id+'">Block</button></span>';
+ return '<span class="room-member-actions" '+(H.selectedMember===n?'':'hidden')+'><button type="button" class="btn" aria-label="Kick '+label+'" data-room-action="kick" data-member="'+id+'">Kick</button><button type="button" class="btn" aria-label="Block '+label+'" data-room-action="block" data-member="'+id+'">Block</button></span>';
 }
 document.addEventListener('click',async e=>{
  const button=e.target.closest('[data-room-action]'),H=LIVE;if(!button||!H?.host)return;
@@ -1154,7 +1192,7 @@ function showLB(){const r=LIVE.res,t=r.rows[0];
  $('lbBody').innerHTML=`<p class="weak" style="background:var(--ok-bg);color:var(--ok);border-color:var(--ok-line)">🏆 ${esc(t.n)} wins with ${t.s} point${t.s===1?'':'s'}</p><div style="overflow-x:auto"><table class="lbt"><tr><th>#</th><th>Player</th><th>Score</th><th>Correct</th><th>Wrong</th><th>Skipped</th><th>Avg time</th></tr>${r.rows.map((x,i)=>`<tr><td>${i+1}</td><td><b>${esc(x.n)}</b>${x.n===LIVE.name?' (you)':''}</td><td><b>${x.s}</b></td><td>${x.c}</td><td>${x.w}</td><td>${x.u}</td><td>${x.c+x.w?mmss(Math.round(x.t/(x.c+x.w)/1000)):'–'}</td></tr>`).join('')}</table></div><h3>Responses by question</h3><div style="overflow:auto;max-height:300px"><table class="lbt"><tr><th>Q</th><th>Key</th>${r.rows.map(x=>`<th>${esc(x.n)}</th>`).join('')}</tr>${r.ids.map((id,i)=>{const q=byId.get(id);return`<tr><td>${i+1}</td><td>${keyStr(q)}</td>${r.rows.map(x=>{const s=Object.hasOwn(r.pk[id],x.n)?r.pk[id][x.n]:null;if(!s)return'<td>–</td>';const g=gradeOf(q,{sel:s})==='correct';return`<td style="color:var(--${g?'ok':'bad'});font-weight:700">${lab(q,s)} ${g?'✓':'✗'}</td>`;}).join('')}</tr>`;}).join('')}</table></div>`;
  $('lbBackdrop').hidden=false;}
 function showRoom(){const H=LIVE;if(!H||H.ph!=='lobby'){$('roomBackdrop').hidden=true;return;}const ns=H.host?names():(H.players||[]),c=H.cfg||{};
- $('roomBody').innerHTML=`<div class="rcode" onclick="navigator.clipboard&&navigator.clipboard.writeText('${H.code}');toast('Code copied')">${esc(H.code)}</div><p style="margin:0;text-align:center">Friends tap Join room and enter this code.</p><p style="margin:8px 0 0;text-align:center;font-size:13px">${c.mode==='exam'?'Exam':'Practice'} · ${c.n||'?'} questions · ${c.qsec||'?'}s per question</p><h3>Players (${ns.length})</h3>`+ns.map((n,i)=>`<div class="mine"><span><b>${esc(n)}</b>${i===0?' <span class="chip">host</span>':''}</span>${moderationControls(H,n)}</div>`).join('')+(H.host?'':'<p class="dnote">Waiting for the host to start…</p>');
+ $('roomBody').innerHTML=`<div class="rcode" onclick="navigator.clipboard&&navigator.clipboard.writeText('${H.code}');toast('Code copied')">${esc(H.code)}</div><p style="margin:0;text-align:center">Friends tap Join room and enter this code.</p><p style="margin:8px 0 0;text-align:center;font-size:13px">${c.mode==='exam'?'Exam':'Practice'} · ${c.n||'?'} questions · ${c.qsec||'?'}s per question</p><h3>Players (${ns.length})</h3>`+ns.map((n,i)=>`<div class="mine"><span><b>${memberName(H,n)}</b>${i===0?' <span class="chip">host</span>':''}</span>${moderationControls(H,n)}</div>`).join('')+(H.host?'':'<p class="dnote">Waiting for the host to start…</p>');
  $('roomStart').hidden=!H.host;$('roomBackdrop').hidden=false;}
 function clearLiveAttempt(){
  if(!sess.live||submitted)return;
@@ -1278,7 +1316,7 @@ function liveUI(){const H=L(),q=currentQ();if(!H||!H.cfg||!H.cfg.ids||!q||H.ci<0
  const mine=answers.get(q.id),done=revealed(mine),prac=H.cfg.mode==='practice',pk=H.cpicks||{},nm=H.host?names():H.players;
  const rows=nm.map(n=>{const s=Object.hasOwn(pk,n)?pk[n]:null;let v;if(!s)v=`<span style="color:var(--muted)">${H.ph==='reveal'?'no answer':'thinking…'}</span>`;
   else if(!prac||!(done||H.ph==='reveal'))v='✔ answered';else{const ok=gradeOf(q,{sel:s})==='correct';v=`<b style="color:var(--${ok?'ok':'bad'})">${lab(q,s)} ${ok?'✓':'✗'}</b>`;}
-  return`<div class="mine"><span>${esc(n)}${n===H.name?' (you)':''}</span><span>${v}</span>${moderationControls(H,n)}</div>`;}).join('');
+  return`<div class="mine"><span>${memberName(H,n)}${n===H.name?' (you)':''}</span><span>${v}</span>${moderationControls(H,n)}</div>`;}).join('');
  const ex='';
  const p=document.createElement('div');p.id='livePanel';p.className='lpanel';
  p.innerHTML=`<div class="lhead"><b>Room ${esc(H.code)}</b><span>Question ${H.ci+1} / ${H.cfg.ids.length}</span><span id="lcd">${H.show()}</span></div>${prac?'':'<p class="dnote" style="margin:0 0 6px">Exam: friends’ answers stay hidden until the end.</p>'}${H.pz?'<p style="margin:0 0 6px;font-weight:700">⏸ Test paused by the host</p>':''}${rows}${ex}`;
@@ -1349,10 +1387,22 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
  SUBJECTS.push({id:'polity',name:'Indian Polity & Governance',builtin:true,reflow:true,sourceHtml:POLITY_SRC},
   {id:'history',name:'Indian History',builtin:true,reflow:true,sourceHtml:'<b>Source:</b> Indian History — Complete Booklet (consolidated exam papers, printed pages B9–B760). Question text, options, answer key and explanations are extracted from the supplied booklet; questions with no printed answer key are not scored.'});
  for(const k of (QM.isAdmin?await kv.keys('subj:'):[])){const d=await kv.get(k);if(d&&d.questions)SUBJECTS.push({id:k.slice(5),name:d.title,builtin:false,data:d,sourceHtml:'<b>Source:</b> '+esc(d.source||'Imported subject')+'. Imported on this device.'});}
- const applyRows=rows=>{for(const r of rows){const i=SUBJECTS.findIndex(s=>s.id===r.id);if(r.status==='hidden'){if(i>=0&&SUBJECTS[i].builtin)SUBJECTS.splice(i,1);continue}if(r.status!=='live'||!r.path)continue;const o={id:r.id,name:r.name,builtin:false,cloud:r,sourceHtml:'<b>Source:</b> '+esc(r.subtitle||r.name)};if(i>=0)SUBJECTS[i]=o;else SUBJECTS.push(o)}};
+ const applyRows=rows=>{for(const r of rows){const i=SUBJECTS.findIndex(s=>s.id===r.id);if(r.status!=='live'){if(i>=0)SUBJECTS.splice(i,1);continue}if(r.status!=='live'||!r.path)continue;const o={id:r.id,name:r.name,builtin:false,cloud:r,sourceHtml:'<b>Source:</b> '+esc(r.subtitle||r.name)};if(i>=0)SUBJECTS[i]=o;else SUBJECTS.push(o)}};
  // Resolve the current published version before choosing the question bank.
  // QM.subjects() falls back to the stored catalog when the network is unavailable.
- try{applyRows(await QM.subjects());}catch(e){}
+ let catalogSignature='';
+ try{const rows=await QM.subjects();applyRows(rows);catalogSignature=JSON.stringify(rows);}catch(e){}
+ let checking=false;
+ async function refreshCatalog(){
+  const idle=()=>DATA&&!L()&&!roomOpening&&document.body.dataset.stage==='setup'&&$('mockBackdrop').hidden&&!$('routeDialog').open;
+  if(checking||!idle())return;
+  checking=true;
+  try{const rows=await QM.subjects();if(idle()&&JSON.stringify(rows)!==catalogSignature)location.reload();}
+  finally{checking=false;}
+ }
+ QM.listen(event=>{if(event==='resume')refreshCatalog();});
+ addEventListener('online',refreshCatalog);
+
  SESS=(await kv.get('sessions'))||[];DAILY=(await kv.get('daily'))||{};Object.assign(PREFS,(await kv.get('prefs'))||{});
  const qp=new URLSearchParams(location.search),last=qp.get('s')||store.get(LS_LAST);await openSubject(SUBJECTS.some(s=>s.id===last)?last:(SUBJECTS[0]||{}).id,true);buildSubjectSelect();
  const linkedCode=(qp.get('join')||'').trim().toUpperCase();
@@ -1368,7 +1418,7 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
  }else{
   clearLiveAttempt();
   if(linkedCode){who='join';openCustom();$('mkCode').value=linkedCode;}
-  else if(qp.get('custom'))openCustom();
+  else if(qp.get('custom'))chooseRoute();
  }
  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
@@ -1377,7 +1427,7 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
 (function(){
  const mq=matchMedia('(max-width:760px)'),sizer=document.querySelector('.sizer'),b1=document.querySelector('.bar1'),b2=document.querySelector('.bar2');
  function place(){
-  if(mq.matches){$('slotMode').append($('modeSeg'),$('resetTest'));$('slotTools').append(sizer,$('themeBtn'));}
+  if(mq.matches){b1.append(sizer,$('themeBtn'));}
   else{b2.insertBefore($('modeSeg'),$('testSubmit'));b2.insertBefore($('resetTest'),$('testSubmit'));b1.append(sizer,$('themeBtn'));document.body.classList.remove('fopen');}
  }
  place();mq.addEventListener?mq.addEventListener('change',place):mq.addListener(place);
