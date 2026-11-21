@@ -31,7 +31,7 @@
 </header>
 <div class="fscrim" id="fScrim"></div>
 <section class="fbar" id="fbar" aria-label="Filters and options">
- <div class="setuphead"><div><h2>Build your test</h2><p id="poolCount" aria-live="polite">Loading questions…</p></div><button type="button" class="btn primary" id="startPortal">Start test →</button></div><div class="fhead"><b>Filters &amp; options</b><button class="btn primary" id="fDone" type="button">Done</button></div>
+ <div class="setuphead"><div><h2>Build your test</h2><button class="btn" hidden id="portalRetry">Retry loading</button><p id="poolCount" aria-live="polite">Loading questions…</p></div><button type="button" class="btn primary" id="startPortal">Start test →</button></div><div class="fhead"><b>Filters &amp; options</b><button class="btn primary" id="fDone" type="button">Done</button></div>
  <div class="filters"><label class="sel" id="groupWrap"><span id="groupLbl">Era</span><select id="groupFilter"><option value="all">All</option></select></label>
    <label class="sel"><span>Exam</span><select id="examFilter"><option value="all">All exams</option></select></label>
    <label class="sel" id="yearWrap"><span>Year</span><select id="yearFilter"><option value="all">All years</option></select></label>
@@ -45,7 +45,7 @@
  <div class="fextra"><div class="fgrp"><small>SESSION</small><div id="slotMode"></div></div><div class="fgrp"><small>DISPLAY</small><div id="slotTools"></div></div></div>
 </section>
 
-<section id="chapterShelf" aria-labelledby="chapterHeading"><h2 id="chapterHeading">Chapters</h2><p>Track questions practised and see your latest result in each chapter.</p><div id="chapterList"></div></section>
+<section id="chapterShelf" aria-labelledby="chapterHeading"><h2 id="chapterHeading">Chapters</h2><p>Track questions practised and see your latest result in each chapter.</p><div class="chapterControls"><input id="chapterQuery" type="search" placeholder="Find a chapter or section" aria-label="Find a chapter or section"><select id="chapterStatus" aria-label="Chapter progress"><option value="all">All progress</option><option>Remaining</option><option>In progress</option><option>Complete</option></select></div><div id="chapterList"></div></section>
 <div class="backdrop" id="summaryBackdrop" hidden><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="summaryTitle">
  <div class="dhead"><div><h2 id="summaryTitle">Test summary</h2><p id="summaryTime">Completed in 00:00:00</p></div><button class="btn" id="closeSummary" type="button">Close</button></div>
  <div class="result"><div class="ring"><svg width="150" height="150" viewBox="0 0 150 150"><circle class="bg" cx="75" cy="75" r="64"/><circle class="fg" id="ringFg" cx="75" cy="75" r="64" stroke-dasharray="402.1" stroke-dashoffset="402.1"/></svg><div><b id="ringPct">0%</b><small>accuracy</small></div></div>

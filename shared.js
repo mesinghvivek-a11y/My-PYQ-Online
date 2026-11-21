@@ -4,8 +4,57 @@ const C=window.QM_CONFIG||{},enabled=!!(C.SUPABASE_URL&&C.SUPABASE_ANON_KEY&&!/Y
 const SBJS='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 let sb=null,dbp=null,timer=null;const last=new Map(),cbs=[],emit=e=>cbs.forEach(f=>{try{f(e)}catch(x){}});
 const QM=window.QM={enabled,user:null,isAdmin:false,listen:f=>cbs.push(f),client:()=>sb};
-const idb=()=>dbp||(dbp=new Promise(r=>{try{const q=indexedDB.open('quizmaster',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>{const d=q.result;d.onclose=d.onversionchange=()=>{try{d.close()}catch(e){}dbp=null};r(d)};q.onerror=()=>{dbp=null;r(null)}}catch(e){r(null)}}));
-const tx=async(m,fn,again)=>{const d=await idb();if(!d)return null;try{return await new Promise(r=>{const t=d.transaction('kv',m),q=fn(t.objectStore('kv'));t.oncomplete=()=>r(q&&q.result);t.onerror=t.onabort=()=>r(null)})}catch(e){dbp=null;return again?null:tx(m,fn,1)}};
+// A restored Safari tab can retain a connection which never dispatches another event.
+function deadline(promise,ms,onTimeout){
+ let timer;
+ return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>{
+  onTimeout?.();reject(new Error('Request timed out'));
+ },ms)})]).finally(()=>clearTimeout(timer));
+}
+QM.deadline=deadline;
+function connect(){
+ if(dbp)return dbp;
+ let expired=false;
+ const opened=new Promise((resolve,reject)=>{
+  const req=indexedDB.open('quizmaster',1);
+  req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('kv'))req.result.createObjectStore('kv')};
+  req.onerror=()=>reject(req.error);
+  req.onsuccess=()=>{
+   const db=req.result;
+   if(expired){db.close();return;}
+   db.onclose=db.onversionchange=()=>{db.close();if(dbp===pending)dbp=null};
+   resolve(db);
+  };
+ });
+ const pending=deadline(opened,2500,()=>{expired=true}).catch(e=>{if(dbp===pending)dbp=null;throw e});
+ dbp=pending;return pending;
+}
+async function readStore(fn){
+ for(let attempt=0;attempt<2;attempt++){
+  let db,transaction;
+  try{
+   db=await connect();
+   return await deadline(new Promise((resolve,reject)=>{
+    transaction=db.transaction('kv','readonly');
+    const request=fn(transaction.objectStore('kv'));
+    transaction.oncomplete=()=>resolve(request.result);
+    transaction.onerror=transaction.onabort=()=>reject(transaction.error||new Error('Storage interrupted'));
+   }),3000,()=>{try{transaction?.abort()}catch{}});
+  }catch(e){if(db){db.close();dbp=null}if(attempt)throw e;}
+ }
+}
+QM.readStore=readStore;
+async function tx(mode,fn){
+ if(mode==='readonly')return readStore(fn);
+ const db=await connect();
+ let transaction;
+ return deadline(new Promise((resolve,reject)=>{
+  transaction=db.transaction('kv',mode);
+  const q=fn(transaction.objectStore('kv'));
+  transaction.oncomplete=()=>resolve(q?.result);transaction.onerror=transaction.onabort=()=>reject(transaction.error);
+ }),10000,()=>{try{transaction?.abort()}catch{}db.close();dbp=null});
+}
+addEventListener('pagehide',()=>{const pending=dbp;dbp=null;pending?.then(db=>db.close(),()=>{})});
 const LM=()=>{try{return JSON.parse(localStorage.getItem('qm-lm')||'{}')}catch(e){return{}}},setLM=(k,t)=>{try{const m=LM();m[k]=t||Date.now();localStorage.setItem('qm-lm',JSON.stringify(m))}catch(e){}};
 QM.kvGet=async k=>{const v=await tx('readonly',s=>s.get(k));return v===undefined?null:v};
 QM.kvSet=async(k,v)=>{await tx('readwrite',s=>s.put(v,k));setLM(k);dirty()};QM.touch=k=>{setLM(k);dirty()};
@@ -32,7 +81,17 @@ async function push(){if(!sb||!QM.user)return;const pk='qm-ph:'+QM.user.id;let P
  for(let i=0;i<rows.length;i+=10){const{error}=await sb.from('user_data').upsert(rows.slice(i,i+10));if(error){emit('sync:error');return}rows.slice(i,i+10).forEach(r=>PH[r.k]=hh[r.k]);localStorage.setItem(pk,JSON.stringify(PH))}emit('sync:ok')}
 function dirty(){if(!QM.user)return;clearTimeout(timer);timer=setTimeout(push,4000)}QM.dirty=dirty;QM.push=push;
 function mk(){sb=window.supabase.createClient(C.SUPABASE_URL,C.SUPABASE_ANON_KEY,{global:{fetch:(url,init)=>fetch(url,{...init,cache:'no-store'})},realtime:{params:{eventsPerSecond:40}}})}
-QM.load=()=>sb?Promise.resolve():new Promise((res,rej)=>{if(window.supabase){mk();return res()}const s=document.createElement('script');s.src=SBJS;s.onload=()=>{mk();res()};s.onerror=rej;document.head.append(s)});
+let loadingClient;
+QM.load=()=>{
+ if(sb)return Promise.resolve();
+ if(!loadingClient)loadingClient=new Promise((resolve,reject)=>{
+  const ready=()=>{try{if(!sb)mk();resolve()}catch(e){reject(e)}};
+  if(window.supabase)return ready();
+  const script=document.createElement('script');script.src=SBJS;
+  script.onload=ready;script.onerror=reject;document.head.append(script);
+ }).finally(()=>{loadingClient=null});
+ return loadingClient;
+};
 async function flushRq(){let q=[];try{q=JSON.parse(localStorage.getItem('qm-rq')||'[]')}catch(e){}if(!q.length)return;const{error}=await sb.from('reports').insert(q);if(!error)localStorage.removeItem('qm-rq')}
 async function after(){const{data}=await sb.from('profiles').select('is_admin').maybeSingle();QM.isAdmin=!!(data&&data.is_admin);const ch=await pull();flushRq();emit('auth');if(ch)emit('pulled')}
 QM.init=async(w=2500)=>{if(!enabled)return;if(!QM.inited){QM.inited=1;try{await Promise.race([QM.load(),new Promise((_,j)=>setTimeout(j,4000))])}catch(e){QM.inited=0;return}
@@ -43,7 +102,7 @@ QM.init=async(w=2500)=>{if(!enabled)return;if(!QM.inited){QM.inited=1;try{await 
 QM.signIn=async()=>{await QM.load();await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname+location.search}})};
 QM.signOut=async()=>{await sb.auth.signOut();QM.user=null;emit('auth')};
 QM.report=async r=>{if(QM.user&&sb){const{error}=await sb.from('reports').insert(r);if(!error)return true}let q=[];try{q=JSON.parse(localStorage.getItem('qm-rq')||'[]')}catch(e){}q.push(r);localStorage.setItem('qm-rq',JSON.stringify(q));return false};
-QM.subjects=async()=>{const ck='cache:subjects';if(!enabled)return[];try{await Promise.race([QM.load(),new Promise((_,j)=>setTimeout(j,4000))]);const r=await Promise.race([sb.from('subjects').select('*').order('sort').order('created_at'),new Promise((_,j)=>setTimeout(j,5000))]);if(r.error)throw r.error;await tx('readwrite',s=>s.put(r.data,ck));return r.data}catch(e){return(await QM.kvGet(ck))||[]}};
-QM.bank=async (row,onStale)=>{const k='bank:'+row.id,c=await QM.kvGet(k);const revision=JSON.stringify([row.path,row.version,row.updated_at]);if(c&&c.revision===revision)return c.data;try{const r=await fetch(C.SUPABASE_URL+'/storage/v1/object/public/banks/'+row.path+'?v='+encodeURIComponent(revision),{cache:'no-store'});if(!r.ok)throw 0;const data=await r.json();await tx('readwrite',s=>s.put({revision,data},k));return data}catch(e){if(c){if(onStale)onStale();return c.data}throw e}};
+QM.subjects=async()=>{const ck='cache:subjects';if(!enabled)return[];try{await Promise.race([QM.load(),new Promise((_,j)=>setTimeout(j,4000))]);const r=await Promise.race([sb.from('subjects').select('*').order('sort').order('created_at'),new Promise((_,j)=>setTimeout(j,5000))]);if(r.error)throw r.error;await tx('readwrite',s=>s.put(r.data,ck)).catch(()=>{});return r.data}catch(e){return(await QM.kvGet(ck))||[]}};
+QM.bank=async (row,onStale)=>{const k='bank:'+row.id,c=await QM.kvGet(k);const revision=JSON.stringify([row.path,row.version,row.updated_at]);if(c&&c.revision===revision)return c.data;try{const r=await deadline(fetch(C.SUPABASE_URL+'/storage/v1/object/public/banks/'+row.path+'?v='+encodeURIComponent(revision),{cache:'no-store'}),c?5000:20000);if(!r.ok)throw 0;const data=await deadline(r.json(),c?5000:20000);await tx('readwrite',s=>s.put({revision,data},k)).catch(()=>{});return data}catch(e){if(c){if(onStale)onStale();return c.data}throw e}};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)emit('resume')});addEventListener('pageshow',e=>{if(e.persisted)emit('resume')});
 })();

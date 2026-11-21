@@ -241,6 +241,10 @@ function ask(title,msg,ok){return new Promise(res=>{$('cTitle').textContent=titl
 /* summary: see paintSummary below */
 
 /* actions */
+$('backChapters').onclick=e=>{
+ if(!submitted||e.ctrlKey||e.metaKey||e.shiftKey)return;
+ e.preventDefault();flushPersist();resetAll();FORCE.clear();saveNow();window.scrollTo(0,0);
+};
 function resetAll(){if(LIVE)liveLeave();logSession(submitted?'submitted':'ended');stopClock();sess={};answers.clear();flags.clear();spent.clear();submitted=false;paused=false;document.body.classList.remove('paused');elapsed=0;paint();retryIds=null;$('testSubmit').textContent='Submit';$('summaryBackdrop').hidden=true;applyFilters();setPaused(false);startClock();}
 async function setMode(m){if(m===mode)return;if(answers.size&&!await ask('Switch to '+(m==='exam'?'exam':'practice')+' mode?','Your current answers, flags and timer will be cleared so the new mode starts clean.','Switch and reset'))return;logSession(submitted?'submitted':'ended');sess={};mode=m;resetAll();toast(m==='exam'?'Exam mode: results appear after you submit.':'Practice mode: check each answer as you go.');}
 $('modeSeg').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b)setMode(b.dataset.mode);});
@@ -312,10 +316,10 @@ function dl(name,text){const a=document.createElement('a');a.href=URL.createObje
 const kv={db:null,
  open(){return this.db?Promise.resolve(this.db):new Promise(r=>{try{const q=indexedDB.open('quizmaster',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>{const d=this.db=q.result;d.onclose=d.onversionchange=()=>{try{d.close()}catch(e){}this.db=null};r(d)};q.onerror=()=>r(null);}catch(e){r(null)}})},
  async run(m,fn,again){const d=await this.open();if(!d)return{ok:false};return new Promise(r=>{try{const t=d.transaction('kv',m),q=fn(t.objectStore('kv'));t.oncomplete=()=>r({ok:true,v:q&&q.result});t.onerror=t.onabort=()=>r({ok:false});}catch(e){this.db=null;r(again?{ok:false}:this.run(m,fn,1))}})},
- async get(k){const r=await this.run('readonly',s=>s.get(k));if(r.ok)return r.v===undefined?null:r.v;try{const l=localStorage.getItem('qmkv:'+k);return l?JSON.parse(l):null}catch(e){return null}},
+ async get(k){const v=await QM.readStore(s=>s.get(k));if(v!==undefined)return v;try{return JSON.parse(localStorage.getItem('qmkv:'+k)||'null')}catch{return null}},
  async set(k,v){const r=await this.run('readwrite',s=>s.put(v,k));if(!r.ok)store.set('qmkv:'+k,JSON.stringify(v));return r.ok},
  async del(k){const r=await this.run('readwrite',s=>s.delete(k));if(!r.ok)try{localStorage.removeItem('qmkv:'+k)}catch(e){}},
- async keys(p){const r=await this.run('readonly',s=>s.getAllKeys());if(r.ok)return(r.v||[]).filter(k=>k.startsWith(p));try{return Object.keys(localStorage).filter(k=>k.startsWith('qmkv:'+p)).map(k=>k.slice(5))}catch(e){return[]}}};
+ async keys(p){const keys=await QM.readStore(s=>s.getAllKeys());if(keys)return keys.filter(k=>k.startsWith(p));try{return Object.keys(localStorage).filter(k=>k.startsWith('qmkv:'+p)).map(k=>k.slice(5))}catch(e){return[]}}};
 
 /* filters */
 const chosenChapters=new Set();
@@ -325,7 +329,10 @@ function fillChapters(){
  for(const n of chosenChapters)if(!allowed.has(n))chosenChapters.delete(n);
  $('mkChs').innerHTML=visible.map(c=>`<label class="chk"><input type="checkbox" value="${c.no}" ${chosenChapters.has(c.no)?'checked':''}><span>${esc(c.title)}</span></label>`).join('');
 }
+$('chapterQuery').oninput=$('chapterStatus').onchange=drawChapterShelf;
 function drawChapterShelf(){
+ if(!DATA)return;
+ const query=$('chapterQuery').value.trim().toLowerCase(),filter=$('chapterStatus').value;
  const counts=new Map(),latest=new Map();
  for(const q of DATA.questions){
   if(!q.gradeable||!q.attemptable||!q.options.length)continue;
@@ -343,8 +350,9 @@ function drawChapterShelf(){
   const {total,done}=counts.get(ch.no)||{total:0,done:0},last=latest.get(ch.no)?.row;
   const status=total&&done===total?'Complete':done?'In progress':'Remaining';
   const result=last?' · Last attempt '+last.c+'/'+(last.c+last.w)+' correct':'';
-  return `<div class="chapterRow"><div><strong>${esc(ch.title)}</strong><small>${status} · ${done}/${total} practised${result}</small></div><button type="button" class="btn" data-chapter="${ch.no}" ${total?'':'disabled'} aria-label="Start ${esc(ch.title)}">Start →</button></div>`;
- }).join('');
+  if(filter!=='all'&&filter!==status||query&&!(ch.title+' '+(ch.group||'')).toLowerCase().includes(query))return '';
+  return `<div class="chapterRow"><div class="chapterInfo"><small>${esc(ch.group||'')} · Chapter ${esc(ch.no)}</small><strong>${esc(ch.title)}</strong><small><span class="stateChip">${status}</span> ${done}/${total} practised${result}</small><progress max="${total||1}" value="${done}" aria-label="Questions practised"></progress></div><button type="button" class="btn" data-chapter="${ch.no}" ${total?'':'disabled'} aria-label="Start ${esc(ch.title)}">Start →</button></div>`;
+ }).join('')||'<p>No chapters match these filters.</p>';
 }
 $('chapterList').onclick=e=>{
  const b=e.target.closest('[data-chapter]');if(!b||!signedIn())return;
@@ -362,7 +370,7 @@ groupFilter.addEventListener('change',()=>{fillChapters();userFilter();});yearFi
 
 /* subjects */
 async function ensureData(s){
- if(!s.data)s.data=s.builtin?await(window.__pre&&window.__pre.id===s.id?window.__pre.p:fetch('data/'+s.id+'.json').then(r=>r.json())):s.cloud?await QM.bank(s.cloud,()=>toast('Showing the saved version. Reopen this subject when the latest download is available.')):await kv.get('subj:'+s.id);
+ if(!s.data)s.data=s.builtin?await QM.deadline((window.__pre&&window.__pre.id===s.id?window.__pre.p:fetch('data/'+s.id+'.json').then(r=>r.json())),30000):s.cloud?await QM.deadline(QM.bank(s.cloud,()=>toast('Showing the saved version. Reopen this subject when the latest download is available.')),30000):await kv.get('subj:'+s.id);
  if(!s.prep){const g=new Map(s.data.chapters.map(c=>[c.no,c.group||'']));s.data.questions.forEach(q=>q.group=g.get(q.chapterNo)||'');s.data.groups=[...new Set(s.data.chapters.map(c=>c.group).filter(Boolean))];s.prep=1;}
  return s.data;}
 function buildSubjectSelect(){const el=$('subjectSel');el.innerHTML='';SUBJECTS.forEach(s=>el.append(new Option(s.name,s.id)));el.append(new Option('＋ Add subject…','__add'));if(SUBJ)el.value=SUBJ.id;}
@@ -1210,10 +1218,13 @@ const savedTheme=store.get('pq-theme');setTheme(savedTheme?savedTheme==='dark':m
 applyFont();setNavC(store.get('pq-navc')==='1');
 new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('top').offsetHeight+'px')).observe($('top'));
 (async function boot(){
- try{await QM.init(0);}catch(e){}
+ const auth=QM.init(0).catch(()=>{});
+ const params=new URLSearchParams(location.search);
+ const browsing=location.pathname.endsWith('/builder.html')&&params.has('s')&&!params.has('retry')&&!params.has('custom')&&!localStorage.getItem('qm-room');
+ if(!browsing)await QM.deadline(auth,8000);
  const linkedAtOpen=new URLSearchParams(location.search).get('join')?.trim().toUpperCase();
  const pointer=JSON.parse(localStorage.getItem('qm-room')||'null');
- const hostLookup=QM.user&&(linkedAtOpen||pointer?.role!=='g')?
+ const hostLookup=!browsing&&QM.user&&(linkedAtOpen||pointer?.role!=='g')?
   findHost(linkedAtOpen||null).catch(e=>{toast(e.message);return null;}):Promise.resolve(null);
  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();}catch(e){}
  SUBJECTS.push({id:'polity',name:'Indian Polity & Governance',builtin:true,reflow:true,sourceHtml:POLITY_SRC},
@@ -1223,7 +1234,10 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
  // Resolve the current published version before choosing the question bank.
  // QM.subjects() falls back to the stored catalog when the network is unavailable.
  let catalogSignature='';
- try{const rows=await QM.subjects();applyRows(rows);catalogSignature=JSON.stringify(rows);}catch(e){}
+ const cache=await QM.kvGet('cache:subjects')||[];
+ const cachedSubject=cache.some(r=>r.id===params.get('s'))||['polity','history'].includes(params.get('s'));
+ const rows=browsing&&cachedSubject?cache:await QM.subjects();
+ applyRows(rows);catalogSignature=JSON.stringify(rows);
  let checking=false;
  async function refreshCatalog(){
   const idle=()=>DATA&&!L()&&!roomOpening&&document.body.dataset.stage==='setup'&&$('mockBackdrop').hidden&&!$('routeDialog').open;
@@ -1236,6 +1250,10 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
  addEventListener('online',refreshCatalog);
 
  SESS=(await kv.get('sessions'))||[];DAILY=(await kv.get('daily'))||{};Object.assign(PREFS,(await kv.get('prefs'))||{});
+ if(browsing){const key=params.get('s')==='polity'?'pq-state-v2':'qm-state:'+params.get('s');
+  let saved;try{saved=JSON.parse(store.get(key)||'null')}catch{}
+  if(saved?.x?.id&&!saved.s)await QM.deadline(auth,8000);
+ }
  const qp=new URLSearchParams(location.search),localHost=await hostLookup,last=localHost?.cfg?.subj||qp.get('s')||store.get(LS_LAST);await openSubject(SUBJECTS.some(s=>s.id===last)?last:(SUBJECTS[0]||{}).id,true);buildSubjectSelect();
  const linkedCode=(qp.get('join')||'').trim().toUpperCase();
  let savedRoom;
@@ -1258,8 +1276,13 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
    if(record)await retryFromRec(record);else toast('This attempt is unavailable on this device.');
   }else if(qp.get('custom'))chooseRoute();
  }
+ if(browsing&&cachedSubject)auth.then(()=>refreshCatalog()).catch(()=>{});
  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-})();
+})().catch(()=>{
+ $('poolCount').textContent='Could not finish loading your questions or saved progress.';
+ $('startPortal').disabled=true;$('portalRetry').hidden=false;
+});
+$('portalRetry').onclick=()=>location.reload();
 
 /* ===== v2 UI behaviour: filter sheet, responsive placement, swipe, filter badge ===== */
 (function(){
