@@ -63,12 +63,12 @@ const userFilter=()=>{retryIds=null;applyFilters();};
 
 /* persistence */
 let _st;function save(){clearTimeout(_st);_st=setTimeout(saveNow,400);}
-function saveNow(){clearTimeout(_st);if(!KEY)return;store.set(KEY,JSON.stringify({a:[...answers],f:[...flags],t:[...spent],e:elapsed,s:submitted,m:mode,c:currentQ()?.id,x:sess}));}
+function saveNow(){clearTimeout(_st);if(!KEY)return;store.set(KEY,JSON.stringify({a:[...answers],f:[],t:[...spent],e:elapsed,s:submitted,m:mode,c:currentQ()?.id,x:sess}));}
 function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,4200);}
 function restore(){
  const raw=store.get(KEY);if(!raw)return null;
  try{const s=JSON.parse(raw);if(!QM.user&&!s?.s)return null;if(s?.x?.account&&s.x.account!==QM.user?.id)return null;if(!s||!s.a||!s.a.length&&!s.e&&!s.x?.mock)return null;
-  s.a.forEach(([id,a])=>{if(byId.has(id))answers.set(id,a)});(s.f||[]).forEach(id=>byId.has(id)&&flags.add(id));(s.t||[]).forEach(([id,n])=>byId.has(id)&&spent.set(id,n));
+  s.a.forEach(([id,a])=>{if(byId.has(id))answers.set(id,a)});(s.t||[]).forEach(([id,n])=>byId.has(id)&&spent.set(id,n));
   elapsed=s.e||0;sess=s.x||{};submitted=!!s.s;mode=s.m==='exam'?'exam':'practice';return s;}catch(e){return null;}
 }
 
@@ -159,7 +159,17 @@ function pick(key){
 }
 function checkMulti(){const q=currentQ(),a=q&&stateFor(q);if(!a||submitted)return;const g=gradeOf(q,a);answers.set(q.id,{selected:a.selected,sel:a.sel,grade:g});recordResult(q,g);render();}
 function check(q){if(!selected||submitted||mode==='exam')return;const g=gradeOf(q,selected);answers.set(q.id,{selected,grade:g});recordResult(q,g);render();const f=card.querySelector('.fb');if(f)f.scrollIntoView({behavior:'smooth',block:'nearest'});}
-function toggleFlag(q){flags.has(q.id)?flags.delete(q.id):flags.add(q.id);render();}
+const bookmarkWrites=new Map();
+async function toggleFlag(q){
+ const subject=SUBJ,key=QM.bookmarkKey(subject.id,q.id);
+ if(bookmarkWrites.has(key))return;
+ const remove=flags.has(q.id);
+ const value=remove?{ts:Date.now(),deleted:true}:QM.makeBookmark(subject,q);
+ bookmarkWrites.set(key,true);
+ try{await QM.kvSet(key,value);
+  if(SUBJ===subject){if(remove)flags.delete(q.id);else flags.add(q.id);render();}
+ }catch{toast('Bookmark could not be saved. Please try again.');}finally{bookmarkWrites.delete(key);}
+}
 function go(i){if(i<0||i>=order.length||paused||(L()&&!L().int))return;current=i;selected=null;render();scrollTo({top:0,behavior:'smooth'});if(innerWidth<=760)$('navigator').classList.remove('open');}
 let navOrder=null,navBtns=[];
 function navCls(q,i){const a=stateFor(q),st=!a?'':a.grade==='correct'?' done':a.grade==='wrong'?' wrong':a.grade==='ungraded'?' ungraded':' answered';return'navitem'+(i===current?' active':'')+st+(flags.has(q.id)?' flag':'');}
@@ -245,7 +255,7 @@ $('backChapters').onclick=e=>{
  if(!submitted||e.ctrlKey||e.metaKey||e.shiftKey)return;
  e.preventDefault();flushPersist();resetAll();FORCE.clear();saveNow();window.scrollTo(0,0);
 };
-function resetAll(){if(LIVE)liveLeave();logSession(submitted?'submitted':'ended');stopClock();sess={};answers.clear();flags.clear();spent.clear();submitted=false;paused=false;document.body.classList.remove('paused');elapsed=0;paint();retryIds=null;$('testSubmit').textContent='Submit';$('summaryBackdrop').hidden=true;applyFilters();setPaused(false);startClock();}
+function resetAll(){if(LIVE)liveLeave();logSession(submitted?'submitted':'ended');stopClock();sess={};answers.clear();spent.clear();submitted=false;paused=false;document.body.classList.remove('paused');elapsed=0;paint();retryIds=null;$('testSubmit').textContent='Submit';$('summaryBackdrop').hidden=true;applyFilters();setPaused(false);startClock();}
 async function setMode(m){if(m===mode)return;if(answers.size&&!await ask('Switch to '+(m==='exam'?'exam':'practice')+' mode?','Your current answers, flags and timer will be cleared so the new mode starts clean.','Switch and reset'))return;logSession(submitted?'submitted':'ended');sess={};mode=m;resetAll();toast(m==='exam'?'Exam mode: results appear after you submit.':'Practice mode: check each answer as you go.');}
 $('modeSeg').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b)setMode(b.dataset.mode);});
 $('testSubmit').addEventListener('click',async()=>{
@@ -323,6 +333,12 @@ const kv={db:null,
 
 /* filters */
 const chosenChapters=new Set();
+let shelfSection=null;
+$('sectionRail').onclick=e=>{
+ const button=e.target.closest('button');if(!button)return;
+ shelfSection=button.hasAttribute('data-all')?null:button.dataset.group;
+ drawChapterShelf();
+};
 function fillChapters(){
  const visible=DATA.chapters.filter(c=>groupFilter.value==='all'||c.group===groupFilter.value);
  const allowed=new Set(visible.map(c=>c.no));
@@ -333,25 +349,32 @@ $('chapterQuery').oninput=$('chapterStatus').onchange=drawChapterShelf;
 function drawChapterShelf(){
  if(!DATA)return;
  const query=$('chapterQuery').value.trim().toLowerCase(),filter=$('chapterStatus').value;
+ const groups=[...new Set(DATA.chapters.map(c=>c.group||''))];
+ const rail=$('sectionRail');
+ if(rail.dataset.subject!==SUBJ.id){
+  rail.dataset.subject=SUBJ.id;shelfSection=null;rail.scrollLeft=0;
+  rail.innerHTML='<button type="button" data-all>All sections</button>'+groups.map(g=>`<button type="button" data-group="${esc(g)}">${esc(g||'Unsectioned')}</button>`).join('');
+ }
+ for(const b of rail.children)b.setAttribute('aria-pressed',String(b.hasAttribute('data-all')?shelfSection===null:b.dataset.group===shelfSection));
  const counts=new Map(),latest=new Map();
  for(const q of DATA.questions){
-  if(!q.gradeable||!q.attemptable||!q.options.length)continue;
-  const c=counts.get(q.chapterNo)||{total:0,done:0};
-  c.total++;if(QS[q.id]?.a)c.done++;counts.set(q.chapterNo,c);
+  const c=counts.get(q.chapterNo)||{total:0,eligible:0,done:0};
+  c.total++;if(q.gradeable&&q.attemptable&&q.options.length)c.eligible++;if(QS[q.id]?.a)c.done++;counts.set(q.chapterNo,c);
  }
  for(const record of SESS){
   if(record.subj!==SUBJ.id)continue;
   for(const row of record.rows||[]){
    if(row.c+row.w===0)continue;
-   if(!latest.has(row.no)||latest.get(row.no).end<record.en)latest.set(row.no,{end:record.en,row});
+   if(!latest.has(row.no)||latest.get(row.no).end<record.en)latest.set(row.no,{end:record.en,row,marks:record.marks||1,neg:record.neg||0});
   }
  }
  $('chapterList').innerHTML=DATA.chapters.map(ch=>{
-  const {total,done}=counts.get(ch.no)||{total:0,done:0},last=latest.get(ch.no)?.row;
-  const status=total&&done===total?'Complete':done?'In progress':'Remaining';
-  const result=last?' · Last attempt '+last.c+'/'+(last.c+last.w)+' correct':'';
+  const {total,done,eligible}=counts.get(ch.no)||{total:0,done:0,eligible:0},last=latest.get(ch.no);
+  if(shelfSection!==null&&(ch.group||'')!==shelfSection)return '';
+  const status=eligible&&done>=eligible?'Complete':done?'In progress':'Remaining';
+  const result=last?Number((last.row.c*last.marks-last.row.w*last.neg).toFixed(2))+' / '+Number((last.row.n*last.marks).toFixed(2)):'—';
   if(filter!=='all'&&filter!==status||query&&!(ch.title+' '+(ch.group||'')).toLowerCase().includes(query))return '';
-  return `<div class="chapterRow"><div class="chapterInfo"><small>${esc(ch.group||'')} · Chapter ${esc(ch.no)}</small><strong>${esc(ch.title)}</strong><small><span class="stateChip">${status}</span> ${done}/${total} practised${result}</small><progress max="${total||1}" value="${done}" aria-label="Questions practised"></progress></div><button type="button" class="btn" data-chapter="${ch.no}" ${total?'':'disabled'} aria-label="Start ${esc(ch.title)}">Start →</button></div>`;
+  return `<div class="chapterRow"><div class="chapterInfo"><small>${esc(ch.group||'')} · Chapter ${esc(ch.no)}</small><strong>${esc(ch.title)}</strong><small><span class="stateChip">${status}</span> </small><div class="chapterStats"><span>Questions<b>${total}</b></span><span>Attempted<b>${done}</b></span><span>Last score<b>${result}</b></span></div><progress max="${eligible||1}" value="${done}" aria-label="Questions practised"></progress></div><button type="button" class="btn" data-chapter="${ch.no}" ${eligible?'':'disabled'} aria-label="Start ${esc(ch.title)}">Start →</button></div>`;
  }).join('')||'<p>No chapters match these filters.</p>';
 }
 $('chapterList').onclick=e=>{
@@ -379,12 +402,17 @@ async function openSubject(id,first){
  if(!first){logSession(submitted?'submitted':'in-progress');saveNow();flushPersist();stopClock();}
  if(SUBJ?.id!==s.id)chosenChapters.clear();await ensureData(s);await loadSubjData(s);SUBJ=s;DATA=s.data;KEY=s.id==='polity'?'pq-state-v2':'qm-state:'+s.id;
  byId=new Map(DATA.questions.map(q=>[q.id,q]));buildWords();
- answers.clear();flags.clear();spent.clear();elapsed=0;submitted=false;mode='practice';sess={};retryIds=null;search='';$('searchBox').value='';viewFilter.value='all';
+ answers.clear();spent.clear();elapsed=0;submitted=false;mode='practice';sess={};retryIds=null;search='';$('searchBox').value='';viewFilter.value='all';
  paused=false;document.body.classList.remove('paused');$('summaryBackdrop').hidden=true;
  populateFilters();store.set(LS_LAST,s.id);$('subjectSel').value=s.id;
  $('brandTitle').textContent=s.name;$('brandSub').textContent=`Master test · ${DATA.chapters.length} chapters`;document.title=s.name+' · My PYQ Online';$('sourceNote').innerHTML=s.sourceHtml||'';
+ const legacy=QM.legacyFlags(s.id);
+ if(legacy.length)await QM.importFlags(s,DATA.questions,legacy);
+ const prefix=QM.bookmarkPrefix(s.id),keys=await QM.kvKeys(prefix);
+ const savedBookmarks=await Promise.all(keys.map(key=>QM.kvGet(key)));
+ flags.clear();for(const b of savedBookmarks)if(b&&!b.deleted)flags.add(b.id);
  const prior=restore();
- if(prior?.s&&location.pathname.endsWith('/builder.html')){answers.clear();flags.clear();spent.clear();submitted=false;sess={};elapsed=0;}
+ if(prior?.s&&location.pathname.endsWith('/builder.html')){answers.clear();spent.clear();submitted=false;sess={};elapsed=0;}
 if(sess.ids)retryIds=new Set(sess.ids);const clock=prior&&sess.practiceClock;applyFilters();if(prior&&sess.ids)setOrder(sess.ids.filter(id=>byId.has(id)));if(clock){sess.practiceClock=clock;if(clock.review&&!answers.has(clock.id))FORCE.add(clock.id);}
  if(prior&&(submitted||sess.id)){const i=order.findIndex(q=>q.id===prior.c);if(i>0){current=i;render();}toast(submitted?'Restored your submitted test.':`Welcome back — restored ${answers.size} answers.`);}
  paint();$('pauseBtn').disabled=submitted;$('testSubmit').textContent=submitted?'Summary':L()&&!L().host?'Exit test':'End test';
@@ -442,7 +470,7 @@ async function retryFromRec(rec){
  else if(answers.size&&!await ask('Start a retry session?','Your current attempt in this subject will be ended (it stays in Performance).','Start retry'))return;
  for(const id of ids)if(!byId.has(id))ids.delete(id);
  if(!ids.size){toast('These questions are no longer in the subject.');return;}
- logSession(submitted?'submitted':'ended');sess={id:uid(),st:Date.now(),account:QM.user.id,ids:[...ids]};answers.clear();flags.clear();spent.clear();submitted=false;elapsed=0;mode='practice';
+ logSession(submitted?'submitted':'ended');sess={id:uid(),st:Date.now(),account:QM.user.id,ids:[...ids]};answers.clear();spent.clear();submitted=false;elapsed=0;mode='practice';
  $('summaryBackdrop').hidden=true;$('testSubmit').textContent='Submit';retryIds=ids;setTab('quiz');applyFilters();setPaused(false);startClock();toast(`Retrying ${ids.size} missed questions.`);}
 
 /* performance tab */
@@ -717,7 +745,7 @@ $('bkExport').replaceWith($('bkExport').cloneNode(true));
 $('bkExport').addEventListener('click',async()=>{
  logSession(submitted?'submitted':'in-progress');saveNow();flushPersist();const st={};stateKeys().forEach(k=>st[k]=localStorage.getItem(k));
  const subs={};SUBJECTS.filter(s=>!s.builtin&&s.data).forEach(s=>subs[s.id]=s.data);const kvs={};
- for(const k of [...await kv.keys('qs:'),...await kv.keys('notes:'),'daily','prefs']){const v=await kv.get(k);if(v)kvs[k]=v;}
+ for(const k of [...await kv.keys('qs:'),...await kv.keys('notes:'),...await kv.keys('bookmark:'),'daily','prefs']){const v=await kv.get(k);if(v)kvs[k]=v;}
  dlBlob(new Blob([JSON.stringify({qmBackup:2,state:st,sessions:SESS,subjects:subs,kvs})],{type:'application/json'}),`quizmaster-backup-${dayKey()}.json`);store.set('qm-lastbackup',String(Date.now()));renderPerf();toast('Backup file created.');});
 
 
@@ -785,7 +813,7 @@ $('mkGo').addEventListener('click',async()=>{
  if(who==='host'&&!$('mkAlone').checked)return hostRoom(cfg);
  const lim=+$('mkT').value*60;
  if(answers.size&&!await ask('Start this session?','Your current attempt in this subject will be ended (it stays in Performance).','Start'))return;
- logSession(submitted?'submitted':'ended');stopClock();answers.clear();flags.clear();spent.clear();submitted=false;elapsed=0;FORCE.clear();mode=cmode;
+ logSession(submitted?'submitted':'ended');stopClock();answers.clear();spent.clear();submitted=false;elapsed=0;FORCE.clear();mode=cmode;
  retryIds=new Set(ids);sess={account:QM.user.id,id:uid(),st:Date.now(),qsec:cmode==='practice'?cfg.qsec:0,eb:0,lim,marks:cfg.marks||1,neg:cfg.neg,mock:1,ids};
  $('mockBackdrop').hidden=true;$('summaryBackdrop').hidden=true;$('testSubmit').textContent='Submit';setTab('quiz');applyFilters();setOrder(ids);setPaused(false);paint();
  toast(`${ids.length} questions · ${cmode}${lim?' · '+lim/60+' min':''}`);});
@@ -1029,7 +1057,7 @@ function clearLiveAttempt(){
  if(!sess.live||submitted)return;
  logSession('ended');stopClock();sess={};retryIds=null;elapsed=0;paused=false;
  document.body.classList.remove('paused');
- answers.clear();flags.clear();spent.clear();FORCE.clear();
+ answers.clear();spent.clear();FORCE.clear();
  if(DATA)applyFilters();
 }
 function liveLeave(explicit=true){
@@ -1131,7 +1159,7 @@ async function liveBegin(cfg){
  const prior=SESS.find(entry=>entry.id===H.attemptId);
  const started=(sameAttempt&&sess.st)||prior?.st||Date.now();
  stopClock();answers.clear();
- if(!sameAttempt){flags.clear();spent.clear();elapsed=prior?.dur||0;}
+ if(!sameAttempt){spent.clear();elapsed=prior?.dur||0;}
  submitted=false;FORCE.clear();mode=cfg.mode;paused=false;document.body.classList.remove('paused');
  sess={account:QM.user.id,id:H.attemptId,st:started,eb:0,lim:0,marks:cfg.marks||1,neg:cfg.neg,mock:1,live:1,ids:cfg.ids};retryIds=new Set(cfg.ids);H.cfg=cfg;H.ph='wait';H.ci=-1;H.last='';
  ['roomBackdrop','mockBackdrop','summaryBackdrop'].forEach(i=>$(i).hidden=true);$('testSubmit').textContent='Submit';setTab('quiz');applyFilters();setOrder(cfg.ids);paint();}

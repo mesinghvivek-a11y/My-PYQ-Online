@@ -60,11 +60,29 @@ QM.kvGet=async k=>{const v=await tx('readonly',s=>s.get(k));return v===undefined
 QM.kvSet=async(k,v)=>{await tx('readwrite',s=>s.put(v,k));setLM(k);dirty()};QM.touch=k=>{setLM(k);dirty()};
 QM.kvDel=k=>tx('readwrite',s=>s.delete(k));
 QM.kvKeys=async p=>((await tx('readonly',s=>s.getAllKeys()))||[]).filter(k=>k.startsWith(p));
+QM.bookmarkPrefix=id=>'bookmark:'+encodeURIComponent(id)+':';
+QM.bookmarkKey=(sid,id)=>QM.bookmarkPrefix(sid)+encodeURIComponent(id);
+QM.makeBookmark=(subject,q,ts=Date.now())=>({
+ ts,sid:subject.id,subject:subject.name,id:q.id,number:q.number,chapter:q.chapter,
+ prompt:q.prompt,options:q.options,images:q.images,correct:q.correct,explanation:q.explanation
+});
+QM.legacyFlags=id=>{
+ try{const draft=JSON.parse(localStorage.getItem(id==='polity'?'pq-state-v2':'qm-state:'+id));
+  if(draft?.x?.account&&draft.x.account!==QM.user?.id)return [];
+  return Array.isArray(draft?.f)?draft.f:[];
+ }catch{return []}
+};
+QM.importFlags=async(subject,questions,legacy)=>{
+ const byId=new Map(questions.map(q=>[q.id,q]));
+ for(const id of legacy){const key=QM.bookmarkKey(subject.id,id),q=byId.get(id);
+  if(q&&!await QM.kvGet(key))await QM.kvSet(key,QM.makeBookmark(subject,q,1));
+ }
+};
 async function all(){const o={};for(const k of await QM.kvKeys('')){if(/^(cache|bank|subj):/.test(k))continue;o[k]=await QM.kvGet(k)}try{Object.keys(localStorage).filter(k=>/^(pq-state|qm-state)/.test(k)).forEach(k=>o['ls:'+k]=localStorage.getItem(k))}catch(e){}return o}
 QM.all=all;
 async function put(k,v){if(k.startsWith('ls:')){try{localStorage.setItem(k.slice(3),v)}catch(e){}}else await tx('readwrite',s=>s.put(v,k))}
 QM.put=put;
-const merge=(k,l,r,rt)=>{if(l==null)return r;if(r==null)return l;if(/^(notes|nts):/.test(k))return rt>(LM()[k]||0)?r:l;
+const merge=(k,l,r,rt)=>{if(l==null)return r;if(r==null)return l;if(k.startsWith('bookmark:'))return r.ts>l.ts?r:l;if(/^(notes|nts):/.test(k))return rt>(LM()[k]||0)?r:l;
  if(k==='sessions'){const m=new Map(l.map(x=>[x.id,x]));r.forEach(x=>{const o=m.get(x.id);if(!o||(x.en||0)>(o.en||0))m.set(x.id,x)});return[...m.values()]}
  if(k.startsWith('qs:')){const o={...l};for(const i in r)if(!o[i]||(r[i].t||0)>(o[i].t||0))o[i]=r[i];return o}
  if(k==='daily'){const o={...l};for(const d in r)o[d]=Math.max(o[d]||0,r[d]);return o}
