@@ -238,3 +238,5 @@ body:not([data-stage="active"]) #timerBox,#timerBox[hidden]{display:none!importa
 #sectionRail button[aria-pressed=true]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
 .chapterStats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:.65rem}.chapterStats span{font-size:.75rem;color:var(--muted)}.chapterStats b{display:block;font-size:.95rem;color:var(--ink)}
 .chapterRow{flex-wrap:wrap}.chapterInfo{flex-basis:220px}
+
+.setupActions{display:flex;gap:8px;flex-wrap:wrap}.setupActions a{text-decoration:none;color:var(--ink)}@media(max-width:540px){.setuphead{flex-wrap:wrap}}

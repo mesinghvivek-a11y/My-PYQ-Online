@@ -110,6 +110,8 @@ function render(){
  $('backChapters').href='builder.html?s='+encodeURIComponent(SUBJ.id);
  $('testSubmit').textContent=submitted?'Summary':L()&&!L().host?'Exit test':'End test';
  if(!active&&!submitted)drawChapterShelf();
+ $('examAnalysis').hidden=false;
+ $('examAnalysis').href='analysis.html?s='+encodeURIComponent(SUBJ.id)+(examFilter.value==='all'?'':'&exam='+encodeURIComponent(examFilter.value));
  $('chSummary').textContent=chosenChapters.size?chosenChapters.size+' selected':'All chapters';
  if(!active&&DATA)$('poolCount').textContent=DATA.questions.filter(q=>setupMatch(q)&&q.attemptable&&q.gradeable&&q.options.length).length+' eligible questions';
 
