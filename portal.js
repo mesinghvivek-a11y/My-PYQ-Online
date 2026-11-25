@@ -123,7 +123,9 @@ function render(){
  renderNavigator();updateScore();syncBar(q);save();
  if(!q){card.innerHTML='<div class="empty"><h3>No questions match this view</h3><p>Change the exam, chapter, review set or search text.</p></div>';return;}
  const saved=stateFor(q)||(FORCE.has(q.id)?{grade:'timeout',sel:[],selected:null}:null),rev=revealed(saved);selected=saved?saved.selected:null;
- const tags=(q.group&&DATA.groups&&DATA.groups.length?`<span class="tag">${esc(q.group)}</span>`:'')+(q.examTags.length?q.examTags.map(t=>`<span class="tag exam">${esc(t.label)}</span>`).join(''):(SUBJ.builtin?'<span class="tag">Exam tag not recovered</span>':''));
+ const mixed=mixedTest();
+ $('brandSub').hidden=mixed;$('sourceNote').hidden=mixed;
+ const tags=(!mixed&&q.group&&DATA.groups&&DATA.groups.length?`<span class="tag">${esc(q.group)}</span>`:'')+(q.examTags.length?q.examTags.map(t=>`<span class="tag exam">${esc(t.label)}</span>`).join(''):(SUBJ.builtin?'<span class="tag">Exam tag not recovered</span>':''));
  const mt=q.prompt?parseMatch(q.prompt):null,prompt=(q.prompt?(mt?matchHTML(mt):`<p class="prompt">${esc(rf(q.prompt))}</p>`):'')+(q.images||[]).map(u=>`<img class="qimg" src="${esc(u)}" loading="lazy" decoding="async" alt="Question figure">`).join('');
  let options;
  if(q.options.length){options='<div class="options" role="group" aria-label="Answer options">'+q.options.map(o=>{
@@ -143,7 +145,7 @@ function render(){
  const exam=mode==='exam';
  const hint=isMulti(q)&&!rev&&!submitted&&q.attemptable?'<span>Multiple answers: select every correct option'+(mode==='practice'?', then press Check':'')+'</span>':submitted?'Test submitted — review only.':!q.attemptable?'This item is retained for source review.':exam?'<span>Exam mode: change your answer any time before you submit</span>':'<span>Tap an option to check it instantly</span><kbd class="kbdhint">A–D</kbd><span class="kbdhint">then</span><kbd class="kbdhint">Enter</kbd><span class="kbdhint">for next</span>';
  const mchk=isMulti(q)&&!rev&&!submitted&&mode==='practice'&&saved&&saved.sel&&saved.sel.length?'<div style="margin:0 28px 4px"><button class="btn primary" id="chkMulti" type="button">Check answer</button></div>':'';
- card.innerHTML=`<div class="qhead"><span class="qn">Q${esc(q.number)}</span><span class="qch" title="${esc(q.chapter||'')}">Ch ${String(q.chapterNo).padStart(2,'0')} · ${esc(q.chapter||'')}</span><div class="qacts"><button class="ib ${flags.has(q.id)?'on':''}" id="flagBtn" type="button" title="Bookmark for review (F)" aria-label="Bookmark for review" aria-pressed="${flags.has(q.id)}"><svg viewBox="0 0 24 24" width="18" height="18" fill="${flags.has(q.id)?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button><button class="ib rep" id="rptBtn" type="button" title="Report a problem with this question" aria-label="Report a problem"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/></svg></button></div>${tags?`<div class="tags">${tags}</div>`:''}</div>
+ card.innerHTML=`<div class="qhead"><span class="qn">Q${mixed?current+1:esc(q.number)}</span>${mixed?'':`<span class="qch" title="${esc(q.chapter||'')}">Ch ${String(q.chapterNo).padStart(2,'0')} · ${esc(q.chapter||'')}</span>`}<div class="qacts"><button class="ib ${flags.has(q.id)?'on':''}" id="flagBtn" type="button" title="Bookmark for review (F)" aria-label="Bookmark for review" aria-pressed="${flags.has(q.id)}"><svg viewBox="0 0 24 24" width="18" height="18" fill="${flags.has(q.id)?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button><button class="ib rep" id="rptBtn" type="button" title="Report a problem with this question" aria-label="Report a problem"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/></svg></button></div>${tags?`<div class="tags">${tags}</div>`:''}</div>
  <div class="qbody">${prompt}${options}</div>
  <p class="hint">${hint}</p>${mchk}${fb}${noteBox(q)}`;
  card.querySelectorAll('[data-option]').forEach(b=>b.addEventListener('click',()=>pick(b.dataset.option)));
@@ -176,13 +178,14 @@ async function toggleFlag(q){
  }catch{toast('Bookmark could not be saved. Please try again.');}finally{bookmarkWrites.delete(key);}
 }
 function go(i){if(i<0||i>=order.length||paused||(L()&&!L().int))return;current=i;selected=null;render();scrollTo({top:0,behavior:'smooth'});if(innerWidth<=760)$('navigator').classList.remove('open');}
-let navOrder=null,navBtns=[];
+function mixedTest(){return !!(sess.mock||sess.live||retryIds||document.body.dataset.stage==='active'||submitted)&&order.some(q=>q.chapterNo!==order[0].chapterNo);}
+let navOrder=null,navMixed=null,navBtns=[];
 function navCls(q,i){const a=stateFor(q),st=!a?'':a.grade==='correct'?' done':a.grade==='wrong'?' wrong':a.grade==='ungraded'?' ungraded':' answered';return'navitem'+(i===current?' active':'')+st+(flags.has(q.id)?' flag':'');}
 navList.addEventListener('click',e=>{const b=e.target.closest('.navitem');if(b)go(+b.dataset.i);});
 function renderNavigator(){
- if(navOrder!==order){navOrder=order;navBtns=[];const fr=document.createDocumentFragment();let prev=null;
-  order.forEach((q,i)=>{if(!shuffled&&q.chapterNo!==prev){const g=document.createElement('div');g.className='navgrp';g.textContent=`${String(q.chapterNo).padStart(2,'0')} · ${q.chapter||''}`;fr.append(g);prev=q.chapterNo;}
-   const b=document.createElement('button');b.type='button';b.dataset.i=i;b.textContent=`${q.chapterNo}·${q.number}`;b.title=`Chapter ${q.chapterNo}, question ${q.number}`;navBtns.push(b);fr.append(b);});
+ const mixed=mixedTest();if(navOrder!==order||navMixed!==mixed){navMixed=mixed;navOrder=order;navBtns=[];const fr=document.createDocumentFragment();let prev=null;
+  order.forEach((q,i)=>{if(!mixed&&!shuffled&&q.chapterNo!==prev){const g=document.createElement('div');g.className='navgrp';g.textContent=`${String(q.chapterNo).padStart(2,'0')} · ${q.chapter||''}`;fr.append(g);prev=q.chapterNo;}
+   const b=document.createElement('button');b.type='button';b.dataset.i=i;b.textContent=mixed?String(i+1):`${q.chapterNo}·${q.number}`;b.title=mixed?`Question ${i+1}`:`Chapter ${q.chapterNo}, question ${q.number}`;navBtns.push(b);fr.append(b);});
   navList.replaceChildren(fr);}
  for(let i=0;i<navBtns.length;i++){const c=navCls(order[i],i);if(navBtns[i].className!==c)navBtns[i].className=c;}
  const a=navBtns[current];if(a){const r=a.getBoundingClientRect(),n=navList.getBoundingClientRect();if(r.top<n.top||r.bottom>n.bottom)navList.scrollTop+=r.top-n.top-n.height/2;}
@@ -446,18 +449,19 @@ addEventListener('pagehide',()=>{if(SUBJ){logSession(submitted?'submitted':'in-p
 /* summary (live + saved sessions) */
 let summaryCtx={rec:null};
 function paintSummary(d,rec){
- summaryCtx={rec};const ex=d.mode==='exam';
+ summaryCtx={rec};const mixed=!rec&&mixedTest();const ex=d.mode==='exam';
  $('summaryTitle').textContent=rec?`${d.subjName} · ${d.mock?'Mock test':ex?'Test':'Practice'} session`:'Test summary';
  $('summaryTime').textContent=rec?`${fmtDate(d.st)} · ${fmt(d.dur)} · ${d.total} questions${d.status==='in-progress'?' · in progress':''}`:`Completed in ${fmt(elapsed)} · ${d.total} questions in this test`;
  if(d.mock||d.neg){const sc=Math.round((d.c*(d.marks||1)-d.w*d.neg)*100)/100;$('summaryTime').textContent+=` · Score ${sc} / ${d.total*(d.marks||1)}`;}$('summaryCorrect').textContent=d.c;$('summaryIncorrect').textContent=d.w;$('summaryUnattempted').textContent=d.total-d.att;$('summaryUngraded').textContent=d.u;
- $('summaryAvg').textContent=d.att?mmss(Math.round(d.tt/d.att)):'–';$('summarySlow').textContent=d.slow&&d.slow.s?mmss(d.slow.s):'–';$('summarySlowQ').textContent=d.slow&&d.slow.s?`Slowest · ${d.slow.label}`:'Slowest question';
+ $('summaryAvg').textContent=d.att?mmss(Math.round(d.tt/d.att)):'–';$('summarySlow').textContent=d.slow&&d.slow.s?mmss(d.slow.s):'–';$('summarySlowQ').textContent=d.slow&&d.slow.s&&!mixed?`Slowest · ${d.slow.label}`:'Slowest question';
  const pct=d.c+d.w?Math.round(d.c/(d.c+d.w)*100):0;$('ringPct').textContent=pct+'%';$('ringFg').style.strokeDashoffset=402.1;
  requestAnimationFrame(()=>requestAnimationFrame(()=>$('ringFg').style.strokeDashoffset=402.1*(1-pct/100)));
  const rows=d.rows.filter(r=>r.c+r.w>0).sort((a,b)=>a.c/(a.c+a.w)-b.c/(b.c+b.w));
- $('chapterRows').innerHTML=rows.map(r=>`<div class="chrow"><span title="${esc(r.t)}">${r.no} · ${esc(r.t)}</span><div class="track"><i style="width:${r.c/r.n*100}%;background:var(--ok)"></i><i style="width:${r.w/r.n*100}%;background:var(--bad)"></i></div><em>${r.c}/${r.n}</em></div>`).join('')||'<p class="dnote">No attempts to break down.</p>';
- $('weakNote').hidden=rows.length<2;if(rows.length>=2)$('weakNote').textContent=`Focus first on: ${rows.slice(0,3).map(r=>`${r.no} · ${r.t}`).join(', ')}`;
+ $('chapterRows').hidden=mixed;$('chapterRows').previousElementSibling.hidden=mixed;
+ $('chapterRows').innerHTML=mixed?'':rows.map(r=>`<div class="chrow"><span title="${esc(r.t)}">${r.no} · ${esc(r.t)}</span><div class="track"><i style="width:${r.c/r.n*100}%;background:var(--ok)"></i><i style="width:${r.w/r.n*100}%;background:var(--bad)"></i></div><em>${r.c}/${r.n}</em></div>`).join('')||'<p class="dnote">No attempts to break down.</p>';
+ $('weakNote').hidden=mixed||rows.length<2;if(rows.length>=2)$('weakNote').textContent=`Focus first on: ${rows.slice(0,3).map(r=>`${r.no} · ${r.t}`).join(', ')}`;
  $('incorrectCountSummary').textContent=`(${d.wrong.length})`;$('retryBtn').disabled=!d.wrong.length;$('reviewBox').innerHTML='';
- $('incorrectList').innerHTML=d.wrong.length?d.wrong.map((x,k)=>`<button type="button" data-k="${k}"><b>${x.label}</b><span>${esc(x.ch)}</span></button>`).join(''):'<p class="dnote">No incorrect answers. Nicely done.</p>';
+ $('incorrectList').innerHTML=d.wrong.length?d.wrong.map((x,k)=>`<button type="button" data-k="${k}"><b>${mixed?'Q'+(x.i+1):x.label}</b>${mixed?'':`<span>${esc(x.ch)}</span>`}</button>`).join(''):'<p class="dnote">No incorrect answers. Nicely done.</p>';
  $('incorrectList').querySelectorAll('[data-k]').forEach(b=>b.addEventListener('click',()=>{const x=d.wrong[+b.dataset.k];if(rec)showReview(rec,x.id);else{$('summaryBackdrop').hidden=true;go(x.i);}}));
  $('summaryBackdrop').hidden=false;$('closeSummary').focus();}
 function showSummary(){paintSummary({...tally(),mode},null);}
@@ -1048,7 +1052,7 @@ function reconcileRoster(H,members){
 function publishRoster(H){
  saveHost();
  if(H.ph==='lobby'){lobbyCast();showRoom();}
- else{cast({t:'roster',players:names()});render();}
+ else{cast({t:'roster',players:names()});liveUI();}
 }
 function memberName(H,n){
  if(!H.host||n===H.name)return esc(n);
@@ -1058,7 +1062,7 @@ document.addEventListener('click',e=>{
  const button=e.target.closest('.memberName'),H=LIVE;
  if(!button||!H?.host)return;
  const name=button.textContent;H.selectedMember=H.selectedMember===name?null:name;
- if(H.ph==='lobby')showRoom();else render();
+ if(H.ph==='lobby')showRoom();else liveUI();
 });
 function moderationControls(H,n){
  if(!H.host||n===H.name||H.ph==='over')return '';
@@ -1081,13 +1085,13 @@ document.addEventListener('click',async e=>{
 });
 function recPick(name,m){const H=LIVE;if(!H||H.ph!=='live'||H.pz||H.cfg.ids[H.i]!==m.qid||!Array.isArray(m.sel))return;
  let pm=H.picks.get(m.qid);if(!pm)H.picks.set(m.qid,pm=new Map());const o=pm.get(name);pm.set(name,{sel:m.sel,ms:o?o.ms:(+m.ms||0)});castPh();}
-const allIn=()=>{const H=LIVE,pm=H.picks.get(H.cfg.ids[H.i]);return H.presenceReady&&!!pm&&names().filter(n=>!H.off.has(n)).every(n=>pm.has(n));};
+const allIn=()=>{const H=LIVE,pm=H.picks.get(H.cfg.ids[H.i]);return H.presenceReady&&!!pm&&names().every(n=>pm.has(n));};
 function hostTick(){const H=LIVE;if(!H||H.ph==='over'||H.pz)return;const now=Date.now();
  if(H.ph==='live'){if(now>=H.end||allIn())toReveal();}else if(H.ph==='reveal'&&now>=H.end)nextQ();}
 function toReveal(){if(LIVE.cfg.mode==='exam')return nextQ();LIVE.ph='reveal';LIVE.end=Date.now()+REV*1000;castPh();}
 function nextQ(){const H=LIVE;if(!H||!H.host||H.ph==='over'||H.ph==='lobby')return;H.i++;if(H.i>=H.cfg.ids.length)return finish();H.ph='live';H.end=Date.now()+H.cfg.qsec*1000;castPh();}
 function hostWatch(H){return Math.max(0,(H.cfg.watchPausedAt||Date.now())-(H.cfg.watchStart||Date.now()));}
-function phMsg(){const H=LIVE,pm=H.picks.get(H.cfg.ids[H.i]),pk=Object.create(null);if(pm)pm.forEach((v,n)=>{if(H.roster.has(n))pk[n]=H.cfg.mode==='exam'?[]:v.sel;});return{t:'ph',watchMs:hostWatch(H),i:H.i,ph:H.ph,rem:H.pz?H.pr:H.end-Date.now(),pz:H.pz?1:0,picks:pk};}
+function phMsg(){const H=LIVE,pm=H.picks.get(H.cfg.ids[H.i]),pk=Object.create(null);if(pm)pm.forEach((v,n)=>{if(H.roster.has(n))pk[n]=H.cfg.mode==='practice'&&H.ph==='reveal'?v.sel:[];});return{t:'ph',watchMs:hostWatch(H),i:H.i,ph:H.ph,rem:H.pz?H.pr:H.end-Date.now(),pz:H.pz?1:0,picks:pk};}
 function castPh(){const m=phMsg();cast(m);onPh(m);saveHost();}
 async function queueCheckpoint(H,snapshot){
  H.pendingSnapshot=snapshot;if(H.saving)return;H.saving=true;
@@ -1112,10 +1116,12 @@ async function findHost(code){
 }
 function saveHost(){const H=LIVE;const snapshot={account:QM.user?.id,code:H.code,cursor:H.peer.cursor,session:H.peer.session,ownerKey:H.ownerKey,attemptId:H.attemptId,members:[...H.members],cfg:H.cfg,name:H.name,i:H.i,ph:H.ph,deadline:H.end,rem:H.pz?H.pr:Math.max(0,H.end-Date.now()),pz:H.pz?1:0,roster:[...H.roster],picks:[...H.picks].map(([q,m])=>[q,[...m]])};queueCheckpoint(H,snapshot);try{localStorage.setItem('qm-host',JSON.stringify(snapshot));localStorage.setItem('qm-room',JSON.stringify({role:'h',code:H.code,session:H.peer.session,t:Date.now()}));}catch(e){}}
 function onPh(m){const H=LIVE;if(!H||!H.cfg?.ids||!byId.has(H.cfg.ids[m.i]))return;const first=H.ci!==m.i;
+ const redraw=first||H.displayPhase!==m.ph||current!==m.i;H.displayPhase=m.ph;
  if(first&&m.ph==='live'){H.qs=Date.now()-(H.cfg.qsec*1000-m.rem);H.last='';}
  H.watchMs=m.watchMs??H.watchMs??0;H.watchAnchor=Date.now();H.ci=m.i;H.ph=m.ph;H.end=Date.now()+m.rem;H.cpicks=m.picks;H.pz=m.pz;H.pr=m.rem;
  if(m.ph==='reveal'&&H.cfg.mode==='practice'){const qq=H.cfg.ids[m.i],a=answers.get(qq);if(!a)FORCE.add(qq);else if(a.grade==='pending'){const g=gradeOf(byId.get(qq),a);answers.set(qq,{...a,grade:g});recordResult(byId.get(qq),g);}}
- if(current!==m.i){current=m.i;selected=null;scrollTo({top:0});}render();}
+ if(current!==m.i){current=m.i;selected=null;scrollTo({top:0});}
+ if(redraw)render();else{liveUI();syncBar(currentQ());paint();}}
 function finish(){const H=LIVE,ids=H.cfg.ids,neg=H.cfg.neg||0,rows=[],pk={};
  ids.forEach(id=>{pk[id]=Object.create(null);const pm=H.picks.get(id);if(pm)pm.forEach((v,n)=>{if(H.roster.has(n))pk[id][n]=v.sel;});});
  names().forEach(n=>{let c=0,w=0,t=0,att=0;ids.forEach(id=>{const v=H.picks.get(id)&&H.picks.get(id).get(n);if(!v)return;att++;t+=v.ms||0;const g=gradeOf(byId.get(id),{sel:v.sel});if(g==='correct')c++;else if(g==='wrong')w++;});rows.push({n,c,w,u:ids.length-att,t,s:Math.round((c*(H.cfg.marks||1)-w*neg)*100)/100});});
@@ -1213,7 +1219,7 @@ async function guestMsg(H,m){
   H.admitted=true;clearTimeout(H.handshake);finishRoomOpening(H.opening);$('mockBackdrop').hidden=true;
  }
  if(m.t==='lobby'){H.players=m.players;H.cfg=m.cfg;H.ph='lobby';showRoom();}
- else if(m.t==='roster'){H.players=m.players;if(DATA)render();}
+ else if(m.t==='roster'){H.players=m.players;if(DATA)liveUI();}
  else if(m.t==='start')await liveBegin(m.cfg);
  else if(m.t==='rj'){await liveBegin(m.cfg);if(LIVE!==H)return;restoreMine(m.mine||{});H.players=m.names||[];onPh(m.ph);
   const pending=JSON.parse(localStorage.getItem(H.pendingKey)||'null');
@@ -1251,14 +1257,25 @@ $('pauseBtn').addEventListener('click',e=>{const H=L();if(!H)return;e.stopImmedi
 $('nextBtn').addEventListener('click',e=>{const H=L();if(!H)return;e.stopImmediatePropagation();if(H.host&&!H.pz){if(H.ph==='reveal')nextQ();else if(H.ph==='live')toReveal();}},true);
 const _rn=render;render=function(){_rn();liveUI();paint();};
 function liveUI(){const H=L(),q=currentQ();if(!H||!H.cfg||!H.cfg.ids||!q||H.ci<0)return;
- const mine=answers.get(q.id),done=revealed(mine),prac=H.cfg.mode==='practice',pk=H.cpicks||{},nm=H.host?names():H.players;
+ const prac=H.cfg.mode==='practice',pk=H.cpicks||{},nm=H.host?names():H.players;
  const rows=nm.map(n=>{const s=Object.hasOwn(pk,n)?pk[n]:null;let v;if(!s)v=`<span style="color:var(--muted)">${H.ph==='reveal'?'no answer':'thinking…'}</span>`;
-  else if(!prac||!(done||H.ph==='reveal'))v='✔ answered';else{const ok=gradeOf(q,{sel:s})==='correct';v=`<b style="color:var(--${ok?'ok':'bad'})">${lab(q,s)} ${ok?'✓':'✗'}</b>`;}
+  else if(!prac||H.ph!=='reveal')v='✔ answered';else{const ok=gradeOf(q,{sel:s})==='correct';v=`<b style="color:var(--${ok?'ok':'bad'})">${lab(q,s)} ${ok?'✓':'✗'}</b>`;}
   return`<div class="mine"><span>${memberName(H,n)}${n===H.name?' (you)':''}</span><span>${v}</span>${moderationControls(H,n)}</div>`;}).join('');
  const ex='';
- const p=document.createElement('div');p.id='livePanel';p.className='lpanel';
+ const existing=$('livePanel');
+ const p=existing||document.createElement('div');p.id='livePanel';p.className='lpanel';
+ const structure=JSON.stringify([H.code,H.ci,H.ph,H.pz||0,nm,H.selectedMember,[...H.members||[]]]);
+ if(existing&&p.dataset.structure===structure){
+  const labels=p.querySelectorAll('.mine > span:nth-child(2)');
+  nm.forEach((n,i)=>{
+   const label=labels[i];
+   if(label&&H.ph==='live'&&Object.hasOwn(pk,n)&&label.textContent!=='✔ answered')label.textContent='✔ answered';
+  });
+  return;
+ }
+ p.dataset.structure=structure;
  p.innerHTML=`<div class="lhead"><b>Room ${esc(H.code)}</b><span>Question ${H.ci+1} / ${H.cfg.ids.length}</span>${prac?'':'<span id="lcd">'+H.show()+'</span>'}</div>${prac?'':'<p class="dnote" style="margin:0 0 6px">Exam: friends’ answers stay hidden until the end.</p>'}${H.pz?'<p style="margin:0 0 6px;font-weight:700">⏸ Test paused by the host</p>':''}${rows}${ex}`;
- card.append(p);}
+ if(!existing)card.append(p);}
 function hostPause(){const H=LIVE;if(!H||!H.host)return;if(H.pz){if(H.cfg.watchPausedAt)H.cfg.watchStart+=Date.now()-H.cfg.watchPausedAt;delete H.cfg.watchPausedAt;H.pz=0;H.end=Date.now()+H.pr;}else{H.cfg.watchPausedAt=Date.now();H.pr=Math.max(0,H.end-Date.now());H.pz=1;}castPh();}
 
 /* ===== v5: sync hooks · reports · shared banks ===== */
