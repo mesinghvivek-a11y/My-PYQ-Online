@@ -96,7 +96,10 @@ document.querySelector('a[aria-label="Home"]').addEventListener('click',e=>{
 });
 function render(){
  const active=!submitted&&!!(retryIds||sess.mock||sess.id||L());
- document.body.dataset.stage=active?'active':submitted?'review':'setup';
+ const stage=active?'active':submitted?'review':'setup';
+ document.body.dataset.stage=stage;
+ for(const id of ['fbar','chapterShelf','studyTools'])$(id).hidden=stage!=='setup';
+ $('shell').hidden=stage==='setup';
  const page=active||submitted?'test.html':'builder.html';
  const url=new URL(location.href);
  if(!url.pathname.endsWith('/'+page)){
@@ -113,7 +116,12 @@ function render(){
  $('examAnalysis').hidden=false;
  $('examAnalysis').href='analysis.html?s='+encodeURIComponent(SUBJ.id)+(examFilter.value==='all'?'':'&exam='+encodeURIComponent(examFilter.value));
  $('chSummary').textContent=chosenChapters.size?chosenChapters.size+' selected':'All chapters';
- if(!active&&DATA)$('poolCount').textContent=DATA.questions.filter(q=>setupMatch(q)&&q.attemptable&&q.gradeable&&q.options.length).length+' eligible questions';
+ if(!active&&DATA){
+  const pool=DATA.questions.filter(q=>setupMatch(q)&&q.attemptable&&q.gradeable&&q.options.length);
+  $('poolCount').textContent=pool.length+' eligible questions across '+new Set(pool.map(q=>q.chapterNo)).size+' chapters';
+  const count=[groupFilter.value!=='all',viewFilter.value!=='all',!!search].filter(Boolean).length;
+  $('moreCount').textContent=count?'('+count+')':'';
+ }
 
  const q=currentQ();
  $('filterSummary').textContent=retryIds?(sess.mock?`${sess.live?'Live room':'Custom session'} · ${order.length} questions`:`Retrying ${order.length} missed questions`):`${order.length} of ${DATA.questions.length} questions in view`;
@@ -138,7 +146,7 @@ function render(){
  let fb='';
  if(rev){
   if(saved.grade==='correct')fb=`<div class="fb good"><div class="fb-head"><span class="fb-ico" data-i="✓"></span><div>Correct<small>Correct option: ${keyStr(q)}</small></div></div>${expl(q.explanation,'Explanation','No separate explanation text was recovered from the source.')}</div>`;
-  else if(saved.grade==='wrong')fb=`<div class="fb bad"><div class="fb-head"><span class="fb-ico" data-i="✗"></span><div>Incorrect<small>Correct option: ${keyStr(q)}</small></div></div>${expl(q.explanation,'Explanation')}</div>`;
+  else if(saved.grade==='wrong')fb=`<div class="fb bad"><div class="fb-head"><span class="fb-ico" data-i="✗"></span><div>Incorrect<small>You chose ${esc(lab(q,selKeys(saved)))} · Correct option: ${keyStr(q)}</small></div></div>${expl(q.explanation,'Explanation')}</div>`;
   else if(saved.grade==='timeout')fb=`<div class="fb neutral"><div class="fb-head"><span class="fb-ico" data-i="⏱"></span><div>Time’s up<small>Correct option: ${keyStr(q)}</small></div></div>${expl(q.explanation,'Explanation','No separate explanation text was recovered from the source.')}</div>`;
   else fb=`<div class="fb neutral"><div class="fb-head"><span class="fb-ico" data-i="!"></span><div>Attempt recorded · no answer key<small>${esc(q.answerRaw||'No printed answer key line')} — the book gives no mappable keyed option, so this cannot be scored.</small></div></div>${expl(q.explanation,'Explanation / source note')}</div>`;
  }
@@ -262,7 +270,7 @@ function ask(title,msg,ok){return new Promise(res=>{$('cTitle').textContent=titl
 /* actions */
 $('backChapters').onclick=e=>{
  if(!submitted||e.ctrlKey||e.metaKey||e.shiftKey)return;
- e.preventDefault();flushPersist();resetAll();FORCE.clear();saveNow();window.scrollTo(0,0);
+ e.preventDefault();flushPersist();delete $('sectionRail').dataset.subject;resetAll();FORCE.clear();saveNow();
 };
 function resetAll(){if(LIVE)liveLeave();logSession(submitted?'submitted':'ended');stopClock();sess={};answers.clear();spent.clear();submitted=false;paused=false;document.body.classList.remove('paused');elapsed=0;paint();retryIds=null;$('testSubmit').textContent='Submit';$('summaryBackdrop').hidden=true;applyFilters();setPaused(false);startClock();}
 async function setMode(m){if(m===mode)return;if(answers.size&&!await ask('Switch to '+(m==='exam'?'exam':'practice')+' mode?','Your current answers, flags and timer will be cleared so the new mode starts clean.','Switch and reset'))return;logSession(submitted?'submitted':'ended');sess={};mode=m;resetAll();toast(m==='exam'?'Exam mode: results appear after you submit.':'Practice mode: check each answer as you go.');}
@@ -306,7 +314,13 @@ $('fontDown').addEventListener('click',()=>{fontScale=Math.max(.8,+(fontScale-.1
 $('fontUp').addEventListener('click',()=>{fontScale=Math.min(1.6,+(fontScale+.1).toFixed(2));applyFont();});
 $('themeBtn').addEventListener('click',()=>setTheme(!document.body.classList.contains('dark')));
 document.addEventListener('keydown',e=>{
+ if(document.querySelector('dialog[open]'))return;
  if(!$('confirmBackdrop').hidden){if(e.key==='Escape')$('cNo').click();return;}
+ const layer=topPortalDialog();
+ if(layer){
+  if(e.key==='Escape'){const close={summaryBackdrop:'closeSummary',subjBackdrop:'closeSubj',mockBackdrop:'mkCancel',rptBackdrop:'rptCancel'}[layer.id];if(close)$(close).click();}
+  return;
+ }
  if(e.key==='Escape'){$('summaryBackdrop').hidden=true;$('subjBackdrop').hidden=true;$('mockBackdrop').hidden=true;$('navigator').classList.remove('open');return;}
  if(document.body.dataset.stage==='setup'||$('routeDialog').open)return;
  if(e.ctrlKey||e.metaKey||e.altKey||!$('summaryBackdrop').hidden||!$('subjBackdrop').hidden||tab!=='quiz'||!$('mockBackdrop').hidden||/SELECT|INPUT|TEXTAREA/.test(document.activeElement.tagName))return;
@@ -341,6 +355,12 @@ const kv={db:null,
  async keys(p){const keys=await QM.readStore(s=>s.getAllKeys());if(keys)return keys.filter(k=>k.startsWith(p));try{return Object.keys(localStorage).filter(k=>k.startsWith('qmkv:'+p)).map(k=>k.slice(5))}catch(e){return[]}}};
 
 /* filters */
+function rememberShelf(){
+ if(!SUBJ||document.body.dataset.stage!=='setup')return;
+ try{sessionStorage.setItem('shelf:'+SUBJ.id,JSON.stringify({query:$('chapterQuery').value,status:$('chapterStatus').value,section:shelfSection,x:$('sectionRail').scrollLeft,y:window.scrollY,returning:true}));}catch{}
+}
+document.addEventListener('click',e=>{if(e.target.closest('#chapterList button,#startPortal,[data-study],#examAnalysis'))rememberShelf();},true);
+addEventListener('pagehide',rememberShelf);
 const chosenChapters=new Set();
 let shelfSection=null;
 $('sectionRail').onclick=e=>{
@@ -357,13 +377,17 @@ function fillChapters(){
 $('chapterQuery').oninput=$('chapterStatus').onchange=drawChapterShelf;
 function drawChapterShelf(){
  if(!DATA)return;
- const query=$('chapterQuery').value.trim().toLowerCase(),filter=$('chapterStatus').value;
  const groups=[...new Set(DATA.chapters.map(c=>c.group||''))];
  const rail=$('sectionRail');
  if(rail.dataset.subject!==SUBJ.id){
   rail.dataset.subject=SUBJ.id;shelfSection=null;rail.scrollLeft=0;
+  let saved={};try{saved=JSON.parse(sessionStorage.getItem('shelf:'+SUBJ.id)||'{}')}catch{}
+  $('chapterQuery').value=saved.query||'';$('chapterStatus').value=saved.status||'all';shelfSection=groups.includes(saved.section)?saved.section:null;
+  if(saved.returning){requestAnimationFrame(()=>{scrollTo(0,saved.y||0);rail.scrollLeft=saved.x||0;});saved.returning=false;try{sessionStorage.setItem('shelf:'+SUBJ.id,JSON.stringify(saved));}catch{}}
+
   rail.innerHTML='<button type="button" data-all>All sections</button>'+groups.map(g=>`<button type="button" data-group="${esc(g)}">${esc(g||'Unsectioned')}</button>`).join('');
  }
+ const query=$('chapterQuery').value.trim().toLowerCase(),filter=$('chapterStatus').value;
  for(const b of rail.children)b.setAttribute('aria-pressed',String(b.hasAttribute('data-all')?shelfSection===null:b.dataset.group===shelfSection));
  const counts=new Map(),latest=new Map(),earlier=earlierProgress(progressIndex,QS,SESS,SUBJ);
  for(const q of DATA.questions){
@@ -384,10 +408,11 @@ function drawChapterShelf(){
   const status=eligible&&done>=eligible?'Complete':done||prior?'In progress':'Remaining';
   const result=last?Number((last.row.c*last.marks-last.row.w*last.neg).toFixed(2))+' / '+Number((last.row.n*last.marks).toFixed(2)):'—';
   if(filter!=='all'&&filter!==status||query&&!(ch.title+' '+(ch.group||'')).toLowerCase().includes(query))return '';
-  return `<div class="chapterRow"><div class="chapterInfo"><small>${esc(ch.group||'')} · Chapter ${esc(ch.no)}</small><strong>${esc(ch.title)}</strong><small><span class="stateChip">${status}</span> </small><div class="chapterStats"><span>Questions<b>${total}</b></span><span>Attempted<b>${done+prior}</b></span><span>Last score<b>${result}</b></span></div>${prior?`<small>${prior} attempted in an earlier bank edition</small>`:''}<progress max="${eligible||1}" value="${done}" aria-label="Questions practised"></progress></div><button type="button" class="btn" data-chapter="${ch.no}" ${eligible?'':'disabled'} aria-label="Start ${esc(ch.title)}">Start →</button></div>`;
- }).join('')||'<p>No chapters match these filters.</p>';
+  return `<div class="chapterRow"><div class="chapterInfo"><small>${esc(ch.group||'')} · Chapter ${esc(ch.no)}</small><strong>${esc(ch.title)}</strong><small><span class="stateChip">${status}</span> </small><div class="chapterStats"><span>Attempted<b>${done+prior} / ${total}</b></span><span>Last attempt score<b>${result}</b></span></div>${prior?`<small>${prior} attempted in an earlier bank edition</small>`:''}<progress max="${eligible||1}" value="${done}" aria-label="Questions practised"></progress></div><button type="button" class="btn" data-chapter="${ch.no}" ${eligible?'':'disabled'} aria-label="Start ${esc(ch.title)}">Start →</button></div>`;
+ }).join('')||'<p>No chapters match these filters.</p><button class="btn" type="button" data-clear-shelf>Clear chapter filters</button>';
 }
 $('chapterList').onclick=e=>{
+ if(e.target.closest('[data-clear-shelf]')){shelfSection=null;$('chapterQuery').value='';$('chapterStatus').value='all';drawChapterShelf();return;}
  const b=e.target.closest('[data-chapter]');if(!b||!signedIn())return;
  $('fClear').click();$('mkSrc').value='all';chosenChapters.add(+b.dataset.chapter);
  fillChapters();userFilter();chooseRoute();
@@ -463,7 +488,7 @@ function paintSummary(d,rec){
  $('chapterRows').hidden=mixed;$('chapterRows').previousElementSibling.hidden=mixed;
  $('chapterRows').innerHTML=mixed?'':rows.map(r=>`<div class="chrow"><span title="${esc(r.t)}">${r.no} · ${esc(r.t)}</span><div class="track"><i style="width:${r.c/r.n*100}%;background:var(--ok)"></i><i style="width:${r.w/r.n*100}%;background:var(--bad)"></i></div><em>${r.c}/${r.n}</em></div>`).join('')||'<p class="dnote">No attempts to break down.</p>';
  $('weakNote').hidden=mixed||rows.length<2;if(rows.length>=2)$('weakNote').textContent=`Focus first on: ${rows.slice(0,3).map(r=>`${r.no} · ${r.t}`).join(', ')}`;
- $('incorrectCountSummary').textContent=`(${d.wrong.length})`;$('retryBtn').disabled=!d.wrong.length;$('reviewBox').innerHTML='';
+ $('incorrectCountSummary').textContent=`(${d.wrong.length})`;$('retryBtn').disabled=!d.wrong.length;$('reviewMistakes').hidden=!d.wrong.length;$('reviewMistakes').onclick=()=>$('incorrectList').querySelector('button')?.click();$('reviewBox').innerHTML='';
  $('incorrectList').innerHTML=d.wrong.length?d.wrong.map((x,k)=>`<button type="button" data-k="${k}"><b>${mixed?'Q'+(x.i+1):x.label}</b>${mixed?'':`<span>${esc(x.ch)}</span>`}</button>`).join(''):'<p class="dnote">No incorrect answers. Nicely done.</p>';
  $('incorrectList').querySelectorAll('[data-k]').forEach(b=>b.addEventListener('click',()=>{const x=d.wrong[+b.dataset.k];if(rec)showReview(rec,x.id);else{$('summaryBackdrop').hidden=true;go(x.i);}}));
  $('summaryBackdrop').hidden=false;$('closeSummary').focus();}
@@ -1147,7 +1172,7 @@ function showLB(){const r=LIVE.res,t=r.rows[0];
  select.onchange=draw;d.append(select,chart);$('lbBody').append(d);if(r.ids.length)draw();
  $('lbBackdrop').hidden=false;}
 function showRoom(){const H=LIVE;if(!H||H.ph!=='lobby'){$('roomBackdrop').hidden=true;return;}const ns=H.host?names():(H.players||[]),c=H.cfg||{};
- $('roomBody').innerHTML=`<div class="rcode" onclick="navigator.clipboard&&navigator.clipboard.writeText('${H.code}');toast('Code copied')">${esc(H.code)}</div><p style="margin:0;text-align:center">Friends tap Join room and enter this code.</p><p style="margin:8px 0 0;text-align:center;font-size:13px">${c.mode==='exam'?'Exam':'Practice'} · ${c.n||'?'} questions · ${c.qsec||'?'}s per question</p><h3>Players (${ns.length})</h3>`+ns.map((n,i)=>`<div class="mine"><span><b>${memberName(H,n)}</b>${i===0?' <span class="chip">host</span>':''}</span>${moderationControls(H,n)}</div>`).join('')+(H.host?'':'<p class="dnote">Waiting for the host to start…</p>');
+ $('roomBody').innerHTML=`<button type="button" class="rcode" id="copyCode">${esc(H.code)}</button><p style="margin:0;text-align:center">Friends tap Join room and enter this code.</p><p style="margin:8px 0 0;text-align:center;font-size:13px">${c.mode==='exam'?'Exam':'Practice'} · ${c.n||'?'} questions · ${c.qsec||'?'}s per question</p><h3>Players (${ns.length})</h3>`+ns.map((n,i)=>`<div class="mine"><span><b>${memberName(H,n)}</b>${i===0?' <span class="chip">host</span>':''}</span>${moderationControls(H,n)}</div>`).join('')+(H.host?'':'<p class="dnote">Waiting for the host to start…</p>');
  $('roomStart').hidden=!H.host;$('roomBackdrop').hidden=false;}
 function clearLiveAttempt(){
  if(!sess.live||submitted)return;
@@ -1291,8 +1316,9 @@ function liveUI(){const H=L(),q=currentQ();if(!H||!H.cfg||!H.cfg.ids||!q||H.ci<0
   });
   return;
  }
+ const rosterOpen=p.querySelector('.roomRoster')?.open||false;
  p.dataset.structure=structure;
- p.innerHTML=`<div class="lhead"><b>Room ${esc(H.code)}</b><span>Question ${H.ci+1} / ${H.cfg.ids.length}</span>${prac?'':'<span id="lcd">'+H.show()+'</span>'}</div>${prac?'':'<p class="dnote" style="margin:0 0 6px">Exam: friends’ answers stay hidden until the end.</p>'}${H.pz?'<p style="margin:0 0 6px;font-weight:700">⏸ Test paused by the host</p>':''}${dashboard}${rows}${ex}`;
+ p.innerHTML=`<div class="lhead"><b>Room ${esc(H.code)}</b><span>Question ${H.ci+1} / ${H.cfg.ids.length}</span>${prac?'':'<span id="lcd">'+H.show()+'</span>'}</div>${prac?'':'<p class="dnote" style="margin:0 0 6px">Exam: friends’ answers stay hidden until the end.</p>'}${H.pz?'<p style="margin:0 0 6px;font-weight:700">⏸ Test paused by the host</p>':''}${dashboard}<details class="roomRoster" ${rosterOpen?'open':''}><summary>Members (${nm.length})${H.host&&H.off.size?' · '+H.off.size+' reconnecting':''}</summary>${rows}</details>${ex}`;
  if(!existing)card.append(p);}
 function hostDashboard(H,q,picks,members){
  const answered=members.filter(n=>Object.hasOwn(picks,n));
@@ -1442,6 +1468,7 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
  if(browsing&&cachedSubject)auth.then(()=>refreshCatalog()).catch(()=>{});
  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 })().catch(()=>{
+ document.body.dataset.stage='setup';
  $('poolCount').textContent='Could not finish loading your questions or saved progress.';
  $('startPortal').disabled=true;$('portalRetry').hidden=false;
 });
@@ -1449,12 +1476,6 @@ $('portalRetry').onclick=()=>location.reload();
 
 /* ===== v2 UI behaviour: filter sheet, responsive placement, swipe, filter badge ===== */
 (function(){
- const mq=matchMedia('(max-width:760px)'),sizer=document.querySelector('.sizer'),b1=document.querySelector('.bar1'),b2=document.querySelector('.bar2');
- function place(){
-  if(mq.matches){b1.append(sizer,$('themeBtn'));}
-  else{b2.insertBefore($('modeSeg'),$('testSubmit'));b2.insertBefore($('resetTest'),$('testSubmit'));b1.append(sizer,$('themeBtn'));document.body.classList.remove('fopen');}
- }
- place();mq.addEventListener?mq.addEventListener('change',place):mq.addListener(place);
  const open=v=>document.body.classList.toggle('fopen',v);
  $('fToggle').addEventListener('click',()=>open(!document.body.classList.contains('fopen')));
  $('fDone').addEventListener('click',()=>open(false));$('fScrim').addEventListener('click',()=>open(false));
@@ -1466,4 +1487,31 @@ $('portalRetry').onclick=()=>location.reload();
  let x0=null,y0=0,t0=0;const c=$('questionCard');
  c.addEventListener('touchstart',e=>{const t=e.touches[0];x0=t.clientX;y0=t.clientY;t0=Date.now();},{passive:true});
  c.addEventListener('touchend',e=>{if(x0==null)return;const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;x0=null;if(Math.abs(dx)>90&&Math.abs(dy)<45&&Date.now()-t0<600&&!paused&&tab==='quiz')go(current+(dx<0?1:-1));},{passive:true});
+})();
+
+document.addEventListener('click',async e=>{if(!e.target.closest('#copyCode'))return;try{await navigator.clipboard.writeText($('copyCode').textContent);toast('Room code copied');}catch{toast('Room code: '+$('copyCode').textContent);}});
+function topPortalDialog(){
+ const open=[...document.querySelectorAll('.backdrop:not([hidden])')];
+ return open.sort((a,b)=>(parseInt(getComputedStyle(b).zIndex)||0)-(parseInt(getComputedStyle(a).zIndex)||0))[0];
+}
+(function manageDialogFocus(){
+ let trigger=null,layer=null;
+ document.addEventListener('click',e=>{if(!topPortalDialog())trigger=e.target.closest('button,a,summary');},true);
+ function controls(el){return [...el.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),textarea:not(:disabled),summary')].filter(n=>n.getClientRects().length);}
+ function changed(){
+  const next=topPortalDialog();
+  if(next===layer)return;
+  layer=next;
+  if(next&&!next.contains(document.activeElement))controls(next)[0]?.focus();
+  if(!next&&trigger?.isConnected&&trigger.getClientRects().length)trigger.focus({preventScroll:true});
+ }
+ const watcher=new MutationObserver(changed);
+ for(const panel of document.querySelectorAll('.backdrop'))watcher.observe(panel,{attributes:true,attributeFilter:['hidden']});
+ document.addEventListener('keydown',e=>{
+  if(e.key!=='Tab'||document.querySelector('dialog[open]'))return;
+  const panel=topPortalDialog();if(!panel)return;
+  const list=controls(panel),first=list[0],last=list.at(-1);
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+  if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+ });
 })();

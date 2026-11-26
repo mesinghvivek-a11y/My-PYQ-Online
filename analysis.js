@@ -92,3 +92,5 @@ async function load(){
 try{document.body.classList.toggle('dark',(localStorage.getItem('pq-theme')|| (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))==='dark');}catch{}
 element('back').href='builder.html?s='+encodeURIComponent(subjectId);
 element('exam').onchange=renderExam;element('section').onchange=renderChapters;element('retry').onclick=load;load();
+
+document.getElementById('analysisView').onchange=e=>document.getElementById('results').classList.toggle('chapterView',e.target.value==='chapters');

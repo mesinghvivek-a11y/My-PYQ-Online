@@ -36,14 +36,14 @@ footer{padding:34px 0 60px;color:var(--mut);font-size:12px;text-align:center}.to
 @media(max-width:700px){.attemptList,.attemptList tbody{display:block}.attemptList tr{display:grid;grid-template-columns:1fr auto;gap:8px;background:var(--s2);border:1px solid var(--line);border-radius:13px;padding:12px;margin-bottom:8px}.attemptList td{background:transparent;padding:0;white-space:normal}.attemptList td:last-child{display:none}.attemptList td:nth-child(even){text-align:right}}
 #bookmarks img{max-width:100%;max-height:320px}.bmPrompt{white-space:pre-wrap}#bookmarks details{margin:12px 0}#bookmarks summary{cursor:pointer}
 @media(max-width:760px){nav .w{flex-wrap:wrap;height:auto;padding-block:5px}.nl{display:flex;order:1;width:100%;overflow-x:auto;gap:16px;white-space:nowrap}.nl a{padding:5px 0}}
-.studyBlock{white-space:pre-wrap;margin:.75em 0}.studyNote{border-left:3px solid var(--br);padding:8px 12px;background:var(--s2)}</style><script src="config.js"></script><script src="shared.js"></script></head><body>
+.studyBlock{white-space:pre-wrap;margin:.75em 0}.studyNote{border-left:3px solid var(--br);padding:8px 12px;background:var(--s2)}summary{cursor:pointer}button,a,summary,select{touch-action:manipulation}a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--br,var(--brand,#2f4fd8));outline-offset:3px}@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}.sc progress{width:100%;height:5px;accent-color:var(--br)}.sc .row{align-items:center;gap:18px}.textLink{color:var(--br);font-weight:650}.manage>div{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.manage #rst{margin-left:12px}.returning .hero{padding:18px 0}.returning .hero h1,.returning .hero .w>p:first-of-type,.returning .cta>a[href="#subjects"]{display:none}.hero .stats{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 18px;margin-top:20px}.stats .st{display:flex;align-items:baseline;gap:5px;padding:0;border:0;background:transparent;box-shadow:none}.stats .st b{font-size:16px}.stats .st span{font-size:13px}.ngrp.card{border-radius:0;box-shadow:none;border-width:0 0 1px;margin:0}.bmPrompt{font-weight:600}.hero .join input{min-width:9ch}.attemptLink{text-align:left}section[id]{scroll-margin-top:80px}.linkedOption{display:block;margin-block:8px}.linkedNote img{display:block;max-width:100%;max-height:320px}</style><script src="config.js"></script><script src="shared.js"></script></head><body>
 <nav><div class="w"><a class="lg" href="#top"><img src="icon.svg" alt="">My PYQ Online</a><div class="nl"><a href="#subjects">Subjects</a><a href="#performance">Performance</a><a href="admin.html" id="navAdmin" hidden>Admin</a><a href="#notes">Notes</a><a href="#bookmarks">Bookmarks</a></div><span class="sp"></span><span class="note" id="syncSt"></span><button class="btn" id="theme" aria-label="Toggle dark mode">☾</button><span id="acct"></span></div></nav>
 <div class="pop" id="acctPop" hidden></div><header class="hero" id="top"><div class="w"><h1>Practise every subject.<br><em>Master every PYQ.</em></h1><p>Chapter-wise practice, timed mock exams and live quizzes with friends — your progress follows you across devices.</p>
 <div class="cta"><a class="btn p" href="#subjects">Choose a subject →</a><a class="btn" id="returnRoom" hidden href="test.html?resume=1">Resume hosted test</a><form class="join" id="joinF"><input id="joinC" maxlength="8" placeholder="ROOM CODE" aria-label="Room code"><button class="btn" type="submit">Join live</button></form></div>
 <p class="note" style="margin-top:14px">By signing in with Google you agree to the <a href="/terms" style="text-decoration:underline">Terms</a> and <a href="/privacy" style="text-decoration:underline">Privacy Policy</a>. 18+ only.</p><div class="stats"><div class="st"><b data-n="subjects">…</b><span>Subjects</span></div><div class="st"><b data-n="chapters">…</b><span>Topics &amp; chapters</span></div><div class="st"><b data-n="questions">…</b><span>Questions</span></div><div class="st"><b data-n="pyq">…</b><span>Previous-year questions</span></div></div></div></header>
 <main class="w"><section id="subjects"><div class="hd"><div><h2>Subjects</h2><p class="sub">Pick one to enter the test portal.</p></div></div><div id="homeStatus" role="status"></div><div class="grid" id="subs"></div></section>
-<section id="performance"><div class="hd"><div><h2>Your performance</h2><p class="sub">Every practice session and test, saved automatically<span id="cloudNote"></span>.</p></div><div class="row"><select id="pfS" aria-label="Subject"></select><select id="pfM" aria-label="Type"><option value="all">Practice &amp; tests</option><option value="practice">Practice</option><option value="exam">Tests</option></select><button class="btn" id="bkE">Export backup</button><button class="btn" id="bkI">Import</button><input type="file" id="bkF" accept=".json" hidden><button class="btn d" id="rst">Reset</button></div></div>
-<div id="goal"></div><div class="pg" id="pst"></div><div class="ch2" id="chs"></div><div class="hd"><h3>Test history</h3><select id="attemptSort" aria-label="Sort test history"><option value="recent">Most recent</option><option value="low">Lowest accuracy</option><option value="high">Highest accuracy</option></select></div><div class="card tb" id="tbl"></div></section>
+<section id="performance"><div class="hd"><div><h2>Your performance</h2><p class="sub">Every practice session and test, saved automatically<span id="cloudNote"></span>.</p></div><div class="row"><select id="pfS" aria-label="Subject"></select><select id="pfM" aria-label="Type"><option value="all">Practice &amp; tests</option><option value="practice">Practice</option><option value="exam">Tests</option></select><details class="manage"><summary>Account data</summary><div><button class="btn" id="bkE">Export backup</button><button class="btn" id="bkI">Import</button><input type="file" id="bkF" accept=".json" hidden><button class="btn d" id="rst">Reset progress</button></div></details></div></div>
+<div class="hd"><h3>Test history</h3><select id="attemptSort" aria-label="Sort test history"><option value="recent">Most recent</option><option value="low">Lowest accuracy</option><option value="high">Highest accuracy</option></select></div><div class="card tb" id="tbl"></div><div id="goal"></div><div class="pg" id="pst"></div><div class="ch2" id="chs"></div></section>
 <section id="notes"><div class="hd"><div><h2>My notes</h2><p class="sub">Your saved notes, newest edits first. <b id="nCount"></b></p></div><div class="row"><input id="nQ" type="search" class="srch" placeholder="Search notes" aria-label="Search notes"><select id="nSub" aria-label="Subject"></select><select id="nSort" aria-label="Sort"><option value="chapter">Sort: Chapter</option><option value="date" selected>Sort: Date modified</option></select><button class="btn" id="nExp">Export</button></div></div><div id="nList"></div></section><section id="bookmarks"><div class="hd"><h2>Bookmarks</h2><span class="note" id="bmCount"></span></div><div id="bmList"></div></section></main><dialog id="attemptDialog"><form method="dialog"><button class="btn" autofocus>Close</button></form><div id="attemptBody"></div></dialog>
 <footer class="foot" id="foot"><div class="fw"><div><b>My PYQ Online</b><p>Chapter-wise PYQ practice, mock tests and live quizzes.</p></div><div><b>Legal</b><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div><div><b>Contact</b><a href="mailto:support@mypyq.online">support@mypyq.online</a><span>Grievance Officer: [GRIEVANCE OFFICER NAME]</span></div></div><p class="fine">© 2026 My PYQ Online. Not affiliated with, endorsed by or sponsored by UGC, NTA, UPSC or any exam authority. Question content is provided for practice; names of exams are used only to describe the content.</p></footer><p class="fine" style="margin:0 auto;padding:0 20px 20px;max-width:1180px;font-size:12px;color:var(--mut)"><a href="#" id="delA" hidden style="color:var(--bad)">Delete my account</a> <span id="cfgNote"></span></p><div class="toast" id="toast" hidden></div>
 <script>
@@ -64,20 +64,44 @@ function refreshManifest(){
 }
 function count(el,to){el.textContent=to.toLocaleString()}
 const adminCard=()=>'<a class="card sc add" href="admin.html"><b style="font-size:28px">＋</b><b>Manage subjects</b><small>Add, edit or remove subjects (admin)</small></a>';
-const soonCard=()=>UP.length?`<div class="card sc add"><b>Coming soon</b>${UP.slice(0,4).map(u=>`<div style="display:flex;justify-content:space-between;gap:10px;width:100%;font-size:13px"><b>${esc(u.name)}</b><span class="chip">${esc(u.eta||'Soon')}</span></div>`).join('')}<small>New subjects are added regularly</small></div>`:'<div class="card sc add"><b>More subjects coming soon</b><small>Check back — new banks are added regularly</small></div>';
+const soonCard=()=>UP.length?`<div class="card sc add"><b>Coming soon</b>${UP.slice(0,4).map(u=>`<div style="display:flex;justify-content:space-between;gap:10px;width:100%;font-size:13px"><b>${esc(u.name)}</b><span class="chip">${esc(u.eta||'Soon')}</span></div>`).join('')}<small>New subjects are added regularly</small></div>`:'';
+function renderSubjects(subjects,extra=''){
+ const root=$('subs'),keep=new Set();
+ for(const s of subjects){
+  const id=String(s.id);keep.add(id);
+  let card=Array.from(root.children).find(e=>e.dataset.subject===id);
+  if(!card){
+   card=document.createElement('article');card.className='card sc';card.dataset.subject=id;
+   card.innerHTML='<h3></h3><small></small><div class="pm"></div><progress></progress><div class="row"><a class="btn p">Open chapters</a><a class="textLink">Analysis</a></div>';
+   card.querySelector('progress').setAttribute('aria-label','Questions attempted');
+   const links=card.querySelectorAll('a');links[0].href='builder.html?s='+encodeURIComponent(id);links[1].href='analysis.html?s='+encodeURIComponent(id);root.append(card);
+  }
+  card.querySelector('h3').textContent=s.name;
+  card.querySelector('small').textContent=[s.chapters+' chapters',s.subtitle].filter(Boolean).join(' · ');
+  const known=Number.isFinite(s.att);
+  card.querySelector('.pm').textContent=(known?s.att.toLocaleString():'…')+' / '+Number(s.questions||0).toLocaleString()+' attempted · '+(s.a?Math.round(100*s.c/s.a)+'% accuracy':'Accuracy —')+(s.due?' · '+s.due+' due':'');
+  const bar=card.querySelector('progress');bar.max=s.questions||1;bar.value=s.att||0;
+ }
+ for(const el of [...root.children])if(!keep.has(el.dataset.subject))el.remove();
+ if(extra)root.insertAdjacentHTML('beforeend',extra);
+}
 function showCatalogPreview(){
+ try{document.body.classList.toggle('returning',!!localStorage.getItem('qm-home-visited'));}catch{}
  if(SUBS.length)return;
  let subjects;
- try{subjects=JSON.parse(sessionStorage.getItem('qm-subject-preview'))}catch{}
+ try{subjects=JSON.parse(sessionStorage.getItem('qm-subject-preview:'+ (QM.user?.id||'guest')))}catch{}
  if(!Array.isArray(subjects)){try{subjects=JSON.parse(localStorage.getItem('qm-home-manifest')).subjects}catch{}}
  if(!Array.isArray(subjects)||!subjects.length)return;
  for(const el of document.querySelectorAll('[data-n]')){
   const k=el.dataset.n;count(el,k==='subjects'?subjects.length:subjects.reduce((n,s)=>n+(Number(s[k])||0),0));
  }
- $('subs').innerHTML=subjects.map(s=>`<article class="card sc"><h3>${esc(s.name)}</h3><div class="chips"><span class="chip">${Number(s.chapters)||0} chapters</span><span class="chip">${Number(s.questions)||0} questions</span></div><a class="btn p" href="builder.html?s=${encodeURIComponent(s.id)}">Open chapters</a><a class="btn" href="analysis.html?s=${encodeURIComponent(s.id)}">Analysis</a></article>`).join('');
+ renderSubjects(subjects);
+ $('homeStatus').textContent='Updating subjects…';
+
 }
+addEventListener('pagehide',()=>{try{localStorage.setItem('qm-home-visited','1')}catch{}});
 let _lp=null,_lq=false;
-function load(){if(_lp){_lq=true;return _lp}_lp=loadOnce().catch(()=>{$('homeStatus').innerHTML='<button class="btn" onclick="load()">Could not load subjects · Retry</button>'}).finally(()=>{_lp=null;if(_lq){_lq=false;load()}});return _lp}
+function load(){if(!window.document)return Promise.resolve();if(_lp){_lq=true;return _lp}_lp=loadOnce().catch(()=>{if(!window.document)return;$('homeStatus').innerHTML='<button class="btn" onclick="load()">Could not load subjects · Retry</button>'}).finally(()=>{_lp=null;if(_lq){_lq=false;load()}});return _lp}
 let _rs=0;
 async function refreshSubjects(force){if(!QM.enabled)return;if(!force&&Date.now()-_rs<30000)return;_rs=Date.now();const b=JSON.stringify((await QM.kvGet('cache:subjects'))||[]);await QM.subjects();const a=JSON.stringify((await QM.kvGet('cache:subjects'))||[]);if(a!==b)load()}
 async function loadOnce(){
@@ -91,12 +115,12 @@ async function loadOnce(){
   if(r.path)put({id:r.id,name:r.name,subtitle:r.subtitle||'',chapters:Number(r.chapters)||0,questions:Number(r.questions)||0,pyq:Number(r.pyq)||0,cloud:1})}
  const[sess,daily,prefs]=await Promise.all([QM.kvGet('sessions'),QM.kvGet('daily'),QM.kvGet('prefs')]);
  await Promise.all(subs.map(async s=>{const qs=(await QM.kvGet('qs:'+s.id))||{},v=Object.values(qs);s.att=v.length;s.a=v.reduce((n,z)=>n+z.c+z.w,0);s.c=v.reduce((n,z)=>n+z.c,0);s.due=v.filter(z=>z.d<=Date.now()).length}));
- try{sessionStorage.setItem('qm-subject-preview',JSON.stringify(subs.map(({id,name,questions,chapters,pyq})=>({id,name,questions,chapters,pyq}))))}catch{}
+ try{sessionStorage.setItem('qm-subject-preview:'+(QM.user?.id||'guest'),JSON.stringify(subs))}catch{}
  $('homeStatus').textContent='';SUBS=subs;UP=up;SESS=sess||[];DAILY=daily||{};Object.assign(PREFS,prefs||{});
  const T={subjects:SUBS.length,chapters:0,questions:0,pyq:0};SUBS.forEach(s=>{T.chapters+=s.chapters;T.questions+=s.questions;T.pyq+=s.pyq});
  document.querySelectorAll('[data-n]').forEach(e=>count(e,T[e.dataset.n]));
- $('subs').innerHTML=SUBS.map(s=>{const p=Math.round(s.att/s.questions*100),ac=s.a?Math.round(s.c/s.a*100)+'%':'–';return`<article class="card sc"><div><h3>${esc(s.name)}</h3><small>${esc(s.subtitle)}</small></div><div class="chips"><span class="chip b">${s.chapters} chapters</span><span class="chip">${s.questions.toLocaleString()} questions</span><span class="chip">${s.pyq.toLocaleString()} PYQ</span></div><div><div class="pm"><span>${s.att.toLocaleString()} attempted · accuracy ${ac}</span><span>${p}%</span></div><div class="tr"><i style="width:${p}%"></i></div></div><div class="row"><a class="btn p" href="builder.html?s=${encodeURIComponent(s.id)}">Open chapters</a><a class="btn" href="analysis.html?s=${encodeURIComponent(s.id)}">Analysis</a><a class="btn" href="builder.html?s=${encodeURIComponent(s.id)}&custom=1">Host · Join live</a>${s.due?`<span class="chip b" style="align-self:center">${s.due} due</span>`:''}</div></article>`}).join('')+(QM.isAdmin?adminCard():soonCard());
- const sf=$('pfS').value||'all';$('pfS').innerHTML='<option value="all">All subjects</option>'+SUBS.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');$('pfS').value=SUBS.some(s=>s.id===sf)?sf:'all';perf();notes();loadBookmarks();if(!window._pf){window._pf=1;(window.requestIdleCallback||setTimeout)(()=>{if(navigator.connection&&navigator.connection.saveData)return;SUBS.filter(s=>s.built).forEach(s=>fetch('data/'+s.id+'.json').catch(()=>{}))})}}
+ renderSubjects(SUBS,QM.isAdmin?adminCard():soonCard());
+ const sf=$('pfS').value||'all';$('pfS').innerHTML='<option value="all">All subjects</option>'+SUBS.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');$('pfS').value=SUBS.some(s=>s.id===sf)?sf:'all';perf();notes().catch(()=>{if(window.document)$('nList').innerHTML='<button class="btn" onclick="load()">Could not load notes · Retry</button>';});loadBookmarks();if(!window._pf){window._pf=1;(window.requestIdleCallback||setTimeout)(()=>{if(navigator.connection&&navigator.connection.saveData)return;SUBS.filter(s=>s.built).forEach(s=>fetch('data/'+s.id+'.json').catch(()=>{}))})}}
 const acc=r=>r.c+r.w?Math.round(r.c/(r.c+r.w)*100):null;
 function perf(){
  const sf=$('pfS').value,mf=$('pfM').value,rows=SESS.filter(r=>(sf==='all'||r.subj===sf)&&(mf==='all'||r.mode===mf)).sort((a,b)=>b.en-a.en);
@@ -117,7 +141,8 @@ function perf(){
  $('tbl').innerHTML=history.length?`<table class="attemptList" aria-label="Test history"><tbody>${history.map(r=>{
   const score=acc(r),n=(r.rows||[]).length,title=n===1?r.rows[0].t:n+' chapters';
   return `<tr data-run="${esc(r.id)}"><td><button type="button" class="attemptLink"><b>${esc(r.subjName)}</b><span>${esc(title)} · ${r.mode==='exam'?'Exam':'Practice'}</span></button></td><td><strong>${score===null?'—':score+'%'}</strong><small>Accuracy</small></td><td><span>${r.c} correct · ${r.w} wrong</span><small>${r.att}/${r.total} answered</small></td><td><span>${new Date(r.st).toLocaleDateString([],{day:'numeric',month:'short',year:'numeric'})}</span><small>${fmt(r.dur)}</small></td><td aria-hidden="true">›</td></tr>`;
- }).join('')}</tbody></table>`:'<div class="empty"><b>No matching attempts</b><p>Your saved tests appear here.</p></div>';
+ }).join('')}</tbody></table>`:(SESS.length?'<div class="empty">No attempts match these filters. <button class="btn" id="clearAttemptFilters">Clear filters</button></div>':'<div class="empty">Your first completed test will appear here.</div>');
+ const clear=$('clearAttemptFilters');if(clear)clear.onclick=()=>{$('pfS').value='all';$('pfM').value='all';perf();};
 }
 $('attemptSort').onchange=perf;
 let openedAttempt=0;
@@ -127,6 +152,7 @@ $('tbl').onclick=async e=>{
  const version=++openedAttempt,box=$('attemptBody'),dialog=$('attemptDialog');
  box.innerHTML=`<h2>${esc(rec.subjName)}</h2><p>${rec.c} correct · ${rec.w} wrong · ${rec.total-rec.att} skipped</p><p>${(rec.rows||[]).map(r=>esc(r.t)).join(' · ')}</p>`;
  dialog.showModal();
+ dialog.onclose=()=>{openedAttempt++;const current=[...$('tbl').querySelectorAll('[data-run]')].find(el=>el.dataset.run===String(rec.id));current?.querySelector('button')?.focus({preventScroll:true});};
  if(rec.wrong?.length&&!rec.paperRefs)box.insertAdjacentHTML('beforeend',`<a class="btn p" href="builder.html?s=${encodeURIComponent(rec.subj)}&retry=${encodeURIComponent(rec.id)}">Retry missed questions</a>`);
  try{
   const catalog=await QM.kvGet('cache:subjects')||[],published=catalog.find(r=>r.id===rec.subj&&r.path&&r.status==='live');
@@ -193,8 +219,8 @@ async function loadBookmarks(){
   const keys=await QM.kvKeys('bookmark:'),saved=(await Promise.all(keys.map(k=>QM.kvGet(k)))).filter(b=>b&&!b.deleted).sort((a,b)=>b.ts-a.ts);
   if(generation!==bookmarkLoad)return;
   $('bmCount').textContent=saved.length+' saved'+(pendingLegacy?' · Earlier flags will be checked when the subject is available.':'');
-  $('bmList').innerHTML=saved.map(b=>`<article class="card ngrp"><div class="chips"><span class="chip b">${esc(b.subject)}</span><span class="chip">${esc(b.chapter)}</span><span class="chip">Q ${esc(b.number)}</span></div><p class="bmPrompt">${esc(QM.readingText(b.prompt))}</p>${(b.images||[]).map(url=>`<img loading="lazy" alt="Question figure" src="${esc(url)}">`).join('')}<details><summary>Review options and answer</summary>${(b.options||[]).map(o=>`<p><b>${esc(o.sourceLabel)}.</b> ${esc(o.text)}</p>`).join('')}<b>Answer · ${esc((b.correct||[]).join(', ').toUpperCase()||'Unkeyed')}</b><div>${QM.studyHTML(b.explanation,esc)}</div></details><button type="button" class="btn" data-remove-bookmark="${esc(QM.bookmarkKey(b.sid,b.id))}">Remove bookmark</button></article>`).join('')||'<div class="card empty">Tap the bookmark icon on a test question to save it here.</div>';
- }catch{if(generation===bookmarkLoad)$('bmList').innerHTML='<button class="btn" onclick="loadBookmarks()">Retry loading bookmarks</button>';}
+  $('bmList').innerHTML=saved.map(b=>`<article class="card ngrp"><p class="bmPrompt">${esc(QM.readingText(b.prompt))}</p><div class="chips"><span class="chip b">${esc(b.subject)}</span><span class="chip">${esc(b.chapter)}</span><span class="chip">Q ${esc(b.number)}</span></div>${(b.images||[]).map(url=>`<img loading="lazy" alt="Question figure" src="${esc(url)}">`).join('')}<details><summary>Open question and answer</summary>${(b.options||[]).map(o=>`<p><b>${esc(o.sourceLabel)}.</b> ${esc(o.text)}</p>`).join('')}<b>Answer · ${esc((b.correct||[]).join(', ').toUpperCase()||'Unkeyed')}</b><div>${QM.studyHTML(b.explanation,esc)}</div></details><details><summary>Actions</summary><button type="button" class="btn" data-remove-bookmark="${esc(QM.bookmarkKey(b.sid,b.id))}">Remove bookmark</button></details></article>`).join('')||'<div class="card empty">Tap the bookmark icon on a test question to save it here.</div>';
+ }catch{if(window.document&&generation===bookmarkLoad)$('bmList').innerHTML='<button class="btn" onclick="loadBookmarks()">Retry loading bookmarks</button>';}
 }
 $('bmList').onclick=async e=>{
  const b=e.target.closest('[data-remove-bookmark]');if(!b)return;b.disabled=true;
@@ -206,11 +232,27 @@ let _np=null;async function notes(){if(_np)return _np;return _np=(async()=>{cons
  NT=nt;$('nSub').innerHTML='<option value="all">All subjects</option>'+SUBS.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');$('nSub').value=NS.sub;drawNotes()})().finally(()=>{_np=null})}
 function drawNotes(){const q=NS.q.toLowerCase(),L=NT.filter(n=>(NS.sub==='all'||n.sid===NS.sub)&&(!q||(n.t+n.p+n.ch+n.sn).toLowerCase().includes(q)));
  $('nCount').textContent=NT.length+' note'+(NT.length===1?'':'s');
+ if(!L.length&&NT.length){$('nList').innerHTML='<p>No notes match these filters.</p><button class="btn">Clear filters</button>';$('nList').querySelector('button').onclick=()=>{NS.q='';NS.sub='all';$('nQ').value='';$('nSub').value='all';drawNotes();};return;}
  if(!L.length){$('nList').innerHTML='<div class="card empty"><b>No notes yet</b><br>Open a question in the test portal and tap “Add a note”. Your saved notes appear here.</div>';return}
  L.sort(NS.sort==='date'?(a,b)=>b.ts-a.ts:(a,b)=>a.sn.localeCompare(b.sn)||a.c-b.c);
- $('nList').innerHTML=L.map(n=>`<article class="card ngrp note-i" data-k="${esc(n.sid)}|${esc(n.id)}"><div class="nt">${esc(n.t)}</div><div class="chips"><span class="chip b">${esc(n.sn)}</span><span class="chip">${esc(n.ch||'Chapter '+(n.c||'unknown'))}</span><span class="chip">Q ${esc(n.qn||n.id)}</span></div><details><summary>Linked question</summary><p>${esc(n.p||'Question preview unavailable')}</p></details><div class="row"><button class="btn" data-e>Edit</button><button class="btn d" data-d>Delete</button></div></article>`).join('')}
+ $('nList').innerHTML=L.map(n=>`<article class="card ngrp note-i" data-k="${esc(n.sid)}|${esc(n.id)}"><div class="nt">${esc(n.t)}</div><div class="chips"><span class="chip b">${esc(n.sn)}</span><span class="chip">${esc(n.ch||'Chapter '+(n.c||'unknown'))}</span><span class="chip">Q ${esc(n.qn||n.id)}</span></div><details class="linkedNote"><summary>Open linked question</summary><p>${esc(n.p||'Question preview unavailable')}</p></details><details><summary>Actions</summary><div class="row"><button class="btn" data-e>Edit</button><button class="btn d" data-d>Delete</button></div></details></article>`).join('')}
 $('nQ').oninput=e=>{NS.q=e.target.value;drawNotes()};$('nSub').onchange=e=>{NS.sub=e.target.value;drawNotes()};$('nSort').onchange=e=>{NS.sort=e.target.value;drawNotes()};
 $('nList').onclick=async e=>{const el=e.target.closest('.note-i');if(!el)return;const[sid,id]=el.dataset.k.split('|'),n=NT.find(z=>z.sid===sid&&z.id===id);if(!n)return;
+ const linked=e.target.closest('.linkedNote summary');
+ if(linked&&!linked.parentElement.open&&!linked.dataset.loaded){
+  const result=linked.nextElementSibling;
+  try{
+   const sub=SUBS.find(s=>s.id===sid),catalog=await QM.kvGet('cache:subjects')||[];
+   const row=catalog.find(s=>s.id===sid&&s.path&&s.status==='live');
+   const pinned=!navigator.onLine&&await QM.kvGet('cache:offline:'+sid);
+   const bank=pinned||(row?await QM.bank(row):sub?.built?await (await fetch('data/'+encodeURIComponent(sid)+'.json')).json():await QM.kvGet('subj:'+sid));
+   const question=bank?.questions?.find(q=>String(q.id)===String(id));
+   if(!question){result.textContent=(n.p||'')+' · Question unavailable in this edition.';return;}
+   result.innerHTML='<b>'+esc(QM.readingText(question.prompt))+'</b>'+ (question.images||[]).map(url=>'<img loading="lazy" alt="Question figure" src="'+esc(url)+'">').join('')+question.options.map(o=>'<span class="linkedOption">'+esc(o.sourceLabel.toUpperCase()+'. '+o.text)+(o.image?'<img loading="lazy" alt="Option figure" src="'+esc(o.image)+'">':'')+'</span>').join('')+'<strong>Answer · '+esc((question.correct||[]).join(', ').toUpperCase()||'Ungraded')+'</strong><span class="linkedOption">'+QM.studyHTML(question.explanation||'',esc)+'</span>';
+   linked.dataset.loaded='1';
+  }catch{result.textContent=(n.p||'')+' · Could not load the full question. Close and reopen to retry.';}
+  return;
+ }
  const get=async()=>[(await QM.kvGet('notes:'+sid))||{},(await QM.kvGet('nts:'+sid))||{}];
  if(e.target.closest('[data-d]')){if(!confirm('Delete this note?'))return;const[o,m]=await get();delete o[id];delete m[id];await QM.kvSet('notes:'+sid,o);await QM.kvSet('nts:'+sid,m);NT=NT.filter(z=>z!==n);drawNotes();return}
  if(e.target.closest('[data-e]')){el.querySelector('.nt').innerHTML=`<textarea class="ned" rows="4">${esc(n.t)}</textarea><div class="row" style="margin-top:6px"><button class="btn p" data-s>Save</button><button class="btn" data-c>Cancel</button></div>`;return}
