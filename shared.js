@@ -137,7 +137,11 @@ async function put(k,v){if(k.startsWith('ls:')){try{localStorage.setItem(k.slice
 QM.put=put;
 const merge=(k,l,r,rt)=>{if(l==null)return r;if(r==null)return l;if(k.startsWith('bookmark:'))return r.ts>l.ts?r:l;if(/^(notes|nts):/.test(k))return rt>(LM()[k]||0)?r:l;
  if(k==='sessions'){const m=new Map(l.map(x=>[x.id,x]));r.forEach(x=>{const o=m.get(x.id);if(!o||(x.en||0)>(o.en||0))m.set(x.id,x)});return[...m.values()]}
- if(k.startsWith('qs:')){const o={...l};for(const i in r)if(!o[i]||(r[i].t||0)>(o[i].t||0))o[i]=r[i];return o}
+ if(k.startsWith('qs:')){const o={...l};for(const i in r){
+  const a=l[i],b=r[i];const recent=!a||(b.t||0)>(a.t||0)?b:a;
+  const tag=(a?.tagTime||0)>(b.tagTime||0)?a:b;
+  o[i]=tag.tagTime?{...recent,mistakeTag:tag.mistakeTag||'',tagTime:tag.tagTime}:recent;
+ }return o}
  if(k==='daily'){const o={...l};for(const d in r)o[d]=Math.max(o[d]||0,r[d]);return o}
  if(k.startsWith('ls:')){const n=s=>{try{return JSON.parse(s).a.length}catch(e){return 0}};return n(r)>n(l)?r:l}
  if(k==='prefs')return{...r,...l};
@@ -147,10 +151,11 @@ async function pull(){const uid=QM.user.id,lpk='qm-lp:'+uid;let q=sb.from('user_
  for(const r of data){const rt=Date.parse(r.updated_at)||0;if(rt>mx)mx=rt;const m=merge(r.k,loc[r.k],r.v,rt);if(JSON.stringify(m)!==JSON.stringify(loc[r.k])){await put(r.k,m);if(/^(notes|nts):/.test(r.k))setLM(r.k,rt);ch++}}
  if(mx)localStorage.setItem(lpk,new Date(mx).toISOString());await push();return ch>0}
 const hs=t=>{let h=5381;for(let i=0;i<t.length;i++)h=(h*33^t.charCodeAt(i))>>>0;return t.length+':'+h};
-async function push(){if(!sb||!QM.user)return;const pk='qm-ph:'+QM.user.id;let PH={};try{PH=JSON.parse(localStorage.getItem(pk)||'{}')}catch(e){}const loc=await all(),rows=[],hh={};
+async function push(){if(!sb||!QM.user||!navigator.onLine)return;const pk='qm-ph:'+QM.user.id;let PH={};try{PH=JSON.parse(localStorage.getItem(pk)||'{}')}catch(e){}const loc=await all(),rows=[],hh={};
  for(const k in loc){const h=hs(JSON.stringify(loc[k]));if(PH[k]!==h){hh[k]=h;rows.push({user_id:QM.user.id,k,v:loc[k],updated_at:new Date().toISOString()})}}
  for(let i=0;i<rows.length;i+=10){const{error}=await sb.from('user_data').upsert(rows.slice(i,i+10));if(error){emit('sync:error');return}rows.slice(i,i+10).forEach(r=>PH[r.k]=hh[r.k]);localStorage.setItem(pk,JSON.stringify(PH))}emit('sync:ok')}
-function dirty(){if(!QM.user)return;clearTimeout(timer);timer=setTimeout(push,4000)}QM.dirty=dirty;QM.push=push;
+function dirty(){if(!QM.user)return;emit('sync:pending');clearTimeout(timer);if(navigator.onLine)timer=setTimeout(push,4000)}
+addEventListener('online',async()=>{try{await QM.init();if(QM.user){const changed=await pull();if(changed)emit('pulled');await push();}}catch{emit('sync:error');}});QM.dirty=dirty;QM.push=push;
 function mk(){sb=window.supabase.createClient(C.SUPABASE_URL,C.SUPABASE_ANON_KEY,{global:{fetch:(url,init)=>fetch(url,{...init,cache:'no-store'})},realtime:{params:{eventsPerSecond:40}}})}
 let loadingClient;
 QM.load=()=>{
@@ -165,15 +170,22 @@ QM.load=()=>{
 };
 async function flushRq(){let q=[];try{q=JSON.parse(localStorage.getItem('qm-rq')||'[]')}catch(e){}if(!q.length)return;const{error}=await sb.from('reports').insert(q);if(!error)localStorage.removeItem('qm-rq')}
 async function after(){const{data}=await sb.from('profiles').select('is_admin').maybeSingle();QM.isAdmin=!!(data&&data.is_admin);const ch=await pull();flushRq();emit('auth');if(ch)emit('pulled')}
-QM.init=async(w=2500)=>{if(!enabled)return;if(!QM.inited){QM.inited=1;try{await Promise.race([QM.load(),new Promise((_,j)=>setTimeout(j,4000))])}catch(e){QM.inited=0;return}
- const{data}=await sb.auth.getSession();QM.user=data.session?data.session.user:null;
- sb.auth.onAuthStateChange((ev,s)=>{const u=s?s.user:null,was=QM.user;QM.user=u;if(u&&(!was||was.id!==u.id))setTimeout(after,0);if(!u&&was){QM.isAdmin=false;emit('auth')}});
+QM.init=async(w=2500)=>{if(!enabled)return;
+ if(!navigator.onLine){
+  try{const key='sb-'+new URL(C.SUPABASE_URL).hostname.split('.')[0]+'-auth-token';
+   const session=JSON.parse(localStorage.getItem(key)||'null');
+   if(session?.user?.id===localStorage.getItem('qm-last-signed-in')&&session?.access_token)QM.user=session.user;
+  }catch{}
+  return;
+ }if(!QM.inited){QM.inited=1;try{await Promise.race([QM.load(),new Promise((_,j)=>setTimeout(j,4000))])}catch(e){QM.inited=0;return}
+ const{data}=await sb.auth.getSession();QM.user=data.session?data.session.user:null;if(QM.user)localStorage.setItem('qm-last-signed-in',QM.user.id);
+ sb.auth.onAuthStateChange((ev,s)=>{const u=s?s.user:null,was=QM.user;QM.user=u;if(u)localStorage.setItem('qm-last-signed-in',u.id);else localStorage.removeItem('qm-last-signed-in');if(u&&(!was||was.id!==u.id))setTimeout(after,0);if(!u&&was){QM.isAdmin=false;emit('auth')}});
  if(QM.user)QM.ready=after()}
  if(QM.ready&&w)await Promise.race([QM.ready,new Promise(r=>setTimeout(r,w))])};
 QM.signIn=async()=>{await QM.load();await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname+location.search}})};
 QM.signOut=async()=>{await sb.auth.signOut();QM.user=null;emit('auth')};
 QM.report=async r=>{if(QM.user&&sb){const{error}=await sb.from('reports').insert(r);if(!error)return true}let q=[];try{q=JSON.parse(localStorage.getItem('qm-rq')||'[]')}catch(e){}q.push(r);localStorage.setItem('qm-rq',JSON.stringify(q));return false};
-QM.subjects=async()=>{const ck='cache:subjects';if(!enabled)return[];try{await Promise.race([QM.load(),new Promise((_,j)=>setTimeout(j,4000))]);const r=await Promise.race([sb.from('subjects').select('*').order('sort').order('created_at'),new Promise((_,j)=>setTimeout(j,5000))]);if(r.error)throw r.error;await tx('readwrite',s=>s.put(r.data,ck)).catch(()=>{});return r.data}catch(e){return(await QM.kvGet(ck))||[]}};
+QM.subjects=async()=>{const ck='cache:subjects';if(!navigator.onLine)return(await QM.kvGet(ck))||[];if(!enabled)return[];try{await Promise.race([QM.load(),new Promise((_,j)=>setTimeout(j,4000))]);const r=await Promise.race([sb.from('subjects').select('*').order('sort').order('created_at'),new Promise((_,j)=>setTimeout(j,5000))]);if(r.error)throw r.error;await tx('readwrite',s=>s.put(r.data,ck)).catch(()=>{});return r.data}catch(e){return(await QM.kvGet(ck))||[]}};
 QM.bank=async (row,onStale)=>{const k='bank:'+row.id,c=await QM.kvGet(k);const revision=JSON.stringify([row.path,row.version,row.updated_at]);if(c&&c.revision===revision)return c.data;try{const r=await deadline(fetch(C.SUPABASE_URL+'/storage/v1/object/public/banks/'+row.path+'?v='+encodeURIComponent(revision),{cache:'no-store'}),c?5000:20000);if(!r.ok)throw 0;const data=await deadline(r.json(),c?5000:20000);await tx('readwrite',s=>s.put({revision,data},k)).catch(()=>{});return data}catch(e){if(c){if(onStale)onStale();return c.data}throw e}};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)emit('resume')});addEventListener('pageshow',e=>{if(e.persisted)emit('resume')});
 })();

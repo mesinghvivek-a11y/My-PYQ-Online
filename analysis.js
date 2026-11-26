@@ -58,6 +58,7 @@ function renderChapters(){
  element('chapters').innerHTML=table(rows,model.years,'Chapter',true);
 }
 function renderExam(){
+ element('priorityLink').href='builder.html?s='+encodeURIComponent(subjectId)+'&study=priority&exam='+encodeURIComponent(element('exam').value);
  model=buildCounts(bank,element('exam').value);
  const sections=[...model.sections.values()].sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name));
  const select=element('section'),prior=select.selectedIndex>0?select.value:null;

@@ -240,3 +240,18 @@ body:not([data-stage="active"]) #timerBox,#timerBox[hidden]{display:none!importa
 .chapterRow{flex-wrap:wrap}.chapterInfo{flex-basis:220px}
 
 .setupActions{display:flex;gap:8px;flex-wrap:wrap}.setupActions a{text-decoration:none;color:var(--ink)}@media(max-width:540px){.setuphead{flex-wrap:wrap}}
+
+body.paused.readPaused #questionCard,body.paused.readPaused #navList{filter:none;user-select:text}
+body.paused.readPaused #questionCard{pointer-events:auto}
+body.paused.readPaused .pause{display:none}
+body.paused.readPaused #questionCard .options{pointer-events:none}
+.prompt,.fb .explain{width:100%;max-width:none}
+.studyBlock{white-space:pre-wrap;margin:.7em 0}.studyNote{border-left:3px solid var(--brand);padding:8px 12px;background:var(--surface2)}
+
+.studyTools{display:flex;flex-wrap:wrap;gap:.55rem;max-width:1100px;margin:1rem auto;padding:0 16px}
+body:not([data-stage="setup"]) .studyTools{display:none}
+#studyDialog{background:var(--surface,var(--s,#fff));color:var(--ink);border:1px solid var(--line);border-radius:16px;width:min(680px,90vw);max-height:80vh;padding:22px}
+#studyDialog::backdrop{background:#11182c88}#studyDialog header{display:flex;align-items:center;justify-content:space-between}
+.studyRow{border-top:1px solid var(--line);padding:14px 0}.studyRow p,#studyMessage{font-size:.9rem;color:var(--muted)}#studyBody select,#studyBody input,.studyRow button{margin:4px;padding:7px}
+.confidencePick{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:inherit;padding:6px 26px}.confidencePick select{font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:5px}
+.responseChart{display:grid;gap:4px}.responseChart progress{width:50%;margin:0 10px}

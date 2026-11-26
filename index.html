@@ -36,7 +36,7 @@ footer{padding:34px 0 60px;color:var(--mut);font-size:12px;text-align:center}.to
 @media(max-width:700px){.attemptList,.attemptList tbody{display:block}.attemptList tr{display:grid;grid-template-columns:1fr auto;gap:8px;background:var(--s2);border:1px solid var(--line);border-radius:13px;padding:12px;margin-bottom:8px}.attemptList td{background:transparent;padding:0;white-space:normal}.attemptList td:last-child{display:none}.attemptList td:nth-child(even){text-align:right}}
 #bookmarks img{max-width:100%;max-height:320px}.bmPrompt{white-space:pre-wrap}#bookmarks details{margin:12px 0}#bookmarks summary{cursor:pointer}
 @media(max-width:760px){nav .w{flex-wrap:wrap;height:auto;padding-block:5px}.nl{display:flex;order:1;width:100%;overflow-x:auto;gap:16px;white-space:nowrap}.nl a{padding:5px 0}}
-</style><script src="config.js"></script><script src="shared.js"></script></head><body>
+.studyBlock{white-space:pre-wrap;margin:.75em 0}.studyNote{border-left:3px solid var(--br);padding:8px 12px;background:var(--s2)}</style><script src="config.js"></script><script src="shared.js"></script></head><body>
 <nav><div class="w"><a class="lg" href="#top"><img src="icon.svg" alt="">My PYQ Online</a><div class="nl"><a href="#subjects">Subjects</a><a href="#performance">Performance</a><a href="admin.html" id="navAdmin" hidden>Admin</a><a href="#notes">Notes</a><a href="#bookmarks">Bookmarks</a></div><span class="sp"></span><span class="note" id="syncSt"></span><button class="btn" id="theme" aria-label="Toggle dark mode">☾</button><span id="acct"></span></div></nav>
 <div class="pop" id="acctPop" hidden></div><header class="hero" id="top"><div class="w"><h1>Practise every subject.<br><em>Master every PYQ.</em></h1><p>Chapter-wise practice, timed mock exams and live quizzes with friends — your progress follows you across devices.</p>
 <div class="cta"><a class="btn p" href="#subjects">Choose a subject →</a><a class="btn" id="returnRoom" hidden href="test.html?resume=1">Resume hosted test</a><form class="join" id="joinF"><input id="joinC" maxlength="8" placeholder="ROOM CODE" aria-label="Room code"><button class="btn" type="submit">Join live</button></form></div>
@@ -127,23 +127,35 @@ $('tbl').onclick=async e=>{
  const version=++openedAttempt,box=$('attemptBody'),dialog=$('attemptDialog');
  box.innerHTML=`<h2>${esc(rec.subjName)}</h2><p>${rec.c} correct · ${rec.w} wrong · ${rec.total-rec.att} skipped</p><p>${(rec.rows||[]).map(r=>esc(r.t)).join(' · ')}</p>`;
  dialog.showModal();
- if(rec.wrong?.length)box.insertAdjacentHTML('beforeend',`<a class="btn p" href="builder.html?s=${encodeURIComponent(rec.subj)}&retry=${encodeURIComponent(rec.id)}">Retry missed questions</a>`);
+ if(rec.wrong?.length&&!rec.paperRefs)box.insertAdjacentHTML('beforeend',`<a class="btn p" href="builder.html?s=${encodeURIComponent(rec.subj)}&retry=${encodeURIComponent(rec.id)}">Retry missed questions</a>`);
  try{
   const catalog=await QM.kvGet('cache:subjects')||[],published=catalog.find(r=>r.id===rec.subj&&r.path&&r.status==='live');
-  const bank=published?await QM.bank(published):SUBS.some(s=>s.id===rec.subj&&s.built)?await (await fetch('data/'+encodeURIComponent(rec.subj)+'.json')).json():await QM.kvGet('subj:'+rec.subj);
+  let bank;
+  if(rec.paperRefs){
+   const banks=new Map();for(const sid of new Set(Object.values(rec.paperRefs).map(v=>v.sid))){
+    const row=catalog.find(r=>r.id===sid&&r.path&&r.status==='live');
+    const source=row?await QM.bank(row):await (await fetch('data/'+encodeURIComponent(sid)+'.json')).json();
+    banks.set(sid,new Map(source.questions.map(q=>[q.id,q])));
+   }
+   bank={questions:Object.entries(rec.paperRefs).flatMap(([id,v])=>{const q=banks.get(v.sid)?.get(v.id);return q?[{...q,id}]:[];})};
+  }else bank=published?await QM.bank(published):SUBS.some(s=>s.id===rec.subj&&s.built)?await (await fetch('data/'+encodeURIComponent(rec.subj)+'.json')).json():await QM.kvGet('subj:'+rec.subj);
   if(version!==openedAttempt)return;
   const questions=new Map(bank.questions.map(q=>[q.id,q])),items=new Map((rec.items||[]).map(x=>[x[0],x]));
   const ids=rec.questionIds||[...items.keys()];
   if(!rec.questionIds&&rec.total>ids.length)box.insertAdjacentHTML('beforeend','<p>This older attempt recorded only answered questions.</p>');
-  if(rec.w){const label=document.createElement('label');label.style.display='block';label.innerHTML='<input type="checkbox"> Wrong answers only';box.append(label);
-   label.onchange=()=>box.querySelectorAll('details').forEach(el=>el.hidden=label.firstChild.checked&&el.dataset.grade!=='wrong');}
+  const times=(rec.items||[]).map(x=>Number(x[3])||0).filter(Boolean).sort((a,b)=>a-b);
+  const threshold=times[Math.max(0,Math.ceil(times.length*.75)-1)]||Infinity;
+  const filter=document.createElement('select');filter.setAttribute('aria-label','Replay filter');
+  for(const [k,v] of [['all','All questions'],['wrong','Wrong'],['skipped','Skipped'],['slow','Slow but correct · longest quarter']])filter.add(new Option(v,k));
+  box.append(filter);filter.onchange=()=>box.querySelectorAll('details').forEach(el=>{el.hidden=filter.value==='slow'?el.dataset.slow!=='1':filter.value!=='all'&&el.dataset.grade!==filter.value;});
   for(const [i,id] of ids.entries()){
    const q=questions.get(id),item=items.get(id),detail=document.createElement('details');
    detail.dataset.grade=item?.[2]||'skipped';
-   detail.innerHTML=`<summary>Q${i+1} · ${esc(item?.[2]||'Skipped')} · ${esc(q?.prompt||'Question unavailable')}</summary>`;
+   detail.dataset.slow=item?.[2]==='correct'&&item[3]>=threshold?'1':'0';
+   detail.innerHTML=`<summary>Q${i+1} · ${esc(item?.[2]||'Skipped')}${item?' · '+fmt(Number(item[3])||0):''}${item?.[4]?' · '+esc(item[4]):''} · ${esc(QM.readingText(q?.prompt||'Question unavailable'))}</summary>`;
    detail.ontoggle=()=>{if(!detail.open||detail.dataset.loaded||!q)return;detail.dataset.loaded='1';
     const picks=new Set((item?.[1]||'').split(','));
-    detail.insertAdjacentHTML('beforeend',(q.images||[]).map(url=>`<img loading="lazy" alt="Question figure" src="${esc(url)}">`).join('')+(q.options||[]).map(o=>`<p><b>${esc(o.sourceLabel)}</b> ${esc(o.text)} ${picks.has(o.key)?' · Your answer':''}${q.correct?.includes(o.sourceLabel)?' · Correct answer':''}</p>`).join('')+`<p>${esc(q.explanation||'')}</p>`);};
+    detail.insertAdjacentHTML('beforeend',(q.images||[]).map(url=>`<img loading="lazy" alt="Question figure" src="${esc(url)}">`).join('')+(q.options||[]).map(o=>`<p><b>${esc(o.sourceLabel)}</b> ${esc(o.text)} ${picks.has(o.key)?' · Your answer':''}${q.correct?.includes(o.sourceLabel)?' · Correct answer':''}</p>`).join('')+`<div>${QM.studyHTML(q.explanation,esc)}</div>`);};
    box.append(detail);
   }
  }catch{if(version===openedAttempt)box.insertAdjacentHTML('beforeend','<p>The question bank could not be loaded. Close and reopen this attempt to retry.</p>');}
@@ -181,7 +193,7 @@ async function loadBookmarks(){
   const keys=await QM.kvKeys('bookmark:'),saved=(await Promise.all(keys.map(k=>QM.kvGet(k)))).filter(b=>b&&!b.deleted).sort((a,b)=>b.ts-a.ts);
   if(generation!==bookmarkLoad)return;
   $('bmCount').textContent=saved.length+' saved'+(pendingLegacy?' · Earlier flags will be checked when the subject is available.':'');
-  $('bmList').innerHTML=saved.map(b=>`<article class="card ngrp"><div class="chips"><span class="chip b">${esc(b.subject)}</span><span class="chip">${esc(b.chapter)}</span><span class="chip">Q ${esc(b.number)}</span></div><p class="bmPrompt">${esc(b.prompt)}</p>${(b.images||[]).map(url=>`<img loading="lazy" alt="Question figure" src="${esc(url)}">`).join('')}<details><summary>Review options and answer</summary>${(b.options||[]).map(o=>`<p><b>${esc(o.sourceLabel)}.</b> ${esc(o.text)}</p>`).join('')}<b>Answer · ${esc((b.correct||[]).join(', ').toUpperCase()||'Unkeyed')}</b><p class="bmPrompt">${esc(b.explanation)}</p></details><button type="button" class="btn" data-remove-bookmark="${esc(QM.bookmarkKey(b.sid,b.id))}">Remove bookmark</button></article>`).join('')||'<div class="card empty">Tap the bookmark icon on a test question to save it here.</div>';
+  $('bmList').innerHTML=saved.map(b=>`<article class="card ngrp"><div class="chips"><span class="chip b">${esc(b.subject)}</span><span class="chip">${esc(b.chapter)}</span><span class="chip">Q ${esc(b.number)}</span></div><p class="bmPrompt">${esc(QM.readingText(b.prompt))}</p>${(b.images||[]).map(url=>`<img loading="lazy" alt="Question figure" src="${esc(url)}">`).join('')}<details><summary>Review options and answer</summary>${(b.options||[]).map(o=>`<p><b>${esc(o.sourceLabel)}.</b> ${esc(o.text)}</p>`).join('')}<b>Answer · ${esc((b.correct||[]).join(', ').toUpperCase()||'Unkeyed')}</b><div>${QM.studyHTML(b.explanation,esc)}</div></details><button type="button" class="btn" data-remove-bookmark="${esc(QM.bookmarkKey(b.sid,b.id))}">Remove bookmark</button></article>`).join('')||'<div class="card empty">Tap the bookmark icon on a test question to save it here.</div>';
  }catch{if(generation===bookmarkLoad)$('bmList').innerHTML='<button class="btn" onclick="loadBookmarks()">Retry loading bookmarks</button>';}
 }
 $('bmList').onclick=async e=>{
@@ -207,7 +219,7 @@ $('nList').onclick=async e=>{const el=e.target.closest('.note-i');if(!el)return;
 $('nExp').onclick=()=>{const q=NT.slice().sort((a,b)=>a.sn.localeCompare(b.sn)||a.c-b.c);let o='# My notes\n',s='',c=null;q.forEach(n=>{if(n.sn!==s){s=n.sn;c=null;o+='\n## '+s+'\n'}if(n.c!==c){c=n.c;o+='\n### '+(n.c?n.c+'. '+n.ch:'Chapter unknown')+'\n'}o+='\n- **Q'+n.qn+'** '+n.p+'\n  - '+n.t.replace(/\n/g,'\n    ')+'\n'});const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([o],{type:'text/markdown'}));a.download='my-notes.md';a.click()};
 $('delA').onclick=async e=>{e.preventDefault();if(!confirm('Permanently delete your account, synced progress, reports and shared subjects? This cannot be undone. Data on this device is kept.'))return;const{error}=await QM.client().rpc('delete_my_account');if(error){toast('Could not delete: '+error.message);return}await QM.signOut();toast('Your account was deleted.')};
 document.addEventListener('click',e=>{if(!e.target.closest('#acctPop'))$('acctPop').hidden=true});
-QM.listen(e=>{if(e==='auth')acct();if(e==='pulled')load();if(e==='resume'){load();refreshSubjects()}if(e==='sync:ok')$('syncSt').textContent='☁ Synced';if(e==='sync:error')$('syncSt').textContent='⚠ Sync failed'});
+QM.listen(e=>{if(e==='auth')acct();if(e==='pulled')load();if(e==='resume'){load();refreshSubjects()}if(e==='sync:pending')$('syncSt').textContent=navigator.onLine?'Saving…':'Saved on device';if(e==='sync:ok')$('syncSt').textContent='☁ Synced';if(e==='sync:error')$('syncSt').textContent='⚠ Sync failed'});
 (async()=>{if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
  if(!QM.enabled)$('cfgNote').textContent='· Cloud features are off: add Supabase keys in config.js';
  load();refreshManifest().then(load).catch(()=>{});addEventListener('pageshow',()=>load());acct();await QM.init(0).catch(()=>{});acct();if(QM.user){QM.client().rpc('qm_host_room',{room_code:null}).then(({data})=>{$('returnRoom').hidden=!data;});}await QM.subjects();load().then(()=>{if(location.hash){const el=document.querySelector(location.hash);el&&el.scrollIntoView()}});
