@@ -146,10 +146,11 @@ function render(){
  const hint=isMulti(q)&&!rev&&!submitted&&q.attemptable?'<span>Multiple answers: select every correct option'+(mode==='practice'?', then press Check':'')+'</span>':submitted?'Test submitted — review only.':!q.attemptable?'This item is retained for source review.':exam?'<span>Exam mode: change your answer any time before you submit</span>':'<span>Tap an option to check it instantly</span><kbd class="kbdhint">A–D</kbd><span class="kbdhint">then</span><kbd class="kbdhint">Enter</kbd><span class="kbdhint">for next</span>';
  const mchk=isMulti(q)&&!rev&&!submitted&&mode==='practice'&&saved&&saved.sel&&saved.sel.length?'<div style="margin:0 28px 4px"><button class="btn primary" id="chkMulti" type="button">Check answer</button></div>':'';
  card.innerHTML=`<div class="qhead"><span class="qn">Q${mixed?current+1:esc(q.number)}</span>${mixed?'':`<span class="qch" title="${esc(q.chapter||'')}">Ch ${String(q.chapterNo).padStart(2,'0')} · ${esc(q.chapter||'')}</span>`}<div class="qacts"><button class="ib ${flags.has(q.id)?'on':''}" id="flagBtn" type="button" title="Bookmark for review (F)" aria-label="Bookmark for review" aria-pressed="${flags.has(q.id)}"><svg viewBox="0 0 24 24" width="18" height="18" fill="${flags.has(q.id)?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button><button class="ib rep" id="rptBtn" type="button" title="Report a problem with this question" aria-label="Report a problem"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/></svg></button></div>${tags?`<div class="tags">${tags}</div>`:''}</div>
- <div class="qbody">${prompt}${options}</div>
- <p class="hint">${hint}</p>${mchk}${fb}${noteBox(q)}`;
+ <div class="qbody">${prompt}${!submitted&&active&&!rev?`<label class="confidencePick">Confidence<select id="confidence"><option value="">Optional</option>${['Sure','Unsure','Guess'].map(c=>`<option ${sess.confidence?.[q.id]===c?'selected':''}>${c}</option>`).join('')}</select></label>`:''}${options}</div>
+ <p class="hint">${hint}</p>${mchk}${fb}${rev&&q.revisionNote?`<p class="dnote">Revised ${esc(q.revisionDate)} · ${esc(q.revisionNote)}</p>`:''}${noteBox(q)}`;
  card.querySelectorAll('[data-option]').forEach(b=>b.addEventListener('click',()=>pick(b.dataset.option)));
  $('flagBtn').addEventListener('click',()=>toggleFlag(q));$('rptBtn').addEventListener('click',()=>{$('rptBackdrop').hidden=false;});
+ const confidence=$('confidence');if(confidence)confidence.onchange=()=>{(sess.confidence||={})[q.id]=confidence.value;save();};
  const cm=$('chkMulti');if(cm)cm.addEventListener('click',checkMulti);
  const nt=$('noteTa');if(nt)nt.addEventListener('input',()=>setNote(q.id,nt.value));
 }
@@ -402,6 +403,7 @@ groupFilter.addEventListener('change',()=>{fillChapters();userFilter();});yearFi
 
 /* subjects */
 async function ensureData(s){
+ if(!s.data&&!navigator.onLine)s.data=await QM.kvGet('cache:offline:'+s.id);
  if(!s.data)s.data=s.builtin?await QM.deadline((window.__pre&&window.__pre.id===s.id?window.__pre.p:fetch('data/'+s.id+'.json').then(r=>r.json())),30000):s.cloud?await QM.deadline(QM.bank(s.cloud,()=>toast('Showing the saved version. Reopen this subject when the latest download is available.')),30000):await kv.get('subj:'+s.id);
  if(!s.prep){const g=new Map(s.data.chapters.map(c=>[c.no,c.group||'']));s.data.questions.forEach(q=>q.group=g.get(q.chapterNo)||'');s.data.groups=[...new Set(s.data.chapters.map(c=>c.group).filter(Boolean))];s.prep=1;}
  return s.data;}
@@ -436,12 +438,13 @@ function tally(){
  order.forEach((q,i)=>{const a=answers.get(q.id),r=byCh.get(q.chapterNo)||{no:q.chapterNo,t:q.chapter,n:0,c:0,w:0};r.n++;byCh.set(q.chapterNo,r);if(!a)return;att++;
   const s=spent.get(q.id)||0;tt+=s;if(!slow||s>slow.s)slow={s,label:`${q.chapterNo}·${q.number}`};
   if(a.grade==='correct'){c++;r.c++}else if(a.grade==='wrong'){w++;r.w++;wrong.push({id:q.id,i,label:`${q.chapterNo}·${q.number}`,ch:q.chapter})}else if(a.grade==='ungraded')u++;
-  items.push([q.id,selKeys(a).join(','),a.grade,s]);});
+  items.push([q.id,selKeys(a).join(','),a.grade,s,sess.confidence?.[q.id]||'']);});
  return{c,w,u,att,tt,slow,wrong,total:order.length,rows:[...byCh.values()],items,marks:sess.marks||1,neg:sess.neg||0,mock:!!sess.mock,lim:sess.lim||0};}
 function filterDesc(){const f=[],sel=x=>x.value!=='all';if(retryIds)f.push(sess.live?'Live room':sess.mock?'Custom session':'Retry missed');if(sel(groupFilter))f.push(groupFilter.value);if(sel(examFilter))f.push(examFilter.value);if(sel(yearFilter))f.push(yearFilter.value);if(chosenChapters.size)f.push('Chapters '+[...chosenChapters].join(', '));if(sel(viewFilter))f.push(viewFilter.options[viewFilter.selectedIndex].text);if(search)f.push('“'+search+'”');return f.join(' · ')||'All questions';}
 function logSession(status){
  if(!SUBJ||!sess.id||!order.length)return;const d=tally();if(!d.att&&status!=='submitted')return;
  const rec={id:sess.id,subj:SUBJ.id,subjName:SUBJ.name,mode,status,st:sess.st,en:Date.now(),dur:Math.max(0,elapsed-(sess.eb||0)),filt:filterDesc(),questionIds:order.map(q=>q.id),...d};
+ if(SUBJ.id.startsWith('paper-'))rec.paperRefs=Object.fromEntries(order.map(q=>[q.id,q.origin]));
  const i=SESS.findIndex(r=>r.id===rec.id);if(i>=0)SESS[i]=rec;else SESS.push(rec);kv.set('sessions',SESS);}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&SUBJ){logSession(submitted?'submitted':'in-progress');saveNow();flushPersist();}});
 addEventListener('pagehide',()=>{if(SUBJ){logSession(submitted?'submitted':'in-progress');saveNow();flushPersist();}});
@@ -596,6 +599,7 @@ function flushPersist(){if(_ps==null)return;clearTimeout(_ps);_ps=null;if(SUBJ){
 function recordResult(q,g){
  if(!q||(g!=='correct'&&g!=='wrong'))return;
  const s=QS[progressStorageKey(q.id)]||(QS[progressStorageKey(q.id)]={a:0,c:0,w:0,b:0,t:0,d:0});s.a++;if(g==='correct'){s.c++;s.b=Math.min(5,s.b+1);}else{s.w++;s.b=0;}
+ s.confidence=sess.confidence?.[q.id]||'';s.lastGrade=g;
  s.t=Date.now();s.d=s.t+INTERVALS[s.b]*864e5;const k=dayKey();DAILY[k]=(DAILY[k]||0)+1;persistSoon();}
 function gradePending(){for(const [id,a] of answers)if(a.grade==='pending'){a.grade=gradeOf(byId.get(id),a);recordResult(byId.get(id),a.grade);}}
 function autoSubmit(){gradePending();submitted=true;setPaused(false);stopClock();logSession('submitted');$('testSubmit').textContent='Summary';render();showSummary();toast('Time is up — your test was submitted.');}
@@ -651,7 +655,7 @@ function parseCsv(t){
 function rowsToRaw(rows,info){
  const h=rows.findIndex(r=>r&&r.some(c=>String(c??'').trim()));if(h<0)return{err:['The sheet is empty.']};
  const head=rows[h].map(c=>String(c??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()),find=(...k)=>head.findIndex(x=>k.includes(x));
- const col={qid:find('question id'),ch:find('chapter','chapter name','topic','unit'),gr:find('group','era','category','branch','section'),q:find('question','questions','q','prompt'),an:find('answer','correct answer','correct','ans','key','correct option'),ex:find('explanation','solution','rationale','explain'),exam:find('exam','exams','exam tag','source','previous year','pyq'),yr:find('year')};
+ const col={paper:find('paper id'),pno:find('paper number'),ptotal:find('paper total'),qid:find('question id'),ch:find('chapter','chapter name','topic','unit'),gr:find('group','era','category','branch','section'),q:find('question','questions','q','prompt'),an:find('answer','correct answer','correct','ans','key','correct option'),ex:find('explanation','solution','rationale','explain'),exam:find('exam','exams','exam tag','source','previous year','pyq'),yr:find('year')};
  const oi='abcdef'.split('').map(L=>find(L,'option '+L,'opt '+L,'options '+L,'choice '+L));
  const pictureColumns=head.map((name,i)=>/^(?:image|images|picture|figure|diagram|question image|(?:img|image|picture) [a-f]|(?:opt|option) [a-f] image)$/.test(name)?i:-1).filter(i=>i>=0);
  if(rows.slice(h+1).some(row=>pictureColumns.some(i=>String(row?.[i]??'').trim()))){
@@ -666,7 +670,7 @@ function rowsToRaw(rows,info){
   const ans=g(col.an).toLowerCase().replace(/[().]/g,'').split(/[\s,;&\/]+/).filter(x=>x&&x!=='and').map(x=>/^[1-6]$/.test(x)?'abcdef'[+x-1]:x);
   let ex=g(col.exam).split(/[;|\n]+/).map(s=>s.trim()).filter(Boolean);const y=g(col.yr).match(/(?:19|20)\d{2}/);
   if(y)ex=ex.length?ex.map(s=>/(?:19|20)\d{2}/.test(s)?s:s+' '+y[0]):['PYQ '+y[0]];
-  qs.push({_row:i+1,questionId:g(col.qid),chapter:ch||undefined,group:gr,question:g(col.q),options:opts.slice(0,n),answer:ans,explanation:g(col.ex),exams:ex});}
+  qs.push({_row:i+1,paper:g(col.paper)?{id:g(col.paper),no:Number(g(col.pno))||0,total:Number(g(col.ptotal))||0}:undefined,questionId:g(col.qid),chapter:ch||undefined,group:gr,question:g(col.q),options:opts.slice(0,n),answer:ans,explanation:g(col.ex),exams:ex});}
  return{raw:{subject:info.subject||'',subtitle:info.subtitle||'',groupLabel:info.groupLabel||'',questions:qs}};}
 async function readFileToRaw(f){
  const ext=(f.name.split('.').pop()||'').toLowerCase(),stem=f.name.replace(/\.[^.]+$/,'');
@@ -707,14 +711,14 @@ function xlsxBlob(sheets){
   ['xl/styles.xml',styles],...sheets.map((s,i)=>[`xl/worksheets/sheet${i+1}.xml`,sheetXml(s)])];
  return zipStore(files);}
 function dlBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);}
-const QHEAD=['Chapter','Group','Question','Option A','Option B','Option C','Option D','Option E','Option F','Answer','Explanation','Exam','Question ID'],QW=[28,14,70,26,26,26,26,22,22,10,60,28,24];
+const QHEAD=['Chapter','Group','Question','Option A','Option B','Option C','Option D','Option E','Option F','Answer','Explanation','Exam','Question ID','Paper ID','Paper number','Paper total'],QW=[28,14,70,26,26,26,26,22,22,10,60,28,24];
 function templateBlob(){
  const info=[['Subject','General Science'],['Subtitle','NCERT based · Class 6–10'],['Group label','Branch'],[''],['HOW TO USE THIS TEMPLATE'],['1. Keep the headings in row 1 of the “Questions” sheet. Add one row per question.'],['2. Chapter: type the chapter name. You may leave it blank on following rows of the same chapter.'],['3. Group (optional): e.g. Physics / Chemistry or Ancient / Medieval / Modern. It becomes an extra filter named “Group label” above.'],['4. Options: fill Option A–F (2 to 6 options). Leave unused option columns empty.'],['5. Answer: the correct letter, e.g. B. For several correct answers write A, C. Leave blank for an unscored question.'],['6. Explanation and Exam (e.g. UPSC CSE 2019) are optional. Separate several exams with ;'],['7. Change the Subject name above, save as .xlsx (or .csv) and import it from Subject ▸ Add subject. Re-importing the same subject name updates it and keeps student progress on unchanged questions.']];
  const q=[QHEAD,['Motion and Force','Physics','The SI unit of force is –','Joule','Newton','Watt','Pascal','','','B','Force is measured in newton (N).','UPSC CSE (Pre) 2019'],['','','Select all vector quantities.','Speed','Velocity','Displacement','Mass','','','B, C','Velocity and displacement have direction.',''],['Acids, Bases and Salts','Chemistry','Which of the following are acids?\n1. HCl\n2. NaOH\n3. H2SO4','1 and 2','2 only','1 and 3','1, 2 and 3','','','C','NaOH is a base.','SSC CGL 2021; UPSC CSE (Pre) 2018']];
  return xlsxBlob([{name:'Questions',rows:q,header:true,widths:QW},{name:'Info',rows:info,widths:[18,90]}]);}
 async function exportSubject(s){
  await ensureData(s);const d=s.data,rows=[QHEAD];
- for(const q of d.questions){const o=q.options.map(x=>rfs(s,x.text));while(o.length<6)o.push('');rows.push([q.chapter,q.group||'',rfs(s,q.prompt),...o.slice(0,6),q.correct.map(x=>x.toUpperCase()).join(', '),rfs(s,q.explanation),q.examTags.map(t=>t.label).join(' ; '),q.id]);}
+ for(const q of d.questions){const o=q.options.map(x=>rfs(s,x.text));while(o.length<6)o.push('');rows.push([q.chapter,q.group||'',rfs(s,q.prompt),...o.slice(0,6),q.correct.map(x=>x.toUpperCase()).join(', '),rfs(s,q.explanation),q.examTags.map(t=>t.label).join(' ; '),q.id,q.paper?.id||'',q.paper?.no||'',q.paper?.total||'']);}
  dlBlob(xlsxBlob([{name:'Questions',rows,header:true,widths:QW},{name:'Info',rows:[['Subject',d.title||s.name],['Subtitle',d.subtitle||''],['Group label',d.groupLabel||'']],widths:[18,60]}]),slug(s.name)+'.xlsx');
  toast(`Exported ${d.questions.length} questions to Excel.`);}
 
@@ -769,7 +773,7 @@ function normalizeImport(raw){
   if(!given)while(seen.has(id)||reservedIds.has(id))id=base+'_'+(++dd);
   seen.add(id);
   const ex=Array.isArray(r.exams)?r.exams:r.exams?[r.exams]:[];
-  qs.push({id,chapterNo:ch.no,chapter:ch.title,number:n,pdfPage:'',bookPage:r.page?String(r.page):'',prompt:text,options:opts.map((t,j)=>({key:keys[j],sourceLabel:keys[j],text:t})),correct:a,answerRaw:a.length?'Ans. ('+a.join(' & ')+')':'',type:a.length>1?'Multiple answer':'Multiple choice',explanation:String(r.explanation||''),examTags:ex.filter(Boolean).map(examTag),attemptable:true,gradeable:a.length>0,reviewFlags:[]});});
+  qs.push({id,...(r.paper?{paper:r.paper}:{}),chapterNo:ch.no,chapter:ch.title,number:n,pdfPage:'',bookPage:r.page?String(r.page):'',prompt:text,options:opts.map((t,j)=>({key:keys[j],sourceLabel:keys[j],text:t})),correct:a,answerRaw:a.length?'Ans. ('+a.join(' & ')+')':'',type:a.length>1?'Multiple answer':'Multiple choice',explanation:String(r.explanation||''),examTags:ex.filter(Boolean).map(examTag),attemptable:true,gradeable:a.length>0,reviewFlags:[]});});
  if(!qs.length)return{err:err.length?err:['No valid questions were found.']};
  qs.sort((x,y)=>x.chapterNo-y.chapterNo);const used=new Set(qs.map(q=>q.chapterNo));
  const data={title:name,subtitle:String(raw.subtitle||''),groupLabel:String(raw.groupLabel||'').trim()||'Category',chapters:chs.filter(c=>used.has(c.no)).sort((x,y)=>x.no-y.no),questions:qs,source:String(raw.source||'Imported subject'),stats:{total:qs.length}};
@@ -891,10 +895,13 @@ $('mkGo').addEventListener('click',async()=>{
  if(who==='host'&&!$('mkAlone').checked)return hostRoom(cfg);
  const lim=+$('mkT').value*60;
  if(answers.size&&!await ask('Start this session?','Your current attempt in this subject will be ended (it stays in Performance).','Start'))return;
- logSession(submitted?'submitted':'ended');stopClock();answers.clear();spent.clear();submitted=false;elapsed=0;FORCE.clear();mode=cmode;
- retryIds=new Set(ids);sess={account:QM.user.id,id:uid(),st:Date.now(),qsec:cmode==='practice'?cfg.qsec:0,eb:0,lim,marks:cfg.marks||1,neg:cfg.neg,mock:1,ids};
+ startSoloSession(ids,cmode,cfg,lim);
+});
+function startSoloSession(ids,testMode,cfg,lim){
+ logSession(submitted?'submitted':'ended');stopClock();answers.clear();spent.clear();submitted=false;elapsed=0;FORCE.clear();mode=testMode;
+ retryIds=new Set(ids);sess={account:QM.user.id,id:uid(),st:Date.now(),qsec:testMode==='practice'?cfg.qsec:0,eb:0,lim,marks:cfg.marks||1,neg:cfg.neg,mock:1,ids};
  $('mockBackdrop').hidden=true;$('summaryBackdrop').hidden=true;$('testSubmit').textContent='Submit';setTab('quiz');applyFilters();setOrder(ids);setPaused(false);paint();
- toast(`${ids.length} questions · ${cmode}${lim?' · '+lim/60+' min':''}`);});
+ toast(`${ids.length} questions · ${testMode}${lim?' · '+lim/60+' min':''}`);}
 
 /* --- live rooms --- */
 const names=()=>[...LIVE.roster];
@@ -1047,7 +1054,7 @@ function reconcileRoster(H,members){
   }
  }
  H.presenceReady=true;
- if(changed)publishRoster(H);
+ if(changed)publishRoster(H);else if(H.ph==='live'||H.ph==='reveal')liveUI();
 }
 function publishRoster(H){
  saveHost();
@@ -1129,6 +1136,15 @@ function finish(){const H=LIVE,ids=H.cfg.ids,neg=H.cfg.neg||0,rows=[],pk={};
 function liveEnd(res){const H=LIVE;if(!H)return;try{const saved=JSON.parse(localStorage.getItem('qm-room')||'null');if(saved?.session===H.peer.session){localStorage.removeItem('qm-room');if(H.host)localStorage.removeItem('qm-host');}}catch(e){}H.res=res;H.ph='over';clearInterval(H.iv);H.peer.outbox.finally(()=>H.peer.destroy());gradePending();submitted=true;setPaused(false);stopClock();logSession('submitted');$('testSubmit').textContent='Summary';render();paint();showLB();}
 function showLB(){const r=LIVE.res,t=r.rows[0];
  $('lbBody').innerHTML=`<p class="weak" style="background:var(--ok-bg);color:var(--ok);border-color:var(--ok-line)">🏆 ${esc(t.n)} wins with ${t.s} point${t.s===1?'':'s'}</p><div style="overflow-x:auto"><table class="lbt"><tr><th>#</th><th>Player</th><th>Score</th><th>Correct</th><th>Wrong</th><th>Skipped</th><th>Avg time</th></tr>${r.rows.map((x,i)=>`<tr><td>${i+1}</td><td><b>${esc(x.n)}</b>${x.n===LIVE.name?' (you)':''}</td><td><b>${x.s}</b></td><td>${x.c}</td><td>${x.w}</td><td>${x.u}</td><td>${x.c+x.w?mmss(Math.round(x.t/(x.c+x.w)/1000)):'–'}</td></tr>`).join('')}</table></div><h3>Responses by question</h3><div style="overflow:auto;max-height:300px"><table class="lbt"><tr><th>Q</th><th>Key</th>${r.rows.map(x=>`<th>${esc(x.n)}</th>`).join('')}</tr>${r.ids.map((id,i)=>{const q=byId.get(id);return`<tr><td>${i+1}</td><td>${keyStr(q)}</td>${r.rows.map(x=>{const s=Object.hasOwn(r.pk[id],x.n)?r.pk[id][x.n]:null;if(!s)return'<td>–</td>';const g=gradeOf(q,{sel:s})==='correct';return`<td style="color:var(--${g?'ok':'bad'});font-weight:700">${lab(q,s)} ${g?'✓':'✗'}</td>`;}).join('')}</tr>`;}).join('')}</table></div>`;
+ const d=document.createElement('details');d.innerHTML='<summary>Anonymous responses by question</summary>';
+ const select=document.createElement('select');select.setAttribute('aria-label','Question');
+ r.ids.forEach((_,i)=>select.add(new Option('Question '+(i+1),i)));
+ const chart=document.createElement('div');function draw(){const id=r.ids[select.selectedIndex],q=byId.get(id);
+  chart.replaceChildren();const picks=Object.values(r.pk[id]||{});for(const o of q.options){
+   const bar=document.createElement('progress');bar.max=picks.length||1;bar.value=picks.filter(list=>list.includes(o.key)).length;
+   const row=document.createElement('div');row.append(o.sourceLabel.toUpperCase()+' ',bar,' '+bar.value);chart.append(row);
+  }}
+ select.onchange=draw;d.append(select,chart);$('lbBody').append(d);if(r.ids.length)draw();
  $('lbBackdrop').hidden=false;}
 function showRoom(){const H=LIVE;if(!H||H.ph!=='lobby'){$('roomBackdrop').hidden=true;return;}const ns=H.host?names():(H.players||[]),c=H.cfg||{};
  $('roomBody').innerHTML=`<div class="rcode" onclick="navigator.clipboard&&navigator.clipboard.writeText('${H.code}');toast('Code copied')">${esc(H.code)}</div><p style="margin:0;text-align:center">Friends tap Join room and enter this code.</p><p style="margin:8px 0 0;text-align:center;font-size:13px">${c.mode==='exam'?'Exam':'Practice'} · ${c.n||'?'} questions · ${c.qsec||'?'}s per question</p><h3>Players (${ns.length})</h3>`+ns.map((n,i)=>`<div class="mine"><span><b>${memberName(H,n)}</b>${i===0?' <span class="chip">host</span>':''}</span>${moderationControls(H,n)}</div>`).join('')+(H.host?'':'<p class="dnote">Waiting for the host to start…</p>');
@@ -1258,14 +1274,16 @@ $('nextBtn').addEventListener('click',e=>{const H=L();if(!H)return;e.stopImmedia
 const _rn=render;render=function(){_rn();liveUI();paint();};
 function liveUI(){const H=L(),q=currentQ();if(!H||!H.cfg||!H.cfg.ids||!q||H.ci<0)return;
  const prac=H.cfg.mode==='practice',pk=H.cpicks||{},nm=H.host?names():H.players;
+ const dashboard=H.host?hostDashboard(H,q,pk,nm):'';
  const rows=nm.map(n=>{const s=Object.hasOwn(pk,n)?pk[n]:null;let v;if(!s)v=`<span style="color:var(--muted)">${H.ph==='reveal'?'no answer':'thinking…'}</span>`;
   else if(!prac||H.ph!=='reveal')v='✔ answered';else{const ok=gradeOf(q,{sel:s})==='correct';v=`<b style="color:var(--${ok?'ok':'bad'})">${lab(q,s)} ${ok?'✓':'✗'}</b>`;}
-  return`<div class="mine"><span>${memberName(H,n)}${n===H.name?' (you)':''}</span><span>${v}</span>${moderationControls(H,n)}</div>`;}).join('');
+  return`<div class="mine"><span>${memberName(H,n)}${n===H.name?' (you)':''}${H.host&&H.off.has(n)?' · reconnecting':''}</span><span>${v}</span>${moderationControls(H,n)}</div>`;}).join('');
  const ex='';
  const existing=$('livePanel');
  const p=existing||document.createElement('div');p.id='livePanel';p.className='lpanel';
- const structure=JSON.stringify([H.code,H.ci,H.ph,H.pz||0,nm,H.selectedMember,[...H.members||[]]]);
+ const structure=JSON.stringify([H.code,H.ci,H.ph,H.pz||0,nm,H.host?[...H.off]:[],H.selectedMember,[...H.members||[]]]);
  if(existing&&p.dataset.structure===structure){
+  const meter=p.querySelector('[data-room-count]');if(meter)meter.textContent=nm.filter(n=>Object.hasOwn(pk,n)).length+' / '+nm.length+' answered';
   const labels=p.querySelectorAll('.mine > span:nth-child(2)');
   nm.forEach((n,i)=>{
    const label=labels[i];
@@ -1274,15 +1292,22 @@ function liveUI(){const H=L(),q=currentQ();if(!H||!H.cfg||!H.cfg.ids||!q||H.ci<0
   return;
  }
  p.dataset.structure=structure;
- p.innerHTML=`<div class="lhead"><b>Room ${esc(H.code)}</b><span>Question ${H.ci+1} / ${H.cfg.ids.length}</span>${prac?'':'<span id="lcd">'+H.show()+'</span>'}</div>${prac?'':'<p class="dnote" style="margin:0 0 6px">Exam: friends’ answers stay hidden until the end.</p>'}${H.pz?'<p style="margin:0 0 6px;font-weight:700">⏸ Test paused by the host</p>':''}${rows}${ex}`;
+ p.innerHTML=`<div class="lhead"><b>Room ${esc(H.code)}</b><span>Question ${H.ci+1} / ${H.cfg.ids.length}</span>${prac?'':'<span id="lcd">'+H.show()+'</span>'}</div>${prac?'':'<p class="dnote" style="margin:0 0 6px">Exam: friends’ answers stay hidden until the end.</p>'}${H.pz?'<p style="margin:0 0 6px;font-weight:700">⏸ Test paused by the host</p>':''}${dashboard}${rows}${ex}`;
  if(!existing)card.append(p);}
+function hostDashboard(H,q,picks,members){
+ const answered=members.filter(n=>Object.hasOwn(picks,n));
+ const summary='<p data-room-count>'+answered.length+' / '+members.length+' answered</p>';
+ if(H.ph!=='reveal'||H.cfg.mode!=='practice')return summary;
+ const choices=q.options.map(o=>{const count=answered.filter(n=>picks[n].includes(o.key)).length;return '<div>'+esc(o.sourceLabel.toUpperCase())+' <progress max="'+Math.max(answered.length,1)+'" value="'+count+'"></progress> '+count+'</div>';});
+ return summary+'<div class="responseChart" aria-label="Anonymous response totals">'+choices.join('')+'</div>';
+}
 function hostPause(){const H=LIVE;if(!H||!H.host)return;if(H.pz){if(H.cfg.watchPausedAt)H.cfg.watchStart+=Date.now()-H.cfg.watchPausedAt;delete H.cfg.watchPausedAt;H.pz=0;H.end=Date.now()+H.pr;}else{H.cfg.watchPausedAt=Date.now();H.pr=Math.max(0,H.end-Date.now());H.pz=1;}castPh();}
 
 /* ===== v5: sync hooks · reports · shared banks ===== */
 {const ks=kv.set.bind(kv);kv.set=async(k,v)=>{const r=await ks(k,v);QM.touch&&QM.touch(k);return r;};const ss=store.set;store.set=(k,v)=>{ss(k,v);if(/^(pq-state|qm-state)/.test(k)&&QM.dirty)QM.dirty();};}
 const _rn3=render;render=function(){_rn3();{const nt=$('navToggle');if(nt)nt.innerHTML='☷ <b>'+(order.length?current+1:0)+'/'+order.length+'</b>';}const q=currentQ(),hd=card.querySelector('.qhead');if(q&&hd&&!$('rptBtn')){const b=document.createElement('button');b.id='rptBtn';b.type='button';b.className='btn flagbtn';b.textContent='🚩';b.title='Report a wrong answer or typo';b.setAttribute('aria-label','Report this question');b.onclick=()=>{$('rptBackdrop').hidden=false;};hd.append(b);}};
 $('rptCancel').addEventListener('click',()=>$('rptBackdrop').hidden=true);
-$('rptSend').addEventListener('click',async()=>{const q=currentQ();if(!q)return;const ok=await QM.report({subject_id:SUBJ.id,subject_name:SUBJ.name,qid:q.id,chapter:q.chapter,qno:q.chapterNo+'.'+q.number,prompt:String(q.prompt).slice(0,400),reason:$('rptReason').value,note:$('rptNote').value.trim().slice(0,500)});
+$('rptSend').addEventListener('click',async()=>{const q=currentQ();if(!q)return;const ok=await QM.report({subject_id:q.origin?.sid||SUBJ.id,subject_name:(q.origin&&SUBJECTS.find(s=>s.id===q.origin.sid)?.name)||SUBJ.name,qid:q.origin?.id||q.id,chapter:q.chapter,qno:q.chapterNo+'.'+q.number,prompt:String(q.prompt).slice(0,400),reason:$('rptReason').value,note:$('rptNote').value.trim().slice(0,500)});
  $('rptBackdrop').hidden=true;$('rptNote').value='';toast(ok?'Thanks — report sent to the mentor.':'Saved. It will be sent when you are signed in and online.');});
 $('mySubj').addEventListener('click',async e=>{const b=e.target.closest('[data-sh]');if(!b)return;if(!QM.user){toast('Sign in on the home page to share a subject.');return;}
  const s=SUBJECTS.find(x=>x.id===b.dataset.sh);await ensureData(s);const slug=s.id+'-'+Math.random().toString(36).slice(2,6);
@@ -1349,6 +1374,8 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
  SUBJECTS.push({id:'polity',name:'Indian Polity & Governance',builtin:true,reflow:true,sourceHtml:POLITY_SRC},
   {id:'history',name:'Indian History',builtin:true,reflow:true,sourceHtml:'<b>Source:</b> Indian History — Complete Booklet (consolidated exam papers, printed pages B9–B760). Question text, options, answer key and explanations are extracted from the supplied booklet; questions with no printed answer key are not scored.'});
  for(const k of (QM.isAdmin?await kv.keys('subj:'):[])){const d=await kv.get(k);if(d&&d.questions)SUBJECTS.push({id:k.slice(5),name:d.title,builtin:false,data:d,sourceHtml:'<b>Source:</b> '+esc(d.source||'Imported subject')+'. Imported on this device.'});}
+ const paperId=params.get('s');
+ if(paperId?.startsWith('paper-')){const data=await QM.kvGet('cache:'+paperId);if(data)SUBJECTS.push({id:paperId,name:data.title,data});}
  const applyRows=rows=>{for(const r of rows){const i=SUBJECTS.findIndex(s=>s.id===r.id);if(r.status!=='live'){if(i>=0)SUBJECTS.splice(i,1);continue}if(r.status!=='live'||!r.path)continue;const o={id:r.id,name:r.name,builtin:false,cloud:r,sourceHtml:'<b>Source:</b> '+esc(r.subtitle||r.name)};if(i>=0)SUBJECTS[i]=o;else SUBJECTS.push(o)}};
  // Resolve the current published version before choosing the question bank.
  // QM.subjects() falls back to the stored catalog when the network is unavailable.
@@ -1411,6 +1438,7 @@ new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('to
   }else if(qp.get('custom'))chooseRoute();
  }
  if(browsing)await refreshShelfRecords();
+ if(params.get('study')==='priority'&&document.body.dataset.stage==='setup')await openStudy('Exam priorities');
  if(browsing&&cachedSubject)auth.then(()=>refreshCatalog()).catch(()=>{});
  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 })().catch(()=>{
