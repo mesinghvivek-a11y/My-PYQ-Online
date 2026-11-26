@@ -81,6 +81,25 @@ function priorityView(){
  function years(){year.replaceChildren(new Option('All years',''));const ys=new Set(DATA.questions.flatMap(q=>tags(q).flatMap(yrsOf)));[...ys].sort((a,b)=>b-a).forEach(y=>year.add(new Option(y,y)));draw();}
  exam.onchange=years;year.onchange=draw;years();
 }
+const studyFilters=new Map();
+function studyFilterKey(){return JSON.stringify([QM.user?.id||'',SUBJ.id,studyTab]);}
+function rememberStudyFilter(e){
+ const label=e.target.getAttribute('aria-label');
+ if(!label||label==='Reason for mistake'||!e.target.matches('select,input[type=search]'))return;
+ const key=studyFilterKey(),values=studyFilters.get(key)||{};
+ values[label]=e.target.value;studyFilters.set(key,values);
+}
+studyBody.addEventListener('change',rememberStudyFilter);
+studyBody.addEventListener('input',rememberStudyFilter);
+function restoreStudyFilters(){
+ const values=studyFilters.get(studyFilterKey());if(!values)return;
+ for(const el of studyBody.querySelectorAll('input[type=search],select')){
+  const label=el.getAttribute('aria-label');
+  if(!Object.hasOwn(values,label)||label==='Exam'&&new URLSearchParams(location.search).has('exam'))continue;
+  if(el.options&&![...el.options].some(o=>o.value===values[label]))continue;
+  el.value=values[label];el.dispatchEvent(new Event(el.options?'change':'input'));
+ }
+}
 async function openStudy(tab){
  const version=++studyVersion;studyTab=tab;studyBody.replaceChildren();studyMessage('');$('studyTitle').textContent=tab;
  if(!studyDialog.open)studyDialog.showModal();
@@ -90,6 +109,7 @@ async function openStudy(tab){
   if(tab==='Exam priorities')priorityView();
   if(tab==='Original papers')await paperView(version);
   if(tab==='Offline practice')await offlineView(version);
+  if(version===studyVersion)restoreStudyFilters();
  }catch(e){if(version===studyVersion)studyMessage(e.message||'Unable to open this view.');}
 }
 document.querySelectorAll('[data-study]').forEach(b=>b.onclick=()=>openStudy(b.dataset.study));
