@@ -1314,19 +1314,9 @@ $('nextBtn').addEventListener('click',e=>{const H=L();if(!H)return;e.stopImmedia
 const _rn=render;render=function(){_rn();liveUI();paint();};
 function liveUI(){const H=L(),q=currentQ();if(!H||!H.cfg||!H.cfg.ids||!q||H.ci<0)return;
  const prac=H.cfg.mode==='practice',pk=H.cpicks||{},nm=H.host?names():H.players;
- const dashboard=H.host?hostDashboard(H,q,pk,nm):'';
  renderMembers(H,q,nm,pk,prac);
- const ex='';
- const existing=$('livePanel');
- const p=existing||document.createElement('div');p.id='livePanel';p.className='lpanel';
- const structure=JSON.stringify([H.code,H.ci,H.ph,H.pz||0,nm.length]);
- if(existing&&p.dataset.structure===structure){
-  const meter=p.querySelector('[data-room-count]');if(meter)meter.textContent=nm.filter(n=>Object.hasOwn(pk,n)).length+' / '+nm.length+' answered';
-   return;
- }
- p.dataset.structure=structure;
- p.innerHTML=`<div class="lhead"><b>Room ${esc(H.code)}</b><span>Question ${H.ci+1} / ${H.cfg.ids.length}</span>${prac?'':'<span id="lcd">'+H.show()+'</span>'}</div>${prac?'':'<p class="dnote" style="margin:0 0 6px">Exam: friends’ answers stay hidden until the end.</p>'}${H.pz?'<p style="margin:0 0 6px;font-weight:700">⏸ Test paused by the host</p>':''}${dashboard}${ex}`;
- if(!existing)card.append(p);}
+ $('livePanel')?.remove();
+}
 function renderMembers(H,q,nm,pk,prac){
  const box=$('memBox'),list=$('memList');if(!box||!list)return;
  const rows=nm.map(n=>{const s=Object.hasOwn(pk,n)?pk[n]:null;let v;
@@ -1335,14 +1325,23 @@ function renderMembers(H,q,nm,pk,prac){
   else{const ok=gradeOf(q,{sel:s})==='correct';v=`<b style="color:var(--${ok?'ok':'bad'})">${lab(q,s)} ${ok?'✓':'✗'}</b>`;}
   return `<div class="mine"><span class="mname">${memberName(H,n)}${n===H.name?' (you)':''}${H.host&&H.off.has(n)?' · reconnecting':''}</span>${v}${moderationControls(H,n)}</div>`;}).join('');
  const answered=nm.filter(n=>Object.hasOwn(pk,n)).length;
- $('memSummary').textContent=nm.length+(nm.length===1?' member':' members')+' · '+answered+' answered'+(H.host&&H.off.size?' · '+H.off.size+' reconnecting':'');
+ $('memSummary').innerHTML='Room '+esc(H.code)+' · Q '+(H.ci+1)+'/'+H.cfg.ids.length+' · '+answered+'/'+nm.length+' answered'+(prac?'':' · <span id="lcd"></span>');
+ $('memBox').querySelector('.navhead b').textContent='Members ('+nm.length+')'+(H.host&&H.off.size?' · '+H.off.size+' offline':'');
+ const info=$('memInfo');
+ if(info){
+  let totals='';
+  if(H.host&&prac&&H.ph==='reveal'&&q.options){const ans=nm.filter(n=>Object.hasOwn(pk,n));totals='<div class="mtotals" aria-label="Anonymous response totals">'+q.options.map(o=>esc(o.sourceLabel.toUpperCase())+' <b>'+ans.filter(n=>pk[n].includes(o.key)).length+'</b>').join(' · ')+'</div>';}
+  const html=(prac?'':'<div class="mnote">Exam: answers stay hidden until the end.</div>')+(H.pz?'<div class="mnote strong">⏸ Paused by the host</div>':'')+totals;
+  if(info.dataset.html!==html){info.innerHTML=html;info.dataset.html=html;}
+  const c=$('lcd');if(c&&H.show)c.textContent=H.show();
+ }
  if(list.dataset.html!==rows){const top=list.scrollTop;list.innerHTML=rows;list.dataset.html=rows;list.scrollTop=top;}
 }
 function syncMembersBox(){
  const H=L(),on=!!(H&&H.cfg&&H.cfg.ids&&H.ph!=='lobby');
  const box=$('memBox');if(!box)return;
  box.hidden=!on;$('navigator').classList.toggle('live',on);
- if(!on){const l=$('memList');if(l){l.innerHTML='';delete l.dataset.html;}}
+ if(!on){const l=$('memList');if(l){l.innerHTML='';delete l.dataset.html;}const i=$('memInfo');if(i){i.innerHTML='';delete i.dataset.html;}}
 }
 function hostDashboard(H,q,picks,members){
  const answered=members.filter(n=>Object.hasOwn(picks,n));
@@ -1411,6 +1410,7 @@ document.addEventListener('click',e=>{const i=e.target.closest('.qimg,.oimg');if
 const savedTheme=store.get('pq-theme');setTheme(savedTheme?savedTheme==='dark':matchMedia('(prefers-color-scheme:dark)').matches);
 applyFont();setNavC(store.get('pq-navc')==='1');setMemC(store.get('pq-memc')==='1');
 new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('top').offsetHeight+'px')).observe($('top'));
+new ResizeObserver(()=>document.documentElement.style.setProperty('--botH',document.querySelector('.bottom').offsetHeight+'px')).observe(document.querySelector('.bottom'));
 (async function boot(){
  const auth=QM.init(0).catch(()=>{});
  const params=new URLSearchParams(location.search);
