@@ -297,3 +297,25 @@ body[data-stage=review] #fbar{display:none!important}
 .shell.navc .nav.live .membox.collapsed{flex:3 1 0}
 @media(max-width:760px){.nav.live{height:60vh}}
 .memlist .mstat,.memlist b{white-space:nowrap}
+
+/* ===== v2: fit the side column to the screen; no question strip in footer ===== */
+.qstrip{display:none!important}
+.shell{margin-bottom:calc(var(--botH,76px) + 24px)}
+.nav.live{height:calc(100vh - var(--topH) - var(--botH,76px) - 34px);height:calc(100dvh - var(--topH) - var(--botH,76px) - 34px);max-height:none}
+.nav.live .navbox{flex:7 1 0}
+.nav.live .membox{flex:3 1 0}
+.nav.live .membox.collapsed{flex:0 0 auto}
+.membox.collapsed .meminfo{display:none}
+.shell.navc .membox .meminfo{display:none}
+.nav.live .navlist{flex:1 1 auto;min-height:0}
+.meminfo{padding:8px 14px 2px;font-size:12px;color:var(--muted);flex:0 0 auto}
+.meminfo:empty{display:none}
+.meminfo .mrow{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.meminfo .mrow b{color:var(--ink);font-size:13px}
+.meminfo #lcd{font-weight:800;color:var(--saffron);font-variant-numeric:tabular-nums}
+.meminfo .mnote{margin-top:3px}.meminfo .mnote.strong{font-weight:700;color:var(--ink)}
+.meminfo .mtotals{margin-top:4px;color:var(--ink)}
+.membox .navhead{padding:10px 14px 8px}
+.nav.live .navbox .navhead{padding:10px 14px 8px}
+.nav.live .navfoot{padding:7px 12px}
+@media(max-width:760px){.nav.live{height:60vh;max-height:60vh}.shell{margin-bottom:130px!important}}
