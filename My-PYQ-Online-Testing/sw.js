@@ -1,4 +1,4 @@
-const V='qm-portal-v21-theme';
+const V='qm-portal-v22-build';
 const SHELL=['./','index.html','test.html','builder.html','analysis.html','analysis.js','study-tools.js','portal.css','theme.css','portal.js','admin.html','shared.js','live-room.js','config.js','manifest.webmanifest','data/manifest.json','icon.svg'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(V).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('qm-portal-')&&k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

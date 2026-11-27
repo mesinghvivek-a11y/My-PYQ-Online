@@ -191,12 +191,16 @@ function mixedTest(){return !!(sess.mock||sess.live||retryIds||document.body.dat
 let navOrder=null,navMixed=null,navBtns=[];
 function navCls(q,i){const a=stateFor(q),st=!a?'':a.grade==='correct'?' done':a.grade==='wrong'?' wrong':a.grade==='ungraded'?' ungraded':' answered';return'navitem'+(i===current?' active':'')+st+(flags.has(q.id)?' flag':'');}
 navList.addEventListener('click',e=>{const b=e.target.closest('.navitem');if(b)go(+b.dataset.i);});
+$('qStrip')?.addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(b)go(+b.dataset.i);});
 function renderNavigator(){
  const mixed=mixedTest();if(navOrder!==order||navMixed!==mixed){navMixed=mixed;navOrder=order;navBtns=[];const fr=document.createDocumentFragment();let prev=null;
   order.forEach((q,i)=>{if(!mixed&&!shuffled&&q.chapterNo!==prev){const g=document.createElement('div');g.className='navgrp';g.textContent=`${String(q.chapterNo).padStart(2,'0')} · ${q.chapter||''}`;fr.append(g);prev=q.chapterNo;}
    const b=document.createElement('button');b.type='button';b.dataset.i=i;b.textContent=mixed?String(i+1):`${q.chapterNo}·${q.number}`;b.title=mixed?`Question ${i+1}`:`Chapter ${q.chapterNo}, question ${q.number}`;navBtns.push(b);fr.append(b);});
   navList.replaceChildren(fr);}
  for(let i=0;i<navBtns.length;i++){const c=navCls(order[i],i);if(navBtns[i].className!==c)navBtns[i].className=c;}
+ const qs=$('qStrip');if(qs){if(qs._o!==order){qs._o=order;qs.replaceChildren(...order.map((q,i)=>{const b=document.createElement('button');b.type='button';b.dataset.i=i;b.textContent=i+1;b.setAttribute('aria-label','Question '+(i+1));return b}));}
+  for(let i=0;i<qs.children.length;i++)qs.children[i].className='q'+navCls(order[i],i).slice(7);
+  const el=qs.children[current];if(el)qs.scrollLeft=el.offsetLeft-qs.clientWidth/2+el.offsetWidth/2;}
  const a=navBtns[current];if(a){const r=a.getBoundingClientRect(),n=navList.getBoundingClientRect();if(r.top<n.top||r.bottom>n.bottom)navList.scrollTop+=r.top-n.top-n.height/2;}
 }
 function updateScore(){
