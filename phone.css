@@ -1,0 +1,84 @@
+.phoneMenu,.shortSignin,.phoneFilterShell>summary{display:none}
+@media(max-width:700px),(max-height:500px) and (max-width:920px) and (pointer:coarse){
+ *,*::before,*::after{box-sizing:border-box}
+ body{--gutter:clamp(12px,4vw,20px);-webkit-text-size-adjust:100%}
+ input,select,textarea{max-width:100%;min-width:0;font-size:16px!important}
+ summary,button,a.btn{touch-action:manipulation}
+ .page-index .w,.page-admin .w{padding-inline:var(--gutter)}
+ .page-index nav .w{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center;padding-block:5px;height:auto;max-height:85vh;overflow-y:auto}
+ .page-index nav .lg{grid-column:1;grid-row:1;min-width:0;gap:6px;font-size:15px;line-height:1.15}
+ .page-index nav .lg img{width:26px;height:26px}.page-index nav .sp{display:none}
+ .page-index nav #acct{grid-column:2;grid-row:1}.page-index nav #acct button{min-height:44px;min-width:44px}
+ .fullSignin{display:none}.shortSignin{display:inline}
+ .page-index nav .phoneMenu{display:inline-flex;grid-column:3;grid-row:1;min-height:44px}
+ .page-index nav .nl,.page-index nav #syncSt,.page-index nav #theme{display:none}
+ .page-index.menuOpen nav .nl{display:grid;grid-column:1/-1;grid-row:2;grid-template-columns:1fr 1fr;gap:2px;overflow:visible}
+ .page-index.menuOpen nav .nl a{padding:12px;min-height:44px;text-align:left}
+ .page-index.menuOpen nav #syncSt{display:block;grid-column:1/3;grid-row:3}.page-index.menuOpen nav #theme{display:flex;grid-column:3;grid-row:3}
+ .page-index .pop{max-width:calc(100vw - 24px);right:12px;top:calc(54px + env(safe-area-inset-top))}
+ .page-index .hero,.page-index.returning .hero{padding:14px 0 8px;text-align:left}
+ .page-index .hero h1{font-size:clamp(22px,6vw,30px);line-height:1.12;margin:0 0 8px}
+ .page-index .hero h1 br{display:none}.page-index .hero h1 em::before{content:' '}
+ .page-index .hero .w>p{font-size:14px;line-height:1.4;margin:0 0 12px}
+ .page-index .cta{display:flex;gap:6px;justify-content:flex-start}.page-index .cta>a[href="#subjects"]{display:none}
+ .page-index .hero .join{display:grid;grid-template-columns:minmax(0,1fr) auto;width:100%;margin:0}
+ .page-index .hero .join input{width:100%;min-width:0;letter-spacing:.06em;text-align:left;padding-inline:12px}
+ .page-index .hero .join button{padding-inline:14px}
+ .page-index .hero .stats{margin-top:12px;padding:4px;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .page-index .hero .stats .st{padding:6px}.page-index .stats .st b{font-size:20px}.page-index .stats .st span{font-size:12px}
+ .page-index main section{padding-block:16px;scroll-margin-top:60px}
+ .page-index .grid{grid-template-columns:minmax(0,1fr)}.page-index .card{min-width:0}.page-index .sc{padding:14px;gap:8px}
+ .page-index .hd>.row,.page-index .historyTools>.row{display:flex;flex-wrap:wrap;max-width:100%;gap:6px}
+ .page-index .hd select,.page-index .hd input{min-height:44px;min-width:0;max-width:100%}
+ .page-index #pst{grid-template-columns:repeat(2,minmax(0,1fr))}.page-index .ch2{grid-template-columns:minmax(0,1fr)}
+ .page-index .attemptList tr{grid-template-columns:minmax(0,1fr) auto}.page-index .attemptList td,.page-index .nt,.page-index .bmPrompt{overflow-wrap:anywhere}
+ .page-index .goal{flex-wrap:wrap}.page-index .foot .fw{grid-template-columns:1fr}
+ .bar1 .brand,.bar1 .brand .btxt{display:block!important;min-width:0}
+ .bar1 .brand{flex:1}.bar1 .brand .btxt b{display:block;font-size:14px;line-height:1.22;overflow-wrap:anywhere}.bar1 .brand small,.bar1 .logo,.bar1 .spacer{display:none!important}
+ .bar1 .displayMenu .sizer{display:flex!important}.bar1 .displayMenu #themeBtn{display:inline-flex!important}
+ .bar.bar1{padding:4px var(--gutter)!important;gap:8px}.bar1 .displayMenu{margin-left:auto}
+ .bar1>a.btn{height:44px;min-width:44px}.displayMenu summary{height:44px}
+ body[data-stage=setup] #fbar{width:calc(100% - 2 * var(--gutter))!important;margin:12px auto!important;padding:14px!important;border-radius:14px}
+ .setuphead{display:grid;grid-template-columns:1fr;gap:8px;margin:0}.setuphead h2{font-size:22px}.setuphead p{font-size:14px;line-height:1.4}
+ .setupActions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.setupActions .btn{min-height:44px}
+ .phoneFilterShell{margin-top:10px;border-top:1px solid var(--line)}.phoneFilterShell>summary{display:list-item;padding:12px 0;min-height:44px;font-weight:650}.phoneFilterShell>summary span{float:right;color:var(--muted);font-size:13px}
+ #fbar .filters{grid-template-columns:repeat(2,minmax(0,1fr))!important;border:0;padding:10px 0 0!important;box-shadow:none}
+ #fbar .filters .sel{min-width:0;max-width:none}#fbar #yearWrap{grid-column:auto}.moreFilters>div>*{max-width:100%;min-width:0}
+ #studyTools{width:calc(100% - 2 * var(--gutter));padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px auto}
+ body:not([data-stage=setup]) #studyTools{display:none}.otherStudy{grid-column:1/-1}.otherStudy>summary{width:100%}.otherStudy[open]>div{padding:6px 0;gap:6px}
+ #chapterShelf{width:calc(100% - 2 * var(--gutter));margin-top:14px}#chapterShelf h2{font-size:21px}#chapterShelf>p{margin:3px 0;font-size:13px}
+ .chapterControls{display:grid;grid-template-columns:minmax(0,1fr) minmax(105px,35%);margin:8px 0;gap:6px}.chapterControls input{min-width:0}.chapterRow{padding:10px;gap:6px}
+ .chapterInfo{flex:1 1 0;min-width:0}.chapterInfo strong{overflow-wrap:anywhere}.chapterStats{gap:10px}
+ .bar.bar2{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px;padding:2px var(--gutter) 6px!important}
+ .bar2 .timer{font-size:13px;padding:0 4px 0 8px;gap:4px}.bar2 .timer i{display:none}.bar2 #pauseBtn{min-width:38px;height:40px}
+ .where #filterSummary{display:none}.where p{justify-content:center}.where #positionPill{font-size:12px;white-space:normal}.where .track{height:3px}
+ .bar2 #testSubmit,.bar2 #backChapters{height:44px;min-width:0;padding-inline:10px}.bar2 #positionPill{line-height:1.15}
+ body[data-stage=review] .bar2{grid-template-columns:minmax(0,1fr) auto auto}
+ #shell.shell{margin:8px auto;padding-inline:8px;padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+ .qbody{padding:12px 12px 4px}.prompt{font-size:calc(17px * var(--scale));line-height:1.48}.qhead{padding:6px 12px!important}
+ .qhead .qch{min-width:0;flex:1;white-space:normal;line-height:1.2}.qacts .ib{min-width:40px;min-height:40px}.confidencePick{padding:0 0 8px;font-size:13px}.confidencePick select{min-height:38px}
+ .options{grid-template-columns:minmax(0,1fr);gap:6px}.opt{padding:9px 10px;min-height:44px;font-size:calc(16px * var(--scale));line-height:1.4;overflow-wrap:anywhere}
+ .bottom .bar{padding:5px 8px!important}.bottom .navbtns{grid-template-columns:minmax(48px,.85fr) minmax(48px,.75fr) minmax(60px,.95fr) minmax(88px,1.35fr);gap:4px;width:100%}
+ .bottom .navbtns .btn,.bottom .navbtns #clearBtn{min-width:0;padding:0 3px;font-size:14px;height:46px}.bottom #nextTime{font-size:11px;min-width:0}
+ .dialog,#studyDialog,.page-index #attemptDialog,.page-admin dialog{max-width:100%;max-height:85vh;max-height:85dvh;overflow:auto;overscroll-behavior:contain}
+ .backdrop{padding:10px;align-items:flex-end}.backdrop .dialog{width:100%;padding:16px}.mockgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 8px}.mockgrid label,.mockgrid select{min-width:0}
+ .page-analysis main{width:calc(100% - 2 * var(--gutter));margin:12px auto}.page-analysis .analysisHead{margin:16px 0 8px}.page-analysis .panel{padding:12px}.page-analysis .scroll{max-width:100%;overflow:auto}
+ .page-admin .w{min-width:0}.page-admin .tabs{display:flex;flex-wrap:wrap}.page-admin .frm{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.page-admin .frm label{min-width:0}.page-admin .tb{max-width:100%;overflow:auto}.page-admin .ed{max-width:100%;max-height:85vh;overflow:auto}.page-admin input[type=file]{width:100%}
+}
+@media(max-width:760px){
+ #shell.shell{display:flex;flex-direction:column;gap:6px}body[data-stage=setup] #shell.shell{display:none}
+ #shell .main{width:100%;min-width:0}#shell #testRail{order:-1;align-self:stretch;top:var(--topH);background:var(--bg);z-index:22;--available:min(36vh,270px);max-height:none}
+ #testRail #navigator{display:flex;position:static;width:100%;border-radius:10px;box-shadow:none}
+ #testRail .navhead,#shell.navc .navhead{flex-flow:row nowrap;justify-content:space-between;padding:0 8px;min-height:34px}
+ #testRail .navhead>div,#shell.navc #testRail .navhead>div{display:block}#testRail .navhead small,#testRail .navrail,#testRail .navfoot{display:none}
+ #testRail .navhead .navtoggle{display:inline-flex;width:44px;height:34px}
+ #testRail .navlist{overflow-y:auto;min-height:0}
+ #memberBox{border-radius:10px}#memberBox>summary{padding:6px 10px;min-height:32px}
+ #memberBody .mine{min-height:34px}#memberBox[open] #memberBody{max-height:max(40px,calc(var(--available)*.30 - 32px))}
+ .bottom .navbtns{grid-template-columns:1fr .85fr 1.25fr}
+}
+@media(max-width:760px){
+ #shell:not(.navc) #testRail:has(#memberBox:not([hidden])) #navigator{height:calc(var(--available)*.70)}
+ #memberBox:not([hidden])[open]{height:max(76px,calc(var(--available)*.30))}
+ .bottom #prevBtn .lbl2,.bottom #clearBtn .lbl2{display:inline}.bottom #clearBtn .only-s{display:none}
+}

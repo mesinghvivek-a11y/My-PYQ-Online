@@ -261,61 +261,23 @@ body[data-stage=review] #fbar{display:none!important}
 #studyDialog:has(.studyRow:nth-child(5)){width:min(960px,94vw)}
 #studyDialog header{position:sticky;top:-22px;background:var(--surface);padding-block:8px;z-index:1}
 @media(max-width:600px){#studyDialog{width:calc(100% - 20px);max-height:88dvh;padding:14px}#studyDialog header{top:-14px}.setuphead{align-items:start}.setuphead .setupActions{justify-content:end}.bar1 .brand{min-width:0}.bar1 .brand b{overflow-wrap:anywhere}.where p{flex-wrap:wrap}}
-
-/* ===== Confidence pills (below the options, one tap) ===== */
-.confidencePick{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0 18px}
-.confidencePick .cplabel{font-size:13px;font-weight:700;color:var(--muted);margin-right:2px}
-.cpill{font:inherit;font-size:13px;font-weight:650;min-height:36px;padding:0 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;transition:background .15s,border-color .15s,color .15s}
-.cpill:hover:not(:disabled){border-color:var(--brand)}
-.cpill:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
-.cpill.on{background:var(--brand);border-color:var(--brand);color:var(--brand-ink,#fff)}
-.cpill.on.c-sure{background:var(--ok);border-color:var(--ok);color:#fff}
-.cpill.on.c-unsure{background:var(--warn);border-color:var(--warn);color:#1b1b1b}
-.cpill.on.c-guess{background:var(--bad);border-color:var(--bad);color:#fff}
-.cpill:disabled{cursor:default;opacity:.8}
-
-/* ===== Side column: navigator (70%) + members (30%) ===== */
-.nav{gap:12px;background:none;border:0;box-shadow:none;border-radius:0}
-.navbox,.membox{display:flex;flex-direction:column;min-height:0;overflow:hidden}
-.navbox{flex:1 1 auto}
-.membox[hidden]{display:none}
-.nav.live{height:calc(100vh - var(--topH) - 90px)}
-.nav.live .navbox{flex:7 1 0}
-.nav.live .membox{flex:3 1 0}
-.nav.live .membox.collapsed{flex:0 0 auto}
-.membox.collapsed .memlist{display:none}
-.membox.collapsed .navhead{border-bottom:0}
-.memlist{padding:2px 14px 8px;overflow:auto;flex:1 1 auto;min-height:0;overscroll-behavior:contain}
-.memlist .mine:last-child{border-bottom:0}
-.memlist .mname{min-width:0;overflow-wrap:anywhere;flex:1 1 5rem}
-.memlist .memberName{padding:2px 0;text-align:left}
-.memlist .mstat{color:var(--muted);font-size:12px}.memlist .mstat.ok{color:var(--ok);font-weight:650}
-.memlist .room-member-actions{flex-basis:100%;justify-content:flex-end}
-.shell.navc .membox .memlist,.shell.navc .membox .navhead>div{display:none}
-.shell.navc .membox .navhead{flex-direction:column;padding:12px 6px;border-bottom:0}
-.shell.navc .membox .navrail{display:block;writing-mode:vertical-rl;font-size:12px;font-weight:700;color:var(--muted);margin-top:8px}
-.shell.navc .nav.live .membox.collapsed{flex:3 1 0}
-@media(max-width:760px){.nav.live{height:60vh}}
-.memlist .mstat,.memlist b{white-space:nowrap}
-
-/* ===== v2: fit the side column to the screen; no question strip in footer ===== */
-.qstrip{display:none!important}
-.shell{margin-bottom:calc(var(--botH,76px) + 24px)}
-.nav.live{height:calc(100vh - var(--topH) - var(--botH,76px) - 34px);height:calc(100dvh - var(--topH) - var(--botH,76px) - 34px);max-height:none}
-.nav.live .navbox{flex:7 1 0}
-.nav.live .membox{flex:3 1 0}
-.nav.live .membox.collapsed{flex:0 0 auto}
-.membox.collapsed .meminfo{display:none}
-.shell.navc .membox .meminfo{display:none}
-.nav.live .navlist{flex:1 1 auto;min-height:0}
-.meminfo{padding:8px 14px 2px;font-size:12px;color:var(--muted);flex:0 0 auto}
-.meminfo:empty{display:none}
-.meminfo .mrow{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
-.meminfo .mrow b{color:var(--ink);font-size:13px}
-.meminfo #lcd{font-weight:800;color:var(--saffron);font-variant-numeric:tabular-nums}
-.meminfo .mnote{margin-top:3px}.meminfo .mnote.strong{font-weight:700;color:var(--ink)}
-.meminfo .mtotals{margin-top:4px;color:var(--ink)}
-.membox .navhead{padding:10px 14px 8px}
-.nav.live .navbox .navhead{padding:10px 14px 8px}
-.nav.live .navfoot{padding:7px 12px}
-@media(max-width:760px){.nav.live{height:60vh;max-height:60vh}.shell{margin-bottom:130px!important}}
+.confidenceGroup{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:12px 0}.confidenceGroup small{font:600 13px var(--ui);color:var(--muted);margin-right:4px}
+.confidencePill{font:650 14px var(--ui);border:1px solid var(--line);border-radius:999px;background:var(--surface2);color:var(--ink);padding:7px 15px;min-height:38px}
+.confidencePill[aria-pressed=true]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+#confidencePrompt{position:fixed;bottom:calc(82px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--surface);padding:5px;border:1px solid var(--line);border-radius:999px;z-index:40;box-shadow:var(--shadow);animation:confidenceFade 5s both}
+#confidencePrompt button{min-width:94px;height:44px}#confidencePrompt [data-confidence=Guess]{background:#fff0ce;color:#644100}#confidencePrompt [data-confidence=Unsure]{background:#ede9ff;color:#432981}
+@keyframes confidenceFade{0%,100%{opacity:0}5%,93%{opacity:1}}
+#testRail{--available:calc(100vh - var(--topH) - 100px);--available:calc(100dvh - var(--topH) - 100px);position:sticky;top:calc(var(--topH) + 8px);max-height:var(--available);display:flex;flex-direction:column;gap:5px;min-width:0}
+#testRail #navigator{position:relative;inset:auto;max-height:var(--available);min-height:0}
+#memberBox{overflow:hidden;min-width:0;flex-shrink:0}#memberBox>summary{padding:8px 12px;font-weight:700;font-size:13px}
+#memberBody{overflow:auto;overscroll-behavior:contain;min-height:0}#memberBody .lpanel{margin:0;border:0;padding:0 10px 6px}
+#testRail:has(#memberBox:not([hidden])) #navigator{max-height:calc(var(--available)*.70)}
+#memberBox[open] #memberBody{max-height:calc(var(--available)*.30 - 38px)}
+.shell.navc:has(#memberBox:not([hidden])){grid-template-columns:minmax(0,1fr) minmax(220px,26%)}
+.shell.navc:has(#memberBox:not([hidden])) .navrail{display:none}
+.bottom .navbtns{grid-template-columns:1fr .85fr 1.25fr}
+@media(min-width:761px){
+ #shell:not(.navc) #testRail:has(#memberBox:not([hidden])) #navigator{height:calc((var(--available) - 5px)*.70)}
+ #memberBox:not([hidden])[open]{height:calc((var(--available) - 5px)*.30);display:flex;flex-direction:column}
+ #memberBox[open] #memberBody{flex:1;min-height:0;overflow:auto}
+}

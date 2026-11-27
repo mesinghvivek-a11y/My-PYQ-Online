@@ -94,7 +94,38 @@ document.querySelector('a[aria-label="Home"]').addEventListener('click',e=>{
  if(!confirm('A test is running. Leave this test and go home?'))e.preventDefault();
  else{logSession('in-progress');saveNow();flushPersist();leavingPage=true;setTimeout(()=>{leavingPage=false;},1000);}
 });
+let confidenceTimer, popupQuestion;
+const confidenceValues=['Sure','Unsure','Guess'];
+function confidenceButton(value,selected){
+ const label=value==='Unsure'?'Not sure':value;
+ return '<button type="button" class="confidencePill" data-confidence="'+value+'" aria-pressed="'+String(selected===value)+'">'+label+'</button>';
+}
+function confidenceGroup(q){
+ return '<div class="confidenceGroup" role="group" aria-label="Confidence"><small>Confidence</small>'+confidenceValues.map(v=>confidenceButton(v,sess.confidence?.[q.id])).join('')+'</div>';
+}
+function dismissConfidence(){
+ clearTimeout(confidenceTimer);popupQuestion=null;$('confidencePrompt')?.remove();
+}
+function promptConfidence(q){
+ dismissConfidence();
+ const box=document.createElement('div');box.id='confidencePrompt';box.setAttribute('role','group');box.setAttribute('aria-label','How confident were you?');
+ box.innerHTML=['Guess','Unsure'].map(v=>confidenceButton(v,sess.confidence?.[q.id])).join('');
+ popupQuestion=q.id;document.body.append(box);confidenceTimer=setTimeout(dismissConfidence,5000);
+}
+document.addEventListener('click',e=>{
+ const btn=e.target.closest('[data-confidence]');if(!btn)return;
+ const q=currentQ(),v=btn.dataset.confidence;if(!q||!confidenceValues.includes(v))return;
+ (sess.confidence||={})[q.id]=v;
+ const st=QS[progressStorageKey(q.id)];
+ if(st && answers.has(q.id) && ['wrong','correct'].includes(answers.get(q.id).grade)){
+  st.confidence=v;persistSoon();
+ }
+ document.querySelectorAll('.confidenceGroup button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.confidence===v)));
+ if(submitted)logSession('submitted');saveNow();dismissConfidence();
+});
+$('nextBtn').addEventListener('click',dismissConfidence,true);
 function render(){
+ if(popupQuestion&&(popupQuestion!==currentQ()?.id||submitted||!sess.id))dismissConfidence();
  const active=!submitted&&!!(retryIds||sess.mock||sess.id||L());
  const stage=active?'active':submitted?'review':'setup';
  document.body.dataset.stage=stage;
@@ -154,21 +185,13 @@ function render(){
  const hint=isMulti(q)&&!rev&&!submitted&&q.attemptable?'<span>Multiple answers: select every correct option'+(mode==='practice'?', then press Check':'')+'</span>':submitted?'Test submitted — review only.':!q.attemptable?'This item is retained for source review.':exam?'<span>Exam mode: change your answer any time before you submit</span>':'<span>Tap an option to check it instantly</span><kbd class="kbdhint">A–D</kbd><span class="kbdhint">then</span><kbd class="kbdhint">Enter</kbd><span class="kbdhint">for next</span>';
  const mchk=isMulti(q)&&!rev&&!submitted&&mode==='practice'&&saved&&saved.sel&&saved.sel.length?'<div style="margin:0 28px 4px"><button class="btn primary" id="chkMulti" type="button">Check answer</button></div>':'';
  card.innerHTML=`<div class="qhead"><span class="qn">Q${mixed?current+1:esc(q.number)}</span>${mixed?'':`<span class="qch" title="${esc(q.chapter||'')}">Ch ${String(q.chapterNo).padStart(2,'0')} · ${esc(q.chapter||'')}</span>`}<div class="qacts"><button class="ib ${flags.has(q.id)?'on':''}" id="flagBtn" type="button" title="Bookmark for review (F)" aria-label="Bookmark for review" aria-pressed="${flags.has(q.id)}"><svg viewBox="0 0 24 24" width="18" height="18" fill="${flags.has(q.id)?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button><button class="ib rep" id="rptBtn" type="button" title="Report a problem with this question" aria-label="Report a problem"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/></svg></button></div>${tags?`<div class="tags">${tags}</div>`:''}</div>
- <div class="qbody">${prompt}${options}${confidenceHTML(q,!submitted&&active&&!rev)}</div>
+ <div class="qbody">${prompt}${options}${(active||submitted)&&q.attemptable?confidenceGroup(q):''}</div>
  <p class="hint">${hint}</p>${mchk}${fb}${rev&&q.revisionNote?`<p class="dnote">Revised ${esc(q.revisionDate)} · ${esc(q.revisionNote)}</p>`:''}${noteBox(q)}`;
  card.querySelectorAll('[data-option]').forEach(b=>b.addEventListener('click',()=>pick(b.dataset.option)));
  $('flagBtn').addEventListener('click',()=>toggleFlag(q));$('rptBtn').addEventListener('click',()=>{$('rptBackdrop').hidden=false;});
- const conf=card.querySelector('.confidencePick');if(conf)conf.addEventListener('click',e=>{const b=e.target.closest('[data-conf]');if(!b||b.disabled)return;
-  const v=b.dataset.conf,cur=sess.confidence?.[q.id]||'',next=cur===v?'':v;(sess.confidence||={})[q.id]=next;
-  conf.querySelectorAll('[data-conf]').forEach(x=>{const on=x.dataset.conf===next;x.classList.toggle('on',on);x.setAttribute('aria-checked',String(on));x.tabIndex=on||(!next&&x.dataset.conf===CONF_LEVELS[0])?0:-1;});save();});
+
  const cm=$('chkMulti');if(cm)cm.addEventListener('click',checkMulti);
  const nt=$('noteTa');if(nt)nt.addEventListener('input',()=>setNote(q.id,nt.value));
-}
-const CONF_LEVELS=['Sure','Unsure','Guess'];
-function confidenceHTML(q,editable){
- const cur=sess.confidence?.[q.id]||'';
- if(!editable&&!cur)return '';
- return `<div class="confidencePick" role="radiogroup" aria-label="How confident are you? (optional)"><span class="cplabel">Confidence</span>${CONF_LEVELS.map((c,i)=>`<button type="button" role="radio" class="cpill c-${c.toLowerCase()}${cur===c?' on':''}" data-conf="${c}" aria-checked="${cur===c}" tabindex="${cur===c||(!cur&&i===0)?0:-1}" ${editable?'':'disabled'}>${c}</button>`).join('')}</div>`;
 }
 function syncBar(q){const a=q&&stateFor(q);$('prevBtn').disabled=!q||current===0;$('nextBtn').disabled=!q||current>=order.length-1;$('clearBtn').disabled=!a||submitted;$('nextBtn').classList.toggle('primary',!!q&&(mode==='exam'||revealed(a)));}
 function setPaused(p){if(submitted)p=false;paused=p;
@@ -181,8 +204,8 @@ function pick(key){
  if(mode==='exam'){answers.set(q.id,{selected:key,grade:'pending'});render();return;}
  selected=key;check(q);
 }
-function checkMulti(){if(paused)return;const q=currentQ(),a=q&&stateFor(q);if(!a||submitted)return;const g=gradeOf(q,a);answers.set(q.id,{selected:a.selected,sel:a.sel,grade:g});recordResult(q,g);render();}
-function check(q){if(!selected||submitted||mode==='exam')return;const g=gradeOf(q,selected);answers.set(q.id,{selected,grade:g});recordResult(q,g);render();const f=card.querySelector('.fb');if(f)f.scrollIntoView({behavior:'smooth',block:'nearest'});}
+function checkMulti(){if(paused)return;const q=currentQ(),a=q&&stateFor(q);if(!a||submitted)return;const g=gradeOf(q,a);answers.set(q.id,{selected:a.selected,sel:a.sel,grade:g});recordResult(q,g);render();if(g==="wrong")promptConfidence(q);}
+function check(q){if(!selected||submitted||mode==='exam')return;const g=gradeOf(q,selected);answers.set(q.id,{selected,grade:g});recordResult(q,g);render();if(g==="wrong")promptConfidence(q);const f=card.querySelector('.fb');if(f)f.scrollIntoView({behavior:'smooth',block:'nearest'});}
 const bookmarkWrites=new Map();
 async function toggleFlag(q){
  const subject=SUBJ,key=QM.bookmarkKey(subject.id,q.id);
@@ -199,16 +222,12 @@ function mixedTest(){return !!(sess.mock||sess.live||retryIds||document.body.dat
 let navOrder=null,navMixed=null,navBtns=[];
 function navCls(q,i){const a=stateFor(q),st=!a?'':a.grade==='correct'?' done':a.grade==='wrong'?' wrong':a.grade==='ungraded'?' ungraded':' answered';return'navitem'+(i===current?' active':'')+st+(flags.has(q.id)?' flag':'');}
 navList.addEventListener('click',e=>{const b=e.target.closest('.navitem');if(b)go(+b.dataset.i);});
-$('qStrip')?.addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(b)go(+b.dataset.i);});
 function renderNavigator(){
  const mixed=mixedTest();if(navOrder!==order||navMixed!==mixed){navMixed=mixed;navOrder=order;navBtns=[];const fr=document.createDocumentFragment();let prev=null;
   order.forEach((q,i)=>{if(!mixed&&!shuffled&&q.chapterNo!==prev){const g=document.createElement('div');g.className='navgrp';g.textContent=`${String(q.chapterNo).padStart(2,'0')} · ${q.chapter||''}`;fr.append(g);prev=q.chapterNo;}
    const b=document.createElement('button');b.type='button';b.dataset.i=i;b.textContent=mixed?String(i+1):`${q.chapterNo}·${q.number}`;b.title=mixed?`Question ${i+1}`:`Chapter ${q.chapterNo}, question ${q.number}`;navBtns.push(b);fr.append(b);});
   navList.replaceChildren(fr);}
  for(let i=0;i<navBtns.length;i++){const c=navCls(order[i],i);if(navBtns[i].className!==c)navBtns[i].className=c;}
- const qs=$('qStrip');if(qs){if(qs._o!==order){qs._o=order;qs.replaceChildren(...order.map((q,i)=>{const b=document.createElement('button');b.type='button';b.dataset.i=i;b.textContent=i+1;b.setAttribute('aria-label','Question '+(i+1));return b}));}
-  for(let i=0;i<qs.children.length;i++)qs.children[i].className='q'+navCls(order[i],i).slice(7);
-  const el=qs.children[current];if(el)qs.scrollLeft=el.offsetLeft-qs.clientWidth/2+el.offsetWidth/2;}
  const a=navBtns[current];if(a){const r=a.getBoundingClientRect(),n=navList.getBoundingClientRect();if(r.top<n.top||r.bottom>n.bottom)navList.scrollTop+=r.top-n.top-n.height/2;}
 }
 function updateScore(){
@@ -245,7 +264,6 @@ function soloPhase(){
  return phase;
 }
 function paint(){
- syncMembersBox();
  const H=L(),started=document.body.dataset.stage==='active'&&(!H||!!H.cfg?.ids&&H.ph!=='lobby');
  $('timerBox').hidden=!started;
  const liveMs=H?(H.watchMs||0)+(H.watchAnchor&&!H.pz?Date.now()-H.watchAnchor:0):0;
@@ -318,11 +336,9 @@ $('summaryBackdrop').addEventListener('click',e=>{if(e.target===$('summaryBackdr
 examFilter.addEventListener('change',userFilter);viewFilter.addEventListener('change',userFilter);
 let sh;$('searchBox').addEventListener('input',e=>{clearTimeout(sh);sh=setTimeout(()=>{search=e.target.value.trim().toLowerCase();userFilter();},220);});
 $('shuffleBtn').addEventListener('click',()=>{order=[...filtered];for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}shuffled=true;current=0;selected=null;render();});
-function setMemC(c){const mb=$('memBox'),b=$('memCollapse');if(!mb||!b)return;mb.classList.toggle('collapsed',c);b.textContent=c?'▸':'▾';b.setAttribute('aria-expanded',String(!c));b.setAttribute('aria-label',c?'Expand members':'Collapse members');b.title=c?'Expand members':'Collapse members';store.set('pq-memc',c?'1':'0');}
-$('memCollapse')?.addEventListener('click',()=>{if($('shell').classList.contains('navc'))setNavC(false);else setMemC(!$('memBox').classList.contains('collapsed'));});
 function setNavC(c){$('shell').classList.toggle('navc',c);const b=$('navCollapse');b.textContent=c?'‹':'›';b.setAttribute('aria-expanded',String(!c));b.setAttribute('aria-label',c?'Expand navigator':'Collapse navigator');b.title=(c?'Expand':'Collapse')+' (N)';store.set('pq-navc',c?'1':'0');}
 $('navCollapse').addEventListener('click',()=>setNavC(!$('shell').classList.contains('navc')));
-$('navToggle').addEventListener('click',()=>$('navigator').classList.toggle('open'));
+
 function applyFont(){document.documentElement.style.setProperty('--scale',fontScale.toFixed(2));store.set('pq-font',fontScale);}
 function setTheme(d){document.body.classList.toggle('dark',d);$('themeBtn').textContent=d?'☀':'☾';store.set('pq-theme',d?'dark':'light');}
 $('fontDown').addEventListener('click',()=>{fontScale=Math.max(.8,+(fontScale-.1).toFixed(2));applyFont();});
@@ -1166,7 +1182,7 @@ function onPh(m){const H=LIVE;if(!H||!H.cfg?.ids||!byId.has(H.cfg.ids[m.i]))retu
  const redraw=first||H.displayPhase!==m.ph||current!==m.i;H.displayPhase=m.ph;
  if(first&&m.ph==='live'){H.qs=Date.now()-(H.cfg.qsec*1000-m.rem);H.last='';}
  H.watchMs=m.watchMs??H.watchMs??0;H.watchAnchor=Date.now();H.ci=m.i;H.ph=m.ph;H.end=Date.now()+m.rem;H.cpicks=m.picks;H.pz=m.pz;H.pr=m.rem;
- if(m.ph==='reveal'&&H.cfg.mode==='practice'){const qq=H.cfg.ids[m.i],a=answers.get(qq);if(!a)FORCE.add(qq);else if(a.grade==='pending'){const g=gradeOf(byId.get(qq),a);answers.set(qq,{...a,grade:g});recordResult(byId.get(qq),g);}}
+ if(m.ph==='reveal'&&H.cfg.mode==='practice'){const qq=H.cfg.ids[m.i],a=answers.get(qq);if(!a)FORCE.add(qq);else if(a.grade==='pending'){const g=gradeOf(byId.get(qq),a);answers.set(qq,{...a,grade:g});recordResult(byId.get(qq),g);if(g==="wrong")promptConfidence(byId.get(qq));}}
  if(current!==m.i){current=m.i;selected=null;scrollTo({top:0});}
  if(redraw)render();else{liveUI();syncBar(currentQ());paint();}}
 function finish(){const H=LIVE,ids=H.cfg.ids,neg=H.cfg.neg||0,rows=[],pk={};
@@ -1312,37 +1328,32 @@ const _sp=setPaused;setPaused=function(p){if(L())return;_sp(p);paint();};
 $('pauseBtn').addEventListener('click',e=>{const H=L();if(!H)return;e.stopImmediatePropagation();if(H.host)hostPause();},true);
 $('nextBtn').addEventListener('click',e=>{const H=L();if(!H)return;e.stopImmediatePropagation();if(H.host&&!H.pz){if(H.ph==='reveal')nextQ();else if(H.ph==='live')toReveal();}},true);
 const _rn=render;render=function(){_rn();liveUI();paint();};
-function liveUI(){const H=L(),q=currentQ();if(!H||!H.cfg||!H.cfg.ids||!q||H.ci<0)return;
+function liveUI(){const H=L(),q=currentQ();if(!H||!H.cfg?.ids||!q||H.ci<0){$('memberBox').hidden=true;$('memberBody').replaceChildren();return;}
+ $('memberBox').hidden=false;
  const prac=H.cfg.mode==='practice',pk=H.cpicks||{},nm=H.host?names():H.players;
- renderMembers(H,q,nm,pk,prac);
- $('livePanel')?.remove();
-}
-function renderMembers(H,q,nm,pk,prac){
- const box=$('memBox'),list=$('memList');if(!box||!list||!$('memSummary'))return;
- const rows=nm.map(n=>{const s=Object.hasOwn(pk,n)?pk[n]:null;let v;
-  if(!s)v=`<span class="mstat">${H.ph==='reveal'?'no answer':'thinking…'}</span>`;
-  else if(!prac||H.ph!=='reveal')v='<span class="mstat ok">✔ answered</span>';
-  else{const ok=gradeOf(q,{sel:s})==='correct';v=`<b style="color:var(--${ok?'ok':'bad'})">${lab(q,s)} ${ok?'✓':'✗'}</b>`;}
-  return `<div class="mine"><span class="mname">${memberName(H,n)}${n===H.name?' (you)':''}${H.host&&H.off.has(n)?' · reconnecting':''}</span>${v}${moderationControls(H,n)}</div>`;}).join('');
- const answered=nm.filter(n=>Object.hasOwn(pk,n)).length;
- $('memSummary').innerHTML='Room '+esc(H.code)+' · Q '+(H.ci+1)+'/'+H.cfg.ids.length+' · '+answered+'/'+nm.length+' answered'+(prac?'':' · <span id="lcd"></span>');
- $('memBox').querySelector('.navhead b').textContent='Members ('+nm.length+')'+(H.host&&H.off.size?' · '+H.off.size+' offline':'');
- const info=$('memInfo');
- if(info){
-  let totals='';
-  if(H.host&&prac&&H.ph==='reveal'&&q.options){const ans=nm.filter(n=>Object.hasOwn(pk,n));totals='<div class="mtotals" aria-label="Anonymous response totals">'+q.options.map(o=>esc(o.sourceLabel.toUpperCase())+' <b>'+ans.filter(n=>pk[n].includes(o.key)).length+'</b>').join(' · ')+'</div>';}
-  const html=(prac?'':'<div class="mnote">Exam: answers stay hidden until the end.</div>')+(H.pz?'<div class="mnote strong">⏸ Paused by the host</div>':'')+totals;
-  if(info.dataset.html!==html){info.innerHTML=html;info.dataset.html=html;}
-  const c=$('lcd');if(c&&H.show)c.textContent=H.show();
+ const dashboard=H.host?hostDashboard(H,q,pk,nm):'';
+ const rows=nm.map(n=>{const s=Object.hasOwn(pk,n)?pk[n]:null;let v;if(!s)v=`<span style="color:var(--muted)">${H.ph==='reveal'?'no answer':'thinking…'}</span>`;
+  else if(!prac||H.ph!=='reveal')v='✔ answered';else{const ok=gradeOf(q,{sel:s})==='correct';v=`<b style="color:var(--${ok?'ok':'bad'})">${lab(q,s)} ${ok?'✓':'✗'}</b>`;}
+  return`<div class="mine"><span>${memberName(H,n)}${n===H.name?' (you)':''}${H.host&&H.off.has(n)?' · reconnecting':''}</span><span>${v}</span>${moderationControls(H,n)}</div>`;}).join('');
+ const ex='';
+ const existing=$('livePanel');
+ const p=existing||document.createElement('div');p.id='livePanel';p.className='lpanel';
+ const structure=JSON.stringify([H.code,H.ci,H.ph,H.pz||0,nm,H.host?[...H.off]:[],H.selectedMember,[...H.members||[]]]);
+ if(existing&&p.dataset.structure===structure){
+  const meter=p.querySelector('[data-room-count]');if(meter)meter.textContent=nm.filter(n=>Object.hasOwn(pk,n)).length+' / '+nm.length+' answered';
+  const labels=p.querySelectorAll('.mine > span:nth-child(2)');
+  nm.forEach((n,i)=>{
+   const label=labels[i];
+   if(label&&H.ph==='live'&&Object.hasOwn(pk,n)&&label.textContent!=='✔ answered')label.textContent='✔ answered';
+  });
+  return;
  }
- if(list.dataset.html!==rows){const top=list.scrollTop;list.innerHTML=rows;list.dataset.html=rows;list.scrollTop=top;}
-}
-function syncMembersBox(){
- const H=L(),on=!!(H&&H.cfg&&H.cfg.ids&&H.ph!=='lobby');
- const box=$('memBox');if(!box)return;
- box.hidden=!on;$('navigator').classList.toggle('live',on);
- if(!on){const l=$('memList');if(l){l.innerHTML='';delete l.dataset.html;}const i=$('memInfo');if(i){i.innerHTML='';delete i.dataset.html;}}
-}
+ const body=$('memberBody'),scroll=body.scrollTop;
+ $('memberHeading').textContent='Members · '+nm.length+' · '+H.code;
+ p.dataset.structure=structure;
+ p.innerHTML=(prac?'':'<span id="lcd">'+H.show()+'</span>')+dashboard+rows;
+ if(!existing)body.append(p);
+ body.scrollTop=scroll;}
 function hostDashboard(H,q,picks,members){
  const answered=members.filter(n=>Object.hasOwn(picks,n));
  const summary='<p data-room-count>'+answered.length+' / '+members.length+' answered</p>';
@@ -1354,7 +1365,7 @@ function hostPause(){const H=LIVE;if(!H||!H.host)return;if(H.pz){if(H.cfg.watchP
 
 /* ===== v5: sync hooks · reports · shared banks ===== */
 {const ks=kv.set.bind(kv);kv.set=async(k,v)=>{const r=await ks(k,v);QM.touch&&QM.touch(k);return r;};const ss=store.set;store.set=(k,v)=>{ss(k,v);if(/^(pq-state|qm-state)/.test(k)&&QM.dirty)QM.dirty();};}
-const _rn3=render;render=function(){_rn3();{const nt=$('navToggle');if(nt)nt.innerHTML='☷ <b>'+(order.length?current+1:0)+'/'+order.length+'</b>';}const q=currentQ(),hd=card.querySelector('.qhead');if(q&&hd&&!$('rptBtn')){const b=document.createElement('button');b.id='rptBtn';b.type='button';b.className='btn flagbtn';b.textContent='🚩';b.title='Report a wrong answer or typo';b.setAttribute('aria-label','Report this question');b.onclick=()=>{$('rptBackdrop').hidden=false;};hd.append(b);}};
+const _rn3=render;render=function(){_rn3();const q=currentQ(),hd=card.querySelector('.qhead');if(q&&hd&&!$('rptBtn')){const b=document.createElement('button');b.id='rptBtn';b.type='button';b.className='btn flagbtn';b.textContent='🚩';b.title='Report a wrong answer or typo';b.setAttribute('aria-label','Report this question');b.onclick=()=>{$('rptBackdrop').hidden=false;};hd.append(b);}};
 $('rptCancel').addEventListener('click',()=>$('rptBackdrop').hidden=true);
 $('rptSend').addEventListener('click',async()=>{const q=currentQ();if(!q)return;const ok=await QM.report({subject_id:q.origin?.sid||SUBJ.id,subject_name:(q.origin&&SUBJECTS.find(s=>s.id===q.origin.sid)?.name)||SUBJ.name,qid:q.origin?.id||q.id,chapter:q.chapter,qno:q.chapterNo+'.'+q.number,prompt:String(q.prompt).slice(0,400),reason:$('rptReason').value,note:$('rptNote').value.trim().slice(0,500)});
  $('rptBackdrop').hidden=true;$('rptNote').value='';toast(ok?'Thanks — report sent to the mentor.':'Saved. It will be sent when you are signed in and online.');});
@@ -1408,9 +1419,8 @@ document.addEventListener('click',e=>{const i=e.target.closest('.qimg,.oimg');if
 
 /* boot */
 const savedTheme=store.get('pq-theme');setTheme(savedTheme?savedTheme==='dark':matchMedia('(prefers-color-scheme:dark)').matches);
-applyFont();setNavC(store.get('pq-navc')==='1');setMemC(store.get('pq-memc')==='1');
+applyFont();setNavC(store.get('pq-navc')==='1'||(store.get('pq-navc')==null&&matchMedia('(max-width:760px)').matches));
 new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('top').offsetHeight+'px')).observe($('top'));
-{const bt=document.querySelector('.bottom');if(bt)new ResizeObserver(()=>document.documentElement.style.setProperty('--botH',bt.offsetHeight+'px')).observe(bt);}
 (async function boot(){
  const auth=QM.init(0).catch(()=>{});
  const params=new URLSearchParams(location.search);
