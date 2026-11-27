@@ -1,0 +1,17 @@
+/* My PYQ Online shared theme: ballpoint ink, highlighter yellow, Bricolage + Mukta. Loaded after each page's own styles. */
+:root{--bg:#eef0f6;--surface:#fff;--surface2:#f4f5fa;--ink:#141a3d;--muted:#59627f;--line:#d9deec;--brand:#1f31a8;--brand-ink:#fff;--brand-soft:#e4e8fb;--hl:#ffd93b;--hli:#241d00;--shadow:none;
+--s:#fff;--s2:#f4f5fa;--mut:#59627f;--br:#1f31a8;--bi:#fff;--soft:#e4e8fb;--sh:none;
+--ui:"Mukta",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;--read:"Mukta",ui-sans-serif,system-ui,sans-serif;--rd:"Mukta",system-ui,sans-serif;--dp:"Bricolage Grotesque","Mukta",system-ui,sans-serif}
+body.dark{--bg:#0a0e22;--surface:#131937;--surface2:#0f1430;--ink:#ecefff;--muted:#9aa4c8;--line:#262e55;--brand:#a4b4ff;--brand-ink:#0a0e22;--brand-soft:#1c2557;--shadow:none;
+--s:#131937;--s2:#0f1430;--mut:#9aa4c8;--br:#a4b4ff;--bi:#0a0e22;--soft:#1c2557;--sh:none}
+body{font-family:var(--ui);font-size:16px;-webkit-tap-highlight-color:transparent}
+h1,h2,h3,.badge .ch,.brand b,.lg{font-family:var(--dp);letter-spacing:-.02em}
+.prompt,.opt,.fb,.studyBlock{font-family:var(--read);line-height:1.65}
+.btn,.seg button,button.btn{border-radius:12px;font-weight:600}.btn.p,.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.card,.panel,.dialog,.perfcard,.fbar,.filters{border-radius:18px;box-shadow:none}
+.seg button.on,.tabs .btn.on,.tabs a.on{background:var(--hl);border-color:var(--hl);color:var(--hli)}
+a:focus-visible,button:focus-visible,summary:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+@media(pointer:coarse){.btn,select,input:not([type=checkbox]):not([type=radio]),.seg button{min-height:44px}}
+@media(max-width:760px){input,select,textarea{font-size:16px!important}.top,header.top{padding-top:env(safe-area-inset-top)}body{-webkit-text-size-adjust:100%}
+main,.shell,.w{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}.tb,.scroll{-webkit-overflow-scrolling:touch}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
