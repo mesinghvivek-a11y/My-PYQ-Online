@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>My PYQ Online · Test portal</title>
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="theme-color" content="#2f4fd8"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg"><link rel="apple-touch-icon" href="icon-192.png"><script src="config.js"></script><script src="shared.js"></script><script src="live-room.js"></script><script>try{var __s=new URLSearchParams(location.search).get("s")||localStorage.getItem("qm-last")||"polity";if(__s==="polity"||__s==="history")window.__pre={id:__s,p:fetch("data/"+__s+".json").then(function(r){return r.json()})}}catch(e){}</script>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+
 <link rel="stylesheet" href="portal.css">
-<link rel="stylesheet" href="phone.css"></head>
-<body class="page-builder" data-stage="setup">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Mukta:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="theme.css"><link rel="stylesheet" href="fx.css"></head>
+<body data-stage="setup">
 <div class="warnbar" id="warnBar" hidden></div>
 <header class="top" id="top">
- <div class="bar bar1"><a class="btn" href="index.html" title="Back to home" aria-label="Home"><span aria-hidden="true">⌂</span><span class="lbl2"> Home</span></a>
+ <div class="bar bar1"><a class="btn" href="index.html" title="Back to home" aria-label="Home">⌂<span class="lbl2"> Home</span></a>
   <label class="sel subj" hidden><span>Subject</span><select id="subjectSel" aria-label="Select subject"></select></label>
   <div class="brand"><div class="logo" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M12 3v7M12 14v7M3 12h7M14 12h7M5.6 5.6l5 5M13.4 13.4l5 5M18.4 5.6l-5 5M10.6 13.4l-5 5"/></svg></div><div class="btxt"><b id="brandTitle">Indian Polity &amp; Governance</b><small id="brandSub">Master test · 42 chapters</small></div></div>
   <span class="spacer"></span>
@@ -28,11 +28,11 @@
   <button class="btn" id="resetTest" type="button">Reset</button>
   <a class="btn" id="backChapters" hidden>Chapters</a><button class="btn primary" id="testSubmit" type="button">Submit</button>
  </div>
-</header>
+<div class="dock" id="dock"><button class="btn" id="navToggle" type="button" aria-expanded="false">☷ Questions</button><button class="btn" id="roomToggle" type="button" aria-expanded="false" hidden>Room</button></div></header>
 <div class="fscrim" id="fScrim"></div>
 <section class="fbar" id="fbar" aria-label="Filters and options">
  <div class="setuphead"><div><h2>Build your test</h2><button class="btn" hidden id="portalRetry">Retry loading</button><p id="poolCount" aria-live="polite">Loading questions…</p></div><div class="setupActions"><a class="btn" id="examAnalysis" href="analysis.html" hidden>Analysis</a><button type="button" class="btn primary" id="startPortal">Start test →</button></div></div><div class="fhead"><b>Filters &amp; options</b><button class="btn primary" id="fDone" type="button">Done</button></div>
- <details class="phoneFilterShell" open><summary>Test filters <span id="phoneFilterCount"></span></summary><div class="filters">
+ <div class="filters">
    <label class="sel"><span>Exam</span><select id="examFilter"><option value="all">All exams</option></select></label>
    <label class="sel" id="yearWrap"><span>Year</span><select id="yearFilter"><option value="all">All years</option></select></label>
    <details class="chapterBox"><summary>Chapters <span id="chSummary">All chapters</span></summary><div class="dhead" style="margin-top:12px;align-items:center"><b style="font-size:13px">Chapters <small style="font-weight:500;color:var(--muted)">· select any combination</small></b><span><button class="btn" id="mkAll" type="button" style="height:30px">All</button> <button class="btn" id="mkNone" type="button" style="height:30px">None</button></span></div>
@@ -42,7 +42,7 @@
    <button class="btn" id="shuffleBtn" type="button" title="Shuffle the questions in this view" aria-label="Reshuffle">⇄<span class="lbl"> Reshuffle</span></button>
    <button class="btn" id="fClear" type="button">Clear filters</button>
    <button class="btn" id="reviseBtn" type="button">↻ Revise due</button></div></details><button class="btn primary" id="hostBtn" type="button" style="font-weight:700">▶ Host test</button><button class="btn" id="joinBtn" type="button" style="font-weight:700;border-color:var(--brand);color:var(--brand)">⌁ Join test</button></div>
- </details><div class="fextra"><div class="fgrp"><small>SESSION</small><div id="slotMode"></div></div><div class="fgrp"><small>DISPLAY</small><div id="slotTools"></div></div></div>
+ <div class="fextra"><div class="fgrp"><small>SESSION</small><div id="slotMode"></div></div><div class="fgrp"><small>DISPLAY</small><div id="slotTools"></div></div></div>
 </section>
 
 <section id="studyTools" class="studyTools" aria-label="Study tools"><button class="btn" data-study="Daily revision">Daily revision</button><button class="btn" data-study="Mistake notebook">Mistake notebook</button><details class="otherStudy"><summary class="btn">More study tools</summary><div><button class="btn" data-study="Exam priorities">Exam priorities</button><button class="btn" data-study="Original papers">Original papers</button><button class="btn" data-study="Offline practice">Offline practice</button></div></details></section>
@@ -63,8 +63,8 @@
   <section class="card" id="questionCard" aria-live="polite"></section>
   <p class="source" id="sourceNote"><b>Source:</b> Preview: Indian Polity and Governance, Part 4 (10th Edition, 2026). Question text, options, answer key and explanations are extracted from the supplied booklet. The original answer key marker “(*)” is treated as unkeyed; no answer is guessed.</p>
  </main>
- <div id="testRail"><aside class="nav card" id="navigator" aria-label="Question navigator"><div class="navhead"><div><b>Question navigator</b><small id="navSummary">All questions</small></div><button class="btn icon navtoggle" id="navCollapse" type="button" aria-expanded="true" aria-label="Collapse navigator" title="Collapse (N)">›</button><span class="navrail">Questions</span></div><div class="navlist" id="navList"></div>
-  <div class="navfoot"><span><i style="background:var(--brand)"></i>Current</span><span><i style="background:var(--ok)"></i>Correct</span><span><i style="background:var(--bad)"></i>Incorrect</span><span><i style="background:var(--warn)"></i>Ungraded</span><span><i style="background:var(--saffron);border-radius:50%"></i>Flagged</span></div></aside><details id="memberBox" class="card" open hidden><summary id="memberHeading">Members</summary><div id="memberBody"></div></details></div>
+ <div class="side" id="side" data-open="nav"><aside class="nav card" id="navigator" aria-label="Question navigator"><div class="navhead"><div><b>Question navigator</b><small id="navSummary">All questions</small></div><button class="btn icon navtoggle" id="navCollapse" type="button" aria-expanded="true" aria-label="Collapse navigator" title="Collapse (N)">›</button><span class="navrail">Questions</span></div><div class="navlist" id="navList"></div>
+  <div class="navfoot"><span><i style="background:var(--brand)"></i>Current</span><span><i style="background:var(--ok)"></i>Correct</span><span><i style="background:var(--bad)"></i>Incorrect</span><span><i style="background:var(--warn)"></i>Ungraded</span><span><i style="background:var(--saffron);border-radius:50%"></i>Flagged</span></div></aside><aside class="room card" id="roomBox" aria-label="Room members" hidden><div class="navhead"><div><b id="roomTitle">Room</b><small id="roomSub"></small></div><button class="btn icon navtoggle" id="roomCollapse" type="button" aria-expanded="true" aria-label="Collapse room box" title="Collapse room box">›</button><span class="navrail">Room</span></div><div class="roomlist" id="roomList"></div></aside></div>
 </div>
 
 <section class="perf" id="perfView" aria-label="Performance">
@@ -122,4 +122,4 @@
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script src="portal.js"></script><script src="study-tools.js"></script>
-<p style="text-align:center;font-size:12px;color:var(--muted);padding:14px 14px calc(14px + env(safe-area-inset-bottom))"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:support@mypyq.online">Contact</a></p><script src="phone.js"></script></body></html>
+<p style="text-align:center;font-size:12px;color:var(--muted);padding:14px 14px calc(14px + env(safe-area-inset-bottom))"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:support@mypyq.online">Contact</a></p></body></html>

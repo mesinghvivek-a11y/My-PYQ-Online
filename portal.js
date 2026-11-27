@@ -94,38 +94,7 @@ document.querySelector('a[aria-label="Home"]').addEventListener('click',e=>{
  if(!confirm('A test is running. Leave this test and go home?'))e.preventDefault();
  else{logSession('in-progress');saveNow();flushPersist();leavingPage=true;setTimeout(()=>{leavingPage=false;},1000);}
 });
-let confidenceTimer, popupQuestion;
-const confidenceValues=['Sure','Unsure','Guess'];
-function confidenceButton(value,selected){
- const label=value==='Unsure'?'Not sure':value;
- return '<button type="button" class="confidencePill" data-confidence="'+value+'" aria-pressed="'+String(selected===value)+'">'+label+'</button>';
-}
-function confidenceGroup(q){
- return '<div class="confidenceGroup" role="group" aria-label="Confidence"><small>Confidence</small>'+confidenceValues.map(v=>confidenceButton(v,sess.confidence?.[q.id])).join('')+'</div>';
-}
-function dismissConfidence(){
- clearTimeout(confidenceTimer);popupQuestion=null;$('confidencePrompt')?.remove();
-}
-function promptConfidence(q){
- dismissConfidence();
- const box=document.createElement('div');box.id='confidencePrompt';box.setAttribute('role','group');box.setAttribute('aria-label','How confident were you?');
- box.innerHTML=['Guess','Unsure'].map(v=>confidenceButton(v,sess.confidence?.[q.id])).join('');
- popupQuestion=q.id;document.body.append(box);confidenceTimer=setTimeout(dismissConfidence,5000);
-}
-document.addEventListener('click',e=>{
- const btn=e.target.closest('[data-confidence]');if(!btn)return;
- const q=currentQ(),v=btn.dataset.confidence;if(!q||!confidenceValues.includes(v))return;
- (sess.confidence||={})[q.id]=v;
- const st=QS[progressStorageKey(q.id)];
- if(st && answers.has(q.id) && ['wrong','correct'].includes(answers.get(q.id).grade)){
-  st.confidence=v;persistSoon();
- }
- document.querySelectorAll('.confidenceGroup button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.confidence===v)));
- if(submitted)logSession('submitted');saveNow();dismissConfidence();
-});
-$('nextBtn').addEventListener('click',dismissConfidence,true);
 function render(){
- if(popupQuestion&&(popupQuestion!==currentQ()?.id||submitted||!sess.id))dismissConfidence();
  const active=!submitted&&!!(retryIds||sess.mock||sess.id||L());
  const stage=active?'active':submitted?'review':'setup';
  document.body.dataset.stage=stage;
@@ -182,15 +151,16 @@ function render(){
   else fb=`<div class="fb neutral"><div class="fb-head"><span class="fb-ico" data-i="!"></span><div>Attempt recorded · no answer key<small>${esc(q.answerRaw||'No printed answer key line')} — the book gives no mappable keyed option, so this cannot be scored.</small></div></div>${expl(q.explanation,'Explanation / source note')}</div>`;
  }
  const exam=mode==='exam';
+ const hasAns=!!(saved&&(saved.selected||(saved.sel&&saved.sel.length))),cc=((sess&&sess.confidence)||{})[q.id]||'';
+ const confRow=!submitted&&active&&hasAns?`<div class="confRow" role="group" aria-label="Confidence in this answer"><span>How sure?</span>${[['Sure','Sure'],['Unsure','Not sure'],['Guess','Guess']].map(([v,l])=>`<button type="button" class="cpill c-${v.toLowerCase()}" data-conf="${v}" aria-pressed="${cc===v}">${l}</button>`).join('')}</div>`:'';
  const hint=isMulti(q)&&!rev&&!submitted&&q.attemptable?'<span>Multiple answers: select every correct option'+(mode==='practice'?', then press Check':'')+'</span>':submitted?'Test submitted — review only.':!q.attemptable?'This item is retained for source review.':exam?'<span>Exam mode: change your answer any time before you submit</span>':'<span>Tap an option to check it instantly</span><kbd class="kbdhint">A–D</kbd><span class="kbdhint">then</span><kbd class="kbdhint">Enter</kbd><span class="kbdhint">for next</span>';
  const mchk=isMulti(q)&&!rev&&!submitted&&mode==='practice'&&saved&&saved.sel&&saved.sel.length?'<div style="margin:0 28px 4px"><button class="btn primary" id="chkMulti" type="button">Check answer</button></div>':'';
  card.innerHTML=`<div class="qhead"><span class="qn">Q${mixed?current+1:esc(q.number)}</span>${mixed?'':`<span class="qch" title="${esc(q.chapter||'')}">Ch ${String(q.chapterNo).padStart(2,'0')} · ${esc(q.chapter||'')}</span>`}<div class="qacts"><button class="ib ${flags.has(q.id)?'on':''}" id="flagBtn" type="button" title="Bookmark for review (F)" aria-label="Bookmark for review" aria-pressed="${flags.has(q.id)}"><svg viewBox="0 0 24 24" width="18" height="18" fill="${flags.has(q.id)?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button><button class="ib rep" id="rptBtn" type="button" title="Report a problem with this question" aria-label="Report a problem"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/></svg></button></div>${tags?`<div class="tags">${tags}</div>`:''}</div>
- <div class="qbody">${prompt}${options}${(active||submitted)&&q.attemptable?confidenceGroup(q):''}</div>
+ <div class="qbody">${prompt}${options}${confRow}</div>
  <p class="hint">${hint}</p>${mchk}${fb}${rev&&q.revisionNote?`<p class="dnote">Revised ${esc(q.revisionDate)} · ${esc(q.revisionNote)}</p>`:''}${noteBox(q)}`;
  card.querySelectorAll('[data-option]').forEach(b=>b.addEventListener('click',()=>pick(b.dataset.option)));
  $('flagBtn').addEventListener('click',()=>toggleFlag(q));$('rptBtn').addEventListener('click',()=>{$('rptBackdrop').hidden=false;});
-
- const cm=$('chkMulti');if(cm)cm.addEventListener('click',checkMulti);
+  const cm=$('chkMulti');if(cm)cm.addEventListener('click',checkMulti);
  const nt=$('noteTa');if(nt)nt.addEventListener('input',()=>setNote(q.id,nt.value));
 }
 function syncBar(q){const a=q&&stateFor(q);$('prevBtn').disabled=!q||current===0;$('nextBtn').disabled=!q||current>=order.length-1;$('clearBtn').disabled=!a||submitted;$('nextBtn').classList.toggle('primary',!!q&&(mode==='exam'||revealed(a)));}
@@ -204,8 +174,8 @@ function pick(key){
  if(mode==='exam'){answers.set(q.id,{selected:key,grade:'pending'});render();return;}
  selected=key;check(q);
 }
-function checkMulti(){if(paused)return;const q=currentQ(),a=q&&stateFor(q);if(!a||submitted)return;const g=gradeOf(q,a);answers.set(q.id,{selected:a.selected,sel:a.sel,grade:g});recordResult(q,g);render();if(g==="wrong")promptConfidence(q);}
-function check(q){if(!selected||submitted||mode==='exam')return;const g=gradeOf(q,selected);answers.set(q.id,{selected,grade:g});recordResult(q,g);render();if(g==="wrong")promptConfidence(q);const f=card.querySelector('.fb');if(f)f.scrollIntoView({behavior:'smooth',block:'nearest'});}
+function checkMulti(){if(paused)return;const q=currentQ(),a=q&&stateFor(q);if(!a||submitted)return;const g=gradeOf(q,a);answers.set(q.id,{selected:a.selected,sel:a.sel,grade:g});recordResult(q,g);render();if(g==='wrong'&&!L()&&!((sess&&sess.confidence)||{})[q.id])confPopShow(q);}
+function check(q){if(!selected||submitted||mode==='exam')return;const g=gradeOf(q,selected);answers.set(q.id,{selected,grade:g});recordResult(q,g);render();if(g==='wrong'&&!L()&&!((sess&&sess.confidence)||{})[q.id])confPopShow(q);const f=card.querySelector('.fb');if(f)f.scrollIntoView({behavior:'smooth',block:'nearest'});}
 const bookmarkWrites=new Map();
 async function toggleFlag(q){
  const subject=SUBJ,key=QM.bookmarkKey(subject.id,q.id);
@@ -217,7 +187,17 @@ async function toggleFlag(q){
   if(SUBJ===subject){if(remove)flags.delete(q.id);else flags.add(q.id);render();}
  }catch{toast('Bookmark could not be saved. Please try again.');}finally{bookmarkWrites.delete(key);}
 }
-function go(i){if(i<0||i>=order.length||paused||(L()&&!L().int))return;current=i;selected=null;render();scrollTo({top:0,behavior:'smooth'});if(innerWidth<=760)$('navigator').classList.remove('open');}
+var confPopT=0,confPopQ=null;
+function confPopHide(now){clearTimeout(confPopT);const e=document.getElementById('confPop');confPopQ=null;if(!e)return;if(now){e.remove();return;}e.classList.remove('in');setTimeout(()=>e.remove(),320);}
+function confPopShow(q){confPopHide(true);confPopQ=q.id;const e=document.createElement('div');e.id='confPop';e.className='cpop';e.setAttribute('role','group');e.setAttribute('aria-label','How sure were you?');
+ e.innerHTML='<button type="button" class="cpill c-guess" data-conf="Guess">Guess</button><button type="button" class="cpill c-unsure" data-conf="Unsure">Not sure</button>';
+ document.body.append(e);const b=document.querySelector('.bottom');e.style.bottom=((b?b.offsetHeight:72)+14)+'px';
+ requestAnimationFrame(()=>requestAnimationFrame(()=>e.classList.add('in')));confPopT=setTimeout(()=>confPopHide(false),5000);}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-conf]');if(!b)return;const pop=!!b.closest('#confPop'),qid=pop?confPopQ:(currentQ()||{}).id;if(!qid||!sess)return;
+ const cur=(sess.confidence||{})[qid],nv=(!pop&&cur===b.dataset.conf)?'':b.dataset.conf;(sess.confidence||={})[qid]=nv;save();
+ if(pop)confPopHide(false);document.querySelectorAll('.confRow [data-conf]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.conf===nv)));});
+{const _rc=render;render=function(){const q=currentQ();if(confPopQ&&(!q||q.id!==confPopQ||!stateFor(q)))confPopHide(true);_rc();};}
+function go(i){if(i<0||i>=order.length||paused||(L()&&!L().int))return;current=i;selected=null;confPopHide(true);render();scrollTo({top:0,behavior:'smooth'});$('side').classList.remove('open');}
 function mixedTest(){return !!(sess.mock||sess.live||retryIds||document.body.dataset.stage==='active'||submitted)&&order.some(q=>q.chapterNo!==order[0].chapterNo);}
 let navOrder=null,navMixed=null,navBtns=[];
 function navCls(q,i){const a=stateFor(q),st=!a?'':a.grade==='correct'?' done':a.grade==='wrong'?' wrong':a.grade==='ungraded'?' ungraded':' answered';return'navitem'+(i===current?' active':'')+st+(flags.has(q.id)?' flag':'');}
@@ -336,9 +316,17 @@ $('summaryBackdrop').addEventListener('click',e=>{if(e.target===$('summaryBackdr
 examFilter.addEventListener('change',userFilter);viewFilter.addEventListener('change',userFilter);
 let sh;$('searchBox').addEventListener('input',e=>{clearTimeout(sh);sh=setTimeout(()=>{search=e.target.value.trim().toLowerCase();userFilter();},220);});
 $('shuffleBtn').addEventListener('click',()=>{order=[...filtered];for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}shuffled=true;current=0;selected=null;render();});
-function setNavC(c){$('shell').classList.toggle('navc',c);const b=$('navCollapse');b.textContent=c?'‹':'›';b.setAttribute('aria-expanded',String(!c));b.setAttribute('aria-label',c?'Expand navigator':'Collapse navigator');b.title=(c?'Expand':'Collapse')+' (N)';store.set('pq-navc',c?'1':'0');}
-$('navCollapse').addEventListener('click',()=>setNavC(!$('shell').classList.contains('navc')));
-
+function setNavC(c){$('navigator').classList.toggle('collapsed',c);const b=$('navCollapse');b.textContent=c?'‹':'›';b.setAttribute('aria-expanded',String(!c));b.setAttribute('aria-label',c?'Expand navigator':'Collapse navigator');b.title=(c?'Expand':'Collapse')+' (N)';store.set('pq-navc',c?'1':'0');roomLayout();}
+function setRoomC(c){$('roomBox').classList.toggle('collapsed',c);const b=$('roomCollapse');b.textContent=c?'‹':'›';b.setAttribute('aria-expanded',String(!c));b.setAttribute('aria-label',c?'Expand room box':'Collapse room box');store.set('pq-roomc',c?'1':'0');roomLayout();}
+function roomLayout(){const box=$('roomBox'),has=!box.hidden;$('side').classList.toggle('hasroom',has);
+ $('shell').classList.toggle('navc',$('navigator').classList.contains('collapsed')&&(!has||box.classList.contains('collapsed')));
+ const rt=$('roomToggle');rt.hidden=!has;if(!has&&$('side').dataset.open==='room')$('side').classList.remove('open');}
+function sideOpen(w){const s=$('side'),was=s.classList.contains('open')&&s.dataset.open===w;s.classList.remove('open');if(!was){s.dataset.open=w;s.style.top=($('dock').getBoundingClientRect().bottom+6)+'px';s.classList.add('open');}
+ $('navToggle').setAttribute('aria-expanded',String(!was&&w==='nav'));$('roomToggle').setAttribute('aria-expanded',String(!was&&w==='room'));}
+$('navCollapse').addEventListener('click',()=>setNavC(!$('navigator').classList.contains('collapsed')));
+$('roomCollapse').addEventListener('click',()=>setRoomC(!$('roomBox').classList.contains('collapsed')));
+document.addEventListener('click',e=>{const s=$('side');if(s.classList.contains('open')&&!e.target.closest('#side,#dock'))s.classList.remove('open');});
+$('navToggle').addEventListener('click',()=>sideOpen('nav'));$('roomToggle').addEventListener('click',()=>sideOpen('room'));
 function applyFont(){document.documentElement.style.setProperty('--scale',fontScale.toFixed(2));store.set('pq-font',fontScale);}
 function setTheme(d){document.body.classList.toggle('dark',d);$('themeBtn').textContent=d?'☀':'☾';store.set('pq-theme',d?'dark':'light');}
 $('fontDown').addEventListener('click',()=>{fontScale=Math.max(.8,+(fontScale-.1).toFixed(2));applyFont();});
@@ -352,12 +340,12 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){const close={summaryBackdrop:'closeSummary',subjBackdrop:'closeSubj',mockBackdrop:'mkCancel',rptBackdrop:'rptCancel'}[layer.id];if(close)$(close).click();}
   return;
  }
- if(e.key==='Escape'){$('summaryBackdrop').hidden=true;$('subjBackdrop').hidden=true;$('mockBackdrop').hidden=true;$('navigator').classList.remove('open');return;}
+ if(e.key==='Escape'){$('summaryBackdrop').hidden=true;$('subjBackdrop').hidden=true;$('mockBackdrop').hidden=true;$('side').classList.remove('open');return;}
  if(document.body.dataset.stage==='setup'||$('routeDialog').open)return;
  if(e.ctrlKey||e.metaKey||e.altKey||!$('summaryBackdrop').hidden||!$('subjBackdrop').hidden||tab!=='quiz'||!$('mockBackdrop').hidden||/SELECT|INPUT|TEXTAREA/.test(document.activeElement.tagName))return;
  const q=currentQ();if(!q)return;const k=e.key.toLowerCase();
  if(k==='p'){setPaused(!paused);return;}if(paused)return;
- if(k==='arrowright')go(current+1);else if(k==='arrowleft')go(current-1);else if(k==='f')toggleFlag(q);else if(k==='n')setNavC(!$('shell').classList.contains('navc'));
+ if(k==='arrowright')go(current+1);else if(k==='arrowleft')go(current-1);else if(k==='f')toggleFlag(q);else if(k==='n')setNavC(!$('navigator').classList.contains('collapsed'));
  else if(k==='enter'){if(document.activeElement.tagName==='BUTTON')return;if(mode==='practice'&&!stateFor(q))return;go(current+1);}
  else if(k.length===1){const i='1234'.includes(k)?+k-1:'abcd'.indexOf(k);if(i>=0&&i<q.options.length)pick(q.options[i].key);}
 });
@@ -1138,7 +1126,7 @@ document.addEventListener('click',async e=>{
  const button=e.target.closest('[data-room-action]'),H=LIVE;if(!button||!H?.host)return;
  const {member,roomAction}=button.dataset,name=H.members.get(member);
  if(!name||H.moderating.has(member)||!['kick','block'].includes(roomAction))return;
- if(!confirm(roomAction==='kick'?'Remove '+name+'? They can join again.':'Block '+name+' from this room?'))return;
+ if(!await ask(roomAction==='kick'?'Remove '+name+'?':'Block '+name+'?',roomAction==='kick'?'They can join again.':'They will not be able to rejoin this room.',roomAction==='kick'?'Remove':'Block'))return;
  H.moderating.add(member);button.disabled=true;
  try{
   await H.peer.moderate(roomAction,member);if(LIVE!==H)return;
@@ -1182,7 +1170,7 @@ function onPh(m){const H=LIVE;if(!H||!H.cfg?.ids||!byId.has(H.cfg.ids[m.i]))retu
  const redraw=first||H.displayPhase!==m.ph||current!==m.i;H.displayPhase=m.ph;
  if(first&&m.ph==='live'){H.qs=Date.now()-(H.cfg.qsec*1000-m.rem);H.last='';}
  H.watchMs=m.watchMs??H.watchMs??0;H.watchAnchor=Date.now();H.ci=m.i;H.ph=m.ph;H.end=Date.now()+m.rem;H.cpicks=m.picks;H.pz=m.pz;H.pr=m.rem;
- if(m.ph==='reveal'&&H.cfg.mode==='practice'){const qq=H.cfg.ids[m.i],a=answers.get(qq);if(!a)FORCE.add(qq);else if(a.grade==='pending'){const g=gradeOf(byId.get(qq),a);answers.set(qq,{...a,grade:g});recordResult(byId.get(qq),g);if(g==="wrong")promptConfidence(byId.get(qq));}}
+ if(m.ph==='reveal'&&H.cfg.mode==='practice'){const qq=H.cfg.ids[m.i],a=answers.get(qq);if(!a)FORCE.add(qq);else if(a.grade==='pending'){const g=gradeOf(byId.get(qq),a);answers.set(qq,{...a,grade:g});recordResult(byId.get(qq),g);}}
  if(current!==m.i){current=m.i;selected=null;scrollTo({top:0});}
  if(redraw)render();else{liveUI();syncBar(currentQ());paint();}}
 function finish(){const H=LIVE,ids=H.cfg.ids,neg=H.cfg.neg||0,rows=[],pk={};
@@ -1328,32 +1316,19 @@ const _sp=setPaused;setPaused=function(p){if(L())return;_sp(p);paint();};
 $('pauseBtn').addEventListener('click',e=>{const H=L();if(!H)return;e.stopImmediatePropagation();if(H.host)hostPause();},true);
 $('nextBtn').addEventListener('click',e=>{const H=L();if(!H)return;e.stopImmediatePropagation();if(H.host&&!H.pz){if(H.ph==='reveal')nextQ();else if(H.ph==='live')toReveal();}},true);
 const _rn=render;render=function(){_rn();liveUI();paint();};
-function liveUI(){const H=L(),q=currentQ();if(!H||!H.cfg?.ids||!q||H.ci<0){$('memberBox').hidden=true;$('memberBody').replaceChildren();return;}
- $('memberBox').hidden=false;
- const prac=H.cfg.mode==='practice',pk=H.cpicks||{},nm=H.host?names():H.players;
- const dashboard=H.host?hostDashboard(H,q,pk,nm):'';
- const rows=nm.map(n=>{const s=Object.hasOwn(pk,n)?pk[n]:null;let v;if(!s)v=`<span style="color:var(--muted)">${H.ph==='reveal'?'no answer':'thinking…'}</span>`;
-  else if(!prac||H.ph!=='reveal')v='✔ answered';else{const ok=gradeOf(q,{sel:s})==='correct';v=`<b style="color:var(--${ok?'ok':'bad'})">${lab(q,s)} ${ok?'✓':'✗'}</b>`;}
-  return`<div class="mine"><span>${memberName(H,n)}${n===H.name?' (you)':''}${H.host&&H.off.has(n)?' · reconnecting':''}</span><span>${v}</span>${moderationControls(H,n)}</div>`;}).join('');
- const ex='';
- const existing=$('livePanel');
- const p=existing||document.createElement('div');p.id='livePanel';p.className='lpanel';
- const structure=JSON.stringify([H.code,H.ci,H.ph,H.pz||0,nm,H.host?[...H.off]:[],H.selectedMember,[...H.members||[]]]);
- if(existing&&p.dataset.structure===structure){
-  const meter=p.querySelector('[data-room-count]');if(meter)meter.textContent=nm.filter(n=>Object.hasOwn(pk,n)).length+' / '+nm.length+' answered';
-  const labels=p.querySelectorAll('.mine > span:nth-child(2)');
-  nm.forEach((n,i)=>{
-   const label=labels[i];
-   if(label&&H.ph==='live'&&Object.hasOwn(pk,n)&&label.textContent!=='✔ answered')label.textContent='✔ answered';
-  });
-  return;
- }
- const body=$('memberBody'),scroll=body.scrollTop;
- $('memberHeading').textContent='Members · '+nm.length+' · '+H.code;
- p.dataset.structure=structure;
- p.innerHTML=(prac?'':'<span id="lcd">'+H.show()+'</span>')+dashboard+rows;
- if(!existing)body.append(p);
- body.scrollTop=scroll;}
+function liveUI(){const H=L(),q=currentQ(),box=$('roomBox');
+ if(!H||!H.cfg||!H.cfg.ids||!q||H.ci<0){if(!box.hidden){box.hidden=true;roomLayout();}return;}
+ const prac=H.cfg.mode==='practice',pk=H.cpicks||{},nm=H.host?names():H.players,done=nm.filter(n=>Object.hasOwn(pk,n)).length;
+ const was=box.hidden;box.hidden=false;
+ $('roomTitle').textContent='Room '+H.code;
+ $('roomSub').innerHTML=done+'/'+nm.length+' answered'+(H.pz?' · paused':'')+(prac?'':'<span id="lcd">'+H.show()+'</span>');
+ $('roomToggle').innerHTML='Room <b>'+esc(H.code)+'</b> '+done+'/'+nm.length;
+ const rows=nm.map(n=>{const s=Object.hasOwn(pk,n)?pk[n]:null;let st;
+  if(!s)st='<i class="rs">…</i>';
+  else if(!prac||H.ph!=='reveal')st='<i class="rs on">✔</i>';
+  else{const ok=gradeOf(q,{sel:s})==='correct';st='<i class="rs '+(ok?'ok':'no')+'">'+(esc(lab(q,s))||'–')+' '+(ok?'✓':'✗')+'</i>';}
+  return'<div class="rm">'+st+'<span class="rn">'+memberName(H,n)+(n===H.name?' (you)':'')+(H.host&&H.off.has(n)?' <small>reconnecting</small>':'')+'</span>'+moderationControls(H,n)+'</div>';}).join('');
+ const l=$('roomList'),sc=l.scrollTop;l.innerHTML=rows;l.scrollTop=sc;if(was)roomLayout();}
 function hostDashboard(H,q,picks,members){
  const answered=members.filter(n=>Object.hasOwn(picks,n));
  const summary='<p data-room-count>'+answered.length+' / '+members.length+' answered</p>';
@@ -1365,7 +1340,7 @@ function hostPause(){const H=LIVE;if(!H||!H.host)return;if(H.pz){if(H.cfg.watchP
 
 /* ===== v5: sync hooks · reports · shared banks ===== */
 {const ks=kv.set.bind(kv);kv.set=async(k,v)=>{const r=await ks(k,v);QM.touch&&QM.touch(k);return r;};const ss=store.set;store.set=(k,v)=>{ss(k,v);if(/^(pq-state|qm-state)/.test(k)&&QM.dirty)QM.dirty();};}
-const _rn3=render;render=function(){_rn3();const q=currentQ(),hd=card.querySelector('.qhead');if(q&&hd&&!$('rptBtn')){const b=document.createElement('button');b.id='rptBtn';b.type='button';b.className='btn flagbtn';b.textContent='🚩';b.title='Report a wrong answer or typo';b.setAttribute('aria-label','Report this question');b.onclick=()=>{$('rptBackdrop').hidden=false;};hd.append(b);}};
+const _rn3=render;render=function(){_rn3();{const nt=$('navToggle');if(nt)nt.innerHTML='Questions <b>'+(order.length?current+1:0)+'/'+order.length+'</b>';}const q=currentQ(),hd=card.querySelector('.qhead');if(q&&hd&&!$('rptBtn')){const b=document.createElement('button');b.id='rptBtn';b.type='button';b.className='btn flagbtn';b.textContent='🚩';b.title='Report a wrong answer or typo';b.setAttribute('aria-label','Report this question');b.onclick=()=>{$('rptBackdrop').hidden=false;};hd.append(b);}};
 $('rptCancel').addEventListener('click',()=>$('rptBackdrop').hidden=true);
 $('rptSend').addEventListener('click',async()=>{const q=currentQ();if(!q)return;const ok=await QM.report({subject_id:q.origin?.sid||SUBJ.id,subject_name:(q.origin&&SUBJECTS.find(s=>s.id===q.origin.sid)?.name)||SUBJ.name,qid:q.origin?.id||q.id,chapter:q.chapter,qno:q.chapterNo+'.'+q.number,prompt:String(q.prompt).slice(0,400),reason:$('rptReason').value,note:$('rptNote').value.trim().slice(0,500)});
  $('rptBackdrop').hidden=true;$('rptNote').value='';toast(ok?'Thanks — report sent to the mentor.':'Saved. It will be sent when you are signed in and online.');});
@@ -1419,7 +1394,8 @@ document.addEventListener('click',e=>{const i=e.target.closest('.qimg,.oimg');if
 
 /* boot */
 const savedTheme=store.get('pq-theme');setTheme(savedTheme?savedTheme==='dark':matchMedia('(prefers-color-scheme:dark)').matches);
-applyFont();setNavC(store.get('pq-navc')==='1'||(store.get('pq-navc')==null&&matchMedia('(max-width:760px)').matches));
+applyFont();setNavC(store.get('pq-navc')==='1');setRoomC(store.get('pq-roomc')==='1');
+{const h=$('top'),set=()=>document.documentElement.style.setProperty('--topH',h.offsetHeight+'px');if(window.ResizeObserver)new ResizeObserver(set).observe(h);addEventListener('resize',set);set();}
 new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('top').offsetHeight+'px')).observe($('top'));
 (async function boot(){
  const auth=QM.init(0).catch(()=>{});
