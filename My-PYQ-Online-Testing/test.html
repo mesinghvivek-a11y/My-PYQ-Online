@@ -28,7 +28,7 @@
   <button class="btn" id="resetTest" type="button">Reset</button>
   <a class="btn" id="backChapters" hidden>Chapters</a><button class="btn primary" id="testSubmit" type="button">Submit</button>
  </div>
-</header>
+<div class="dock" id="dock"><button class="btn" id="navToggle" type="button" aria-expanded="false">☷ Questions</button><button class="btn" id="roomToggle" type="button" aria-expanded="false" hidden>Room</button></div></header>
 <div class="fscrim" id="fScrim"></div>
 <section class="fbar" id="fbar" aria-label="Filters and options">
  <div class="setuphead"><div><h2>Build your test</h2><button class="btn" hidden id="portalRetry">Retry loading</button><p id="poolCount" aria-live="polite">Loading questions…</p></div><div class="setupActions"><a class="btn" id="examAnalysis" href="analysis.html" hidden>Analysis</a><button type="button" class="btn primary" id="startPortal">Start test →</button></div></div><div class="fhead"><b>Filters &amp; options</b><button class="btn primary" id="fDone" type="button">Done</button></div>
@@ -63,9 +63,8 @@
   <section class="card" id="questionCard" aria-live="polite"></section>
   <p class="source" id="sourceNote"><b>Source:</b> Preview: Indian Polity and Governance, Part 4 (10th Edition, 2026). Question text, options, answer key and explanations are extracted from the supplied booklet. The original answer key marker “(*)” is treated as unkeyed; no answer is guessed.</p>
  </main>
- <aside class="nav" id="navigator" aria-label="Question navigator and room members"><div class="navbox card" id="navBox"><div class="navhead"><div><b>Question navigator</b><small id="navSummary">All questions</small></div><button class="btn icon navtoggle" id="navCollapse" type="button" aria-expanded="true" aria-label="Collapse navigator" title="Collapse (N)">›</button><span class="navrail">Questions</span></div><div class="navlist" id="navList"></div>
-  <div class="navfoot"><span><i style="background:var(--brand)"></i>Current</span><span><i style="background:var(--ok)"></i>Correct</span><span><i style="background:var(--bad)"></i>Incorrect</span><span><i style="background:var(--warn)"></i>Ungraded</span><span><i style="background:var(--saffron);border-radius:50%"></i>Flagged</span></div></div>
- <section class="membox card" id="memBox" aria-label="Room members" hidden><div class="navhead"><div><b>Members</b><small id="memSummary">In this room</small></div><button class="btn icon navtoggle" id="memCollapse" type="button" aria-expanded="true" aria-controls="memList" aria-label="Collapse members" title="Collapse members">▾</button><span class="navrail">Members</span></div><div class="meminfo" id="memInfo"></div><div class="memlist" id="memList"></div></section></aside>
+ <div class="side" id="side" data-open="nav"><aside class="nav card" id="navigator" aria-label="Question navigator"><div class="navhead"><div><b>Question navigator</b><small id="navSummary">All questions</small></div><button class="btn icon navtoggle" id="navCollapse" type="button" aria-expanded="true" aria-label="Collapse navigator" title="Collapse (N)">›</button><span class="navrail">Questions</span></div><div class="navlist" id="navList"></div>
+  <div class="navfoot"><span><i style="background:var(--brand)"></i>Current</span><span><i style="background:var(--ok)"></i>Correct</span><span><i style="background:var(--bad)"></i>Incorrect</span><span><i style="background:var(--warn)"></i>Ungraded</span><span><i style="background:var(--saffron);border-radius:50%"></i>Flagged</span></div></aside><aside class="room card" id="roomBox" aria-label="Room members" hidden><div class="navhead"><div><b id="roomTitle">Room</b><small id="roomSub"></small></div><button class="btn icon navtoggle" id="roomCollapse" type="button" aria-expanded="true" aria-label="Collapse room box" title="Collapse room box">›</button><span class="navrail">Room</span></div><div class="roomlist" id="roomList"></div></aside></div>
 </div>
 
 <section class="perf" id="perfView" aria-label="Performance">
@@ -75,7 +74,7 @@
  <div class="pstats" id="pStats"></div><div id="pExtra"></div><p class="dnote" id="bkNote" style="margin:0 0 12px"></p><div class="card ptable" id="pList"></div>
 </section>
 <footer class="bottom"><div class="bar">
- <div class="qstrip" id="qStrip" role="group" aria-label="Question status"></div><div class="navbtns"><button class="btn" id="prevBtn" type="button" aria-label="Previous question">←<span class="lbl2"> Prev</span></button><button class="btn" id="clearBtn" type="button" title="Clear this answer"><span class="lbl2">Clear</span><span class="only-s">✕</span></button><button class="btn" id="nextBtn" type="button" aria-label="Next question"><span id="nextAction">Next →</span><small id="nextTime" hidden></small></button><button class="btn mobile-only" id="navToggle" type="button">☷</button></div>
+ <div class="navbtns"><button class="btn" id="prevBtn" type="button" aria-label="Previous question">←<span class="lbl2"> Prev</span></button><button class="btn" id="clearBtn" type="button" title="Clear this answer"><span class="lbl2">Clear</span><span class="only-s">✕</span></button><button class="btn" id="nextBtn" type="button" aria-label="Next question"><span id="nextAction">Next →</span><small id="nextTime" hidden></small></button></div>
  <div class="stats"><span class="stat good">Correct <b id="correctCount">0</b></span><span class="stat bad">Incorrect <b id="incorrectCount">0</b></span><span class="stat neutral">Ungraded <b id="ungradedCount">0</b></span><span class="stat">Attempted <b id="attemptedCount">0</b></span></div>
  <span class="acc" id="scorePercent">Not started</span>
 </div></footer>
