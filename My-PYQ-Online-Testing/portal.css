@@ -261,3 +261,39 @@ body[data-stage=review] #fbar{display:none!important}
 #studyDialog:has(.studyRow:nth-child(5)){width:min(960px,94vw)}
 #studyDialog header{position:sticky;top:-22px;background:var(--surface);padding-block:8px;z-index:1}
 @media(max-width:600px){#studyDialog{width:calc(100% - 20px);max-height:88dvh;padding:14px}#studyDialog header{top:-14px}.setuphead{align-items:start}.setuphead .setupActions{justify-content:end}.bar1 .brand{min-width:0}.bar1 .brand b{overflow-wrap:anywhere}.where p{flex-wrap:wrap}}
+
+/* ===== Confidence pills (below the options, one tap) ===== */
+.confidencePick{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0 18px}
+.confidencePick .cplabel{font-size:13px;font-weight:700;color:var(--muted);margin-right:2px}
+.cpill{font:inherit;font-size:13px;font-weight:650;min-height:36px;padding:0 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.cpill:hover:not(:disabled){border-color:var(--brand)}
+.cpill:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.cpill.on{background:var(--brand);border-color:var(--brand);color:var(--brand-ink,#fff)}
+.cpill.on.c-sure{background:var(--ok);border-color:var(--ok);color:#fff}
+.cpill.on.c-unsure{background:var(--warn);border-color:var(--warn);color:#1b1b1b}
+.cpill.on.c-guess{background:var(--bad);border-color:var(--bad);color:#fff}
+.cpill:disabled{cursor:default;opacity:.8}
+
+/* ===== Side column: navigator (70%) + members (30%) ===== */
+.nav{gap:12px;background:none;border:0;box-shadow:none;border-radius:0}
+.navbox,.membox{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.navbox{flex:1 1 auto}
+.membox[hidden]{display:none}
+.nav.live{height:calc(100vh - var(--topH) - 90px)}
+.nav.live .navbox{flex:7 1 0}
+.nav.live .membox{flex:3 1 0}
+.nav.live .membox.collapsed{flex:0 0 auto}
+.membox.collapsed .memlist{display:none}
+.membox.collapsed .navhead{border-bottom:0}
+.memlist{padding:2px 14px 8px;overflow:auto;flex:1 1 auto;min-height:0;overscroll-behavior:contain}
+.memlist .mine:last-child{border-bottom:0}
+.memlist .mname{min-width:0;overflow-wrap:anywhere;flex:1 1 5rem}
+.memlist .memberName{padding:2px 0;text-align:left}
+.memlist .mstat{color:var(--muted);font-size:12px}.memlist .mstat.ok{color:var(--ok);font-weight:650}
+.memlist .room-member-actions{flex-basis:100%;justify-content:flex-end}
+.shell.navc .membox .memlist,.shell.navc .membox .navhead>div{display:none}
+.shell.navc .membox .navhead{flex-direction:column;padding:12px 6px;border-bottom:0}
+.shell.navc .membox .navrail{display:block;writing-mode:vertical-rl;font-size:12px;font-weight:700;color:var(--muted);margin-top:8px}
+.shell.navc .nav.live .membox.collapsed{flex:3 1 0}
+@media(max-width:760px){.nav.live{height:60vh}}
+.memlist .mstat,.memlist b{white-space:nowrap}

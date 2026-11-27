@@ -154,13 +154,21 @@ function render(){
  const hint=isMulti(q)&&!rev&&!submitted&&q.attemptable?'<span>Multiple answers: select every correct option'+(mode==='practice'?', then press Check':'')+'</span>':submitted?'Test submitted — review only.':!q.attemptable?'This item is retained for source review.':exam?'<span>Exam mode: change your answer any time before you submit</span>':'<span>Tap an option to check it instantly</span><kbd class="kbdhint">A–D</kbd><span class="kbdhint">then</span><kbd class="kbdhint">Enter</kbd><span class="kbdhint">for next</span>';
  const mchk=isMulti(q)&&!rev&&!submitted&&mode==='practice'&&saved&&saved.sel&&saved.sel.length?'<div style="margin:0 28px 4px"><button class="btn primary" id="chkMulti" type="button">Check answer</button></div>':'';
  card.innerHTML=`<div class="qhead"><span class="qn">Q${mixed?current+1:esc(q.number)}</span>${mixed?'':`<span class="qch" title="${esc(q.chapter||'')}">Ch ${String(q.chapterNo).padStart(2,'0')} · ${esc(q.chapter||'')}</span>`}<div class="qacts"><button class="ib ${flags.has(q.id)?'on':''}" id="flagBtn" type="button" title="Bookmark for review (F)" aria-label="Bookmark for review" aria-pressed="${flags.has(q.id)}"><svg viewBox="0 0 24 24" width="18" height="18" fill="${flags.has(q.id)?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button><button class="ib rep" id="rptBtn" type="button" title="Report a problem with this question" aria-label="Report a problem"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/></svg></button></div>${tags?`<div class="tags">${tags}</div>`:''}</div>
- <div class="qbody">${prompt}${!submitted&&active&&!rev?`<label class="confidencePick">Confidence<select id="confidence"><option value="">Optional</option>${['Sure','Unsure','Guess'].map(c=>`<option ${sess.confidence?.[q.id]===c?'selected':''}>${c}</option>`).join('')}</select></label>`:''}${options}</div>
+ <div class="qbody">${prompt}${options}${confidenceHTML(q,!submitted&&active&&!rev)}</div>
  <p class="hint">${hint}</p>${mchk}${fb}${rev&&q.revisionNote?`<p class="dnote">Revised ${esc(q.revisionDate)} · ${esc(q.revisionNote)}</p>`:''}${noteBox(q)}`;
  card.querySelectorAll('[data-option]').forEach(b=>b.addEventListener('click',()=>pick(b.dataset.option)));
  $('flagBtn').addEventListener('click',()=>toggleFlag(q));$('rptBtn').addEventListener('click',()=>{$('rptBackdrop').hidden=false;});
- const confidence=$('confidence');if(confidence)confidence.onchange=()=>{(sess.confidence||={})[q.id]=confidence.value;save();};
+ const conf=card.querySelector('.confidencePick');if(conf)conf.addEventListener('click',e=>{const b=e.target.closest('[data-conf]');if(!b||b.disabled)return;
+  const v=b.dataset.conf,cur=sess.confidence?.[q.id]||'',next=cur===v?'':v;(sess.confidence||={})[q.id]=next;
+  conf.querySelectorAll('[data-conf]').forEach(x=>{const on=x.dataset.conf===next;x.classList.toggle('on',on);x.setAttribute('aria-checked',String(on));x.tabIndex=on||(!next&&x.dataset.conf===CONF_LEVELS[0])?0:-1;});save();});
  const cm=$('chkMulti');if(cm)cm.addEventListener('click',checkMulti);
  const nt=$('noteTa');if(nt)nt.addEventListener('input',()=>setNote(q.id,nt.value));
+}
+const CONF_LEVELS=['Sure','Unsure','Guess'];
+function confidenceHTML(q,editable){
+ const cur=sess.confidence?.[q.id]||'';
+ if(!editable&&!cur)return '';
+ return `<div class="confidencePick" role="radiogroup" aria-label="How confident are you? (optional)"><span class="cplabel">Confidence</span>${CONF_LEVELS.map((c,i)=>`<button type="button" role="radio" class="cpill c-${c.toLowerCase()}${cur===c?' on':''}" data-conf="${c}" aria-checked="${cur===c}" tabindex="${cur===c||(!cur&&i===0)?0:-1}" ${editable?'':'disabled'}>${c}</button>`).join('')}</div>`;
 }
 function syncBar(q){const a=q&&stateFor(q);$('prevBtn').disabled=!q||current===0;$('nextBtn').disabled=!q||current>=order.length-1;$('clearBtn').disabled=!a||submitted;$('nextBtn').classList.toggle('primary',!!q&&(mode==='exam'||revealed(a)));}
 function setPaused(p){if(submitted)p=false;paused=p;
@@ -237,6 +245,7 @@ function soloPhase(){
  return phase;
 }
 function paint(){
+ syncMembersBox();
  const H=L(),started=document.body.dataset.stage==='active'&&(!H||!!H.cfg?.ids&&H.ph!=='lobby');
  $('timerBox').hidden=!started;
  const liveMs=H?(H.watchMs||0)+(H.watchAnchor&&!H.pz?Date.now()-H.watchAnchor:0):0;
@@ -309,6 +318,8 @@ $('summaryBackdrop').addEventListener('click',e=>{if(e.target===$('summaryBackdr
 examFilter.addEventListener('change',userFilter);viewFilter.addEventListener('change',userFilter);
 let sh;$('searchBox').addEventListener('input',e=>{clearTimeout(sh);sh=setTimeout(()=>{search=e.target.value.trim().toLowerCase();userFilter();},220);});
 $('shuffleBtn').addEventListener('click',()=>{order=[...filtered];for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}shuffled=true;current=0;selected=null;render();});
+function setMemC(c){$('memBox').classList.toggle('collapsed',c);const b=$('memCollapse');b.textContent=c?'▸':'▾';b.setAttribute('aria-expanded',String(!c));b.setAttribute('aria-label',c?'Expand members':'Collapse members');b.title=c?'Expand members':'Collapse members';store.set('pq-memc',c?'1':'0');}
+$('memCollapse').addEventListener('click',()=>{if($('shell').classList.contains('navc'))setNavC(false);else setMemC(!$('memBox').classList.contains('collapsed'));});
 function setNavC(c){$('shell').classList.toggle('navc',c);const b=$('navCollapse');b.textContent=c?'‹':'›';b.setAttribute('aria-expanded',String(!c));b.setAttribute('aria-label',c?'Expand navigator':'Collapse navigator');b.title=(c?'Expand':'Collapse')+' (N)';store.set('pq-navc',c?'1':'0');}
 $('navCollapse').addEventListener('click',()=>setNavC(!$('shell').classList.contains('navc')));
 $('navToggle').addEventListener('click',()=>$('navigator').classList.toggle('open'));
@@ -1304,26 +1315,35 @@ const _rn=render;render=function(){_rn();liveUI();paint();};
 function liveUI(){const H=L(),q=currentQ();if(!H||!H.cfg||!H.cfg.ids||!q||H.ci<0)return;
  const prac=H.cfg.mode==='practice',pk=H.cpicks||{},nm=H.host?names():H.players;
  const dashboard=H.host?hostDashboard(H,q,pk,nm):'';
- const rows=nm.map(n=>{const s=Object.hasOwn(pk,n)?pk[n]:null;let v;if(!s)v=`<span style="color:var(--muted)">${H.ph==='reveal'?'no answer':'thinking…'}</span>`;
-  else if(!prac||H.ph!=='reveal')v='✔ answered';else{const ok=gradeOf(q,{sel:s})==='correct';v=`<b style="color:var(--${ok?'ok':'bad'})">${lab(q,s)} ${ok?'✓':'✗'}</b>`;}
-  return`<div class="mine"><span>${memberName(H,n)}${n===H.name?' (you)':''}${H.host&&H.off.has(n)?' · reconnecting':''}</span><span>${v}</span>${moderationControls(H,n)}</div>`;}).join('');
+ renderMembers(H,q,nm,pk,prac);
  const ex='';
  const existing=$('livePanel');
  const p=existing||document.createElement('div');p.id='livePanel';p.className='lpanel';
- const structure=JSON.stringify([H.code,H.ci,H.ph,H.pz||0,nm,H.host?[...H.off]:[],H.selectedMember,[...H.members||[]]]);
+ const structure=JSON.stringify([H.code,H.ci,H.ph,H.pz||0,nm.length]);
  if(existing&&p.dataset.structure===structure){
   const meter=p.querySelector('[data-room-count]');if(meter)meter.textContent=nm.filter(n=>Object.hasOwn(pk,n)).length+' / '+nm.length+' answered';
-  const labels=p.querySelectorAll('.mine > span:nth-child(2)');
-  nm.forEach((n,i)=>{
-   const label=labels[i];
-   if(label&&H.ph==='live'&&Object.hasOwn(pk,n)&&label.textContent!=='✔ answered')label.textContent='✔ answered';
-  });
-  return;
+   return;
  }
- const rosterOpen=p.querySelector('.roomRoster')?.open||false;
  p.dataset.structure=structure;
- p.innerHTML=`<div class="lhead"><b>Room ${esc(H.code)}</b><span>Question ${H.ci+1} / ${H.cfg.ids.length}</span>${prac?'':'<span id="lcd">'+H.show()+'</span>'}</div>${prac?'':'<p class="dnote" style="margin:0 0 6px">Exam: friends’ answers stay hidden until the end.</p>'}${H.pz?'<p style="margin:0 0 6px;font-weight:700">⏸ Test paused by the host</p>':''}${dashboard}<details class="roomRoster" ${rosterOpen?'open':''}><summary>Members (${nm.length})${H.host&&H.off.size?' · '+H.off.size+' reconnecting':''}</summary>${rows}</details>${ex}`;
+ p.innerHTML=`<div class="lhead"><b>Room ${esc(H.code)}</b><span>Question ${H.ci+1} / ${H.cfg.ids.length}</span>${prac?'':'<span id="lcd">'+H.show()+'</span>'}</div>${prac?'':'<p class="dnote" style="margin:0 0 6px">Exam: friends’ answers stay hidden until the end.</p>'}${H.pz?'<p style="margin:0 0 6px;font-weight:700">⏸ Test paused by the host</p>':''}${dashboard}${ex}`;
  if(!existing)card.append(p);}
+function renderMembers(H,q,nm,pk,prac){
+ const box=$('memBox'),list=$('memList');if(!box||!list)return;
+ const rows=nm.map(n=>{const s=Object.hasOwn(pk,n)?pk[n]:null;let v;
+  if(!s)v=`<span class="mstat">${H.ph==='reveal'?'no answer':'thinking…'}</span>`;
+  else if(!prac||H.ph!=='reveal')v='<span class="mstat ok">✔ answered</span>';
+  else{const ok=gradeOf(q,{sel:s})==='correct';v=`<b style="color:var(--${ok?'ok':'bad'})">${lab(q,s)} ${ok?'✓':'✗'}</b>`;}
+  return `<div class="mine"><span class="mname">${memberName(H,n)}${n===H.name?' (you)':''}${H.host&&H.off.has(n)?' · reconnecting':''}</span>${v}${moderationControls(H,n)}</div>`;}).join('');
+ const answered=nm.filter(n=>Object.hasOwn(pk,n)).length;
+ $('memSummary').textContent=nm.length+(nm.length===1?' member':' members')+' · '+answered+' answered'+(H.host&&H.off.size?' · '+H.off.size+' reconnecting':'');
+ if(list.dataset.html!==rows){const top=list.scrollTop;list.innerHTML=rows;list.dataset.html=rows;list.scrollTop=top;}
+}
+function syncMembersBox(){
+ const H=L(),on=!!(H&&H.cfg&&H.cfg.ids&&H.ph!=='lobby');
+ const box=$('memBox');if(!box)return;
+ box.hidden=!on;$('navigator').classList.toggle('live',on);
+ if(!on){const l=$('memList');if(l){l.innerHTML='';delete l.dataset.html;}}
+}
 function hostDashboard(H,q,picks,members){
  const answered=members.filter(n=>Object.hasOwn(picks,n));
  const summary='<p data-room-count>'+answered.length+' / '+members.length+' answered</p>';
@@ -1389,7 +1409,7 @@ document.addEventListener('click',e=>{const i=e.target.closest('.qimg,.oimg');if
 
 /* boot */
 const savedTheme=store.get('pq-theme');setTheme(savedTheme?savedTheme==='dark':matchMedia('(prefers-color-scheme:dark)').matches);
-applyFont();setNavC(store.get('pq-navc')==='1');
+applyFont();setNavC(store.get('pq-navc')==='1');setMemC(store.get('pq-memc')==='1');
 new ResizeObserver(()=>document.documentElement.style.setProperty('--topH',$('top').offsetHeight+'px')).observe($('top'));
 (async function boot(){
  const auth=QM.init(0).catch(()=>{});
