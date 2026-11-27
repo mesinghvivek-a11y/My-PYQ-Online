@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>My PYQ Online · Test portal</title>
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="theme-color" content="#2f4fd8"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg"><link rel="apple-touch-icon" href="icon-192.png"><script src="config.js"></script><script src="shared.js"></script><script src="live-room.js"></script><script>try{var __s=new URLSearchParams(location.search).get("s")||localStorage.getItem("qm-last")||"polity";if(__s==="polity"||__s==="history")window.__pre={id:__s,p:fetch("data/"+__s+".json").then(function(r){return r.json()})}}catch(e){}</script>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+
 <link rel="stylesheet" href="portal.css">
-</head>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Mukta:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="theme.css"><link rel="stylesheet" href="fx.css"></head>
 <body data-stage="setup">
 <div class="warnbar" id="warnBar" hidden></div>
 <header class="top" id="top">
@@ -63,8 +63,9 @@
   <section class="card" id="questionCard" aria-live="polite"></section>
   <p class="source" id="sourceNote"><b>Source:</b> Preview: Indian Polity and Governance, Part 4 (10th Edition, 2026). Question text, options, answer key and explanations are extracted from the supplied booklet. The original answer key marker “(*)” is treated as unkeyed; no answer is guessed.</p>
  </main>
- <aside class="nav card" id="navigator" aria-label="Question navigator"><div class="navhead"><div><b>Question navigator</b><small id="navSummary">All questions</small></div><button class="btn icon navtoggle" id="navCollapse" type="button" aria-expanded="true" aria-label="Collapse navigator" title="Collapse (N)">›</button><span class="navrail">Questions</span></div><div class="navlist" id="navList"></div>
-  <div class="navfoot"><span><i style="background:var(--brand)"></i>Current</span><span><i style="background:var(--ok)"></i>Correct</span><span><i style="background:var(--bad)"></i>Incorrect</span><span><i style="background:var(--warn)"></i>Ungraded</span><span><i style="background:var(--saffron);border-radius:50%"></i>Flagged</span></div></aside>
+ <aside class="nav" id="navigator" aria-label="Question navigator and room members"><div class="navbox card" id="navBox"><div class="navhead"><div><b>Question navigator</b><small id="navSummary">All questions</small></div><button class="btn icon navtoggle" id="navCollapse" type="button" aria-expanded="true" aria-label="Collapse navigator" title="Collapse (N)">›</button><span class="navrail">Questions</span></div><div class="navlist" id="navList"></div>
+  <div class="navfoot"><span><i style="background:var(--brand)"></i>Current</span><span><i style="background:var(--ok)"></i>Correct</span><span><i style="background:var(--bad)"></i>Incorrect</span><span><i style="background:var(--warn)"></i>Ungraded</span><span><i style="background:var(--saffron);border-radius:50%"></i>Flagged</span></div></div>
+ <section class="membox card" id="memBox" aria-label="Room members" hidden><div class="navhead"><div><b>Members</b><small id="memSummary">In this room</small></div><button class="btn icon navtoggle" id="memCollapse" type="button" aria-expanded="true" aria-controls="memList" aria-label="Collapse members" title="Collapse members">▾</button><span class="navrail">Members</span></div><div class="meminfo" id="memInfo"></div><div class="memlist" id="memList"></div></section></aside>
 </div>
 
 <section class="perf" id="perfView" aria-label="Performance">
@@ -74,7 +75,7 @@
  <div class="pstats" id="pStats"></div><div id="pExtra"></div><p class="dnote" id="bkNote" style="margin:0 0 12px"></p><div class="card ptable" id="pList"></div>
 </section>
 <footer class="bottom"><div class="bar">
- <div class="navbtns"><button class="btn" id="prevBtn" type="button" aria-label="Previous question">←<span class="lbl2"> Prev</span></button><button class="btn" id="clearBtn" type="button" title="Clear this answer"><span class="lbl2">Clear</span><span class="only-s">✕</span></button><button class="btn" id="nextBtn" type="button" aria-label="Next question"><span id="nextAction">Next →</span><small id="nextTime" hidden></small></button><button class="btn mobile-only" id="navToggle" type="button">☷</button></div>
+ <div class="qstrip" id="qStrip" role="group" aria-label="Question status"></div><div class="navbtns"><button class="btn" id="prevBtn" type="button" aria-label="Previous question">←<span class="lbl2"> Prev</span></button><button class="btn" id="clearBtn" type="button" title="Clear this answer"><span class="lbl2">Clear</span><span class="only-s">✕</span></button><button class="btn" id="nextBtn" type="button" aria-label="Next question"><span id="nextAction">Next →</span><small id="nextTime" hidden></small></button><button class="btn mobile-only" id="navToggle" type="button">☷</button></div>
  <div class="stats"><span class="stat good">Correct <b id="correctCount">0</b></span><span class="stat bad">Incorrect <b id="incorrectCount">0</b></span><span class="stat neutral">Ungraded <b id="ungradedCount">0</b></span><span class="stat">Attempted <b id="attemptedCount">0</b></span></div>
  <span class="acc" id="scorePercent">Not started</span>
 </div></footer>
